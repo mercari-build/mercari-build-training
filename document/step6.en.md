@@ -63,3 +63,9 @@ Run `docker-compose up` and check if the following operates properly
 - [http://localhost:3000/](http://localhost:3000/) displayes the frontend page
 - You can add an new item (Listing)
 - You can view the list of all items (ItemList)
+
+---
+
+### Next
+
+[STEP7: Expand application](step7.en.md)
