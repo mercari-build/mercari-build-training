@@ -76,4 +76,4 @@
 ---
 ### Next
 
-[STEP2: 環境構築](document/step2.ja.md)
+[STEP2: 環境構築](step2.ja.md)
