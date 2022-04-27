@@ -33,7 +33,6 @@ The following icons indicate pointers for
   /[EN](document/step5.en.md))
 - [ ] **STEP6** (Stretch)  Run on docker-compose ([JA](document/step6.ja.md)
   /[EN](document/step6.en.md))
-- [ ] **STEP7** (Optional)  Expand application ([JA](document/step7.ja.md)
 
 ### Other documents
 
