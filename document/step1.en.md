@@ -12,7 +12,7 @@ In this step, we will learn how to use Git and Github.
    $ git version
    ```
    
-   * For Mac user: Install [brew](https://brew.sh/index) and `brew install git`
+   * For Mac users: Install [brew](https://brew.sh/index) and `brew install git`
    * For Windows user: Download [installer](https://gitforwindows.org/)
    
 2. Set your name and email address using git config. Check if your email address shows up.
