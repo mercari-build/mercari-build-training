@@ -35,3 +35,8 @@ The following icons indicate pointers for
   /[EN](document/step6.en.md))
 - [ ] **STEP7** (Optional)  Expand application ([JA](document/step7.ja.md)
   /[EN](document/step7.en.md))
+
+### Other documents
+
+- 効率的に開発できるようになるためのTips / Tips for efficient development ([JA](document/tips.ja.md)/[EN](document/tips.en.md))
+
