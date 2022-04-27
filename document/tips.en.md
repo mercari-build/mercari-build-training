@@ -50,7 +50,7 @@ Solving problems by communicating with others is another kind of engineering ski
 It’s of course best if you understand the official documentation (written in English), but it can be hard to find what you’re looking for in a document written in formal, technical English.
 Even if you start by reading an article a third-party knowledge platform like [Qiita](https://qiita.com/) or Medium, etc. that describes a solution, once you understand the overall idea, make sure that you check the official documentation as well.
 
-Example: To write Dockerfiles, see the [official reference materials](https://docs.docker.com/engine/reference/builder/) and the [Japanese reference materials](https://docs.docker.jp/engine/reference/builder.html).
+Example: To write Dockerfiles, see the [official reference materials](https://docs.docker.com/engine/reference/builder/).
 
 Once you are able to do this, the development flow changes as follows:
 
