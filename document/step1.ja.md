@@ -12,7 +12,7 @@
    $ git version
    ```
 
-   * For Mac user: Install [brew](https://brew.sh/index_ja) and `brew install git`
+   * Macを使っている場合: [brew](https://brew.sh/index_ja) をインストールしてから `brew install git`を実行
    * For Windows user: Download [installer](https://gitforwindows.org/)
 
 2. git configに自分の名前とemailアドレスを設定します。以下のコマンドを実行してあなたのemailアドレスが表示されればOKです。
