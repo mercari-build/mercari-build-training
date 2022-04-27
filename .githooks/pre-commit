@@ -1,0 +1,33 @@
+#!/bin/sh
+if git rev-parse --verify HEAD >/dev/null 2>&1
+then
+	against=HEAD
+else
+	# Initial commit: diff against an empty tree object
+	against=$(git hash-object -t tree /dev/null)
+fi
+
+# Change delimiteir to only LF
+IFS=$'\n'
+
+# Get target files
+files=`git diff --cached --name-only --diff-filter=d -z $against`;
+
+# Loop for each file name
+for file in $files
+do
+  lines=`git diff --cached --diff-filter=d "$file"`
+  for line in $lines
+  do
+    # Search deny word
+    if [[ $line =~ (^.*app\.slack\.com.*$ | ^.*@mercari.*$) ]]; then
+      echo
+      echo ".git/hooks/pre-commit : $file --> ${BASH_REMATCH[0]}"
+      echo
+      echo "$LINES"
+      exit 1
+    fi
+
+  done
+done
+exit 0
