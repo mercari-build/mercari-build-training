@@ -72,4 +72,4 @@ Current `ItemList` shows one column of items sequentially. Use the following ref
 
 ### Next
 
-[STEP6: Run frontend and API using docker-compose](document/step6.en.md)
+[STEP6: Run frontend and API using docker-compose](step6.en.md)

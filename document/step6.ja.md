@@ -65,4 +65,4 @@
 
 ### Next
 
-[STEP7: アプリの拡張](document/step7.ja.md)
+[STEP7: アプリの拡張](step7.ja.md)
