@@ -31,6 +31,7 @@ In this step, we will learn how to use Git and Github.
    ```
 
 **:bangbang: Caution**
+
 Please definitely run the following command after cloning repository. 
 ```
 cd mercari-build-training-2022
