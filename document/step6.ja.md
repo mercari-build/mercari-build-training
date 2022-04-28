@@ -60,9 +60,3 @@
 - [http://localhost:3000/](http://localhost:3000/)でページが正しく表示される
 - 新しい商品の登録 (Listing)
 - 商品の一覧の閲覧 (ItemList)
-
----
-
-### Next
-
-[STEP7: アプリの拡張](step7.ja.md)
