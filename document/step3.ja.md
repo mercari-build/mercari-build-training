@@ -226,4 +226,4 @@ Image not found: <image path>
 
 ### Next
 
-[STEP4: 仮想環境でアプリを動かす](document/step4.ja.md)
+[STEP4: 仮想環境でアプリを動かす](step4.ja.md)

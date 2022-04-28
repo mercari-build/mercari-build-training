@@ -36,6 +36,16 @@
    $ cd <your working space>
    $ git clone https://github.com/<your github id>/mercari-build-training-2022
    ```
+
+**:bangbang: 注意**
+
+cloneができたら必ず以下のコマンドを実行してください。
+```shell
+$ cd mercari-build-training-2022
+$ git config --local core.hooksPath .githooks/ 
+```
+これは mercari-build-training-2022 が githooks という機能を使うために必要なものです。
+
 2. `first-pull-request`というブランチを作り、そのブランチに**checkout**します
    ```shell
    $ cd <your working space>/mercari-build-training-2022
@@ -80,4 +90,4 @@
 ---
 ### Next
 
-[STEP2: 環境構築](document/step2.ja.md)
+[STEP2: 環境構築](step2.ja.md)

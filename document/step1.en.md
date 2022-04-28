@@ -33,6 +33,16 @@ In this step, we will learn how to use Git and Github.
    $ cd <your working space>
    $ git clone https://github.com/<your github id>/mercari-build-training-2022
    ```
+
+**:bangbang: Caution**
+
+Please definitely run the following command after cloning repository. 
+```
+cd mercari-build-training-2022
+git config --local core.hooksPath .githooks/ 
+```
+This is required to use githooks in mercari-build-training-2022 repository.
+
 2. Make a new branch named `first-pull-request` and **checkout** into this branch
    ```shell
    $ cd <your working space>/mercari-build-training-2022
@@ -78,4 +88,4 @@ Check if you understand the following concepts.
 
 ### Next
 
-[STEP2: Building local environmentSTEP2: Building local environment](document/step2.en.md)
+[STEP2: Building local environmentSTEP2: Building local environment](step2.en.md)
