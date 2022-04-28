@@ -34,10 +34,11 @@
    ```
 
 **:bangbang: 注意**
+
 cloneができたら必ず以下のコマンドを実行してください。
-```
-cd mercari-build-training-2022
-git config --local core.hooksPath .githooks/ 
+```shell
+$ cd mercari-build-training-2022
+$ git config --local core.hooksPath .githooks/ 
 ```
 これは mercari-build-training-2022 が githooks という機能を使うために必要なものです。
 
