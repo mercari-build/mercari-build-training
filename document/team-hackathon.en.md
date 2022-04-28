@@ -4,7 +4,6 @@ Form a team and propose and develop a new listing feature at Mercari.
 
 For example, 
 
-* UIよりユーザフレンドリーにする
 * A better and more user-friendly UI
 * Allow videos for listing
 * Use OCR for automatically input the item title
