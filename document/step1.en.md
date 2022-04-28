@@ -30,7 +30,7 @@ In this step, we will learn how to use Git and Github.
    $ git clone https://github.com/<your github id>/mercari-build-training-2022
    ```
 
-**:bangbang:**
+**:bangbang: Caution**
 Please definitely run the following command after cloning repository. 
 ```
 cd mercari-build-training-2022

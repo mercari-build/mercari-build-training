@@ -33,7 +33,7 @@
    $ git clone https://github.com/<your github id>/mercari-build-training-2022
    ```
 
-**:bangbang:**
+**:bangbang: 注意**
 cloneができたら必ず以下のコマンドを実行してください。
 ```
 cd mercari-build-training-2022
