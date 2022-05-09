@@ -1,5 +1,7 @@
 # Build@Mercari Training Program 2022
 
+# have changed remote origin to forked repo
+
 This is @elysemelissa's build training repository.
 
 Build training の前半では個人で課題に取り組んでもらい、Web 開発の基礎知識をつけていただきます。
