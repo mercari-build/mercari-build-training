@@ -9,7 +9,7 @@ Build trainingの前半では個人で課題に取り組んでもらい、Web開
 
 In the first half of Build@Mercari program, you will work on individual tasks to understand the basics of web development. Detailed instructions are not given in each step of the program, and you are encouraged to use official documents and external resources, as well as discussing tasks with your teammates and mentors.
 
-The following icons indicate pointers for 
+The following icons indicate pointers for
 
 **:book: Reference**
 
@@ -23,8 +23,8 @@ The following icons indicate pointers for
 
 ## Tasks
 
-- [ ] **STEP1** Git ([JA](document/step1.ja.md)/[EN](document/step1.en.md))
-- [ ] **STEP2** Setup environment ([JA](document/step2.ja.md)
+- [x] **STEP1** Git ([JA](document/step1.ja.md)/[EN](document/step1.en.md))
+- [x] **STEP2** Setup environment ([JA](document/step2.ja.md)
   /[EN](document/step2.en.md))
 - [ ] **STEP3** Develop API ([JA](document/step3.ja.md)
   /[EN](document/step3.en.md))
