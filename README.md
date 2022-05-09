@@ -1,6 +1,6 @@
 # Build@Mercari Training Program 2022
 
-This is @<your github id>'s build training repository.
+This is @ku-bo-mi's build training repository.
 
 Build trainingの前半では個人で課題に取り組んでもらい、Web開発の基礎知識をつけていただきます。
 ドキュメントには詳細なやり方は記載しません。自身で検索したり、リファレンスを確認したり、チームメイトと協力して各課題をクリアしましょう。
@@ -9,7 +9,7 @@ Build trainingの前半では個人で課題に取り組んでもらい、Web開
 
 In the first half of Build@Mercari program, you will work on individual tasks to understand the basics of web development. Detailed instructions are not given in each step of the program, and you are encouraged to use official documents and external resources, as well as discussing tasks with your teammates and mentors.
 
-The following icons indicate pointers for 
+The following icons indicate pointers for
 
 **:book: Reference**
 
