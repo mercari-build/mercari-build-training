@@ -29,7 +29,7 @@ curl -X GET 'http://127.0.0.1:9000'
 サンプルコードには `/items` というエンドポイントが用意されています。 こちらのエンドポイントをcurlで叩いてみます。
 
 ```shell
-$ curl -X GET 'http://127.0.0.1:9000/items'
+$ curl -X POST 'http://127.0.0.1:9000/items'
 ```
 
 このエンドポイントは、コールに成功すると`{"message": "item received: <name>"}`

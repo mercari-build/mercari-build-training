@@ -29,7 +29,7 @@ Check if you can see `{"message": "Hello, world!"}` on your console.
 In the example implementation, you can see `/items` endpoint. Use `curl` to call this endpoints.
 
 ```shell
-$ curl -X GET 'http://127.0.0.1:9000/items'
+$ curl -X POST 'http://127.0.0.1:9000/items'
 ```
 
 This endpoint expects to return `{"message": "item received: <name>"}`, but you should be seeing something different.
