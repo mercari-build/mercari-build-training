@@ -1,6 +1,6 @@
 # Build@Mercari Training Program 2022
 
-This is @<your github id>'s build training repository.
+This is @e-yang08's build training repository.
 
 Build trainingの前半では個人で課題に取り組んでもらい、Web開発の基礎知識をつけていただきます。
 ドキュメントには詳細なやり方は記載しません。自身で検索したり、リファレンスを確認したり、チームメイトと協力して各課題をクリアしましょう。
@@ -23,7 +23,7 @@ The following icons indicate pointers for
 
 ## Tasks
 
-- [ ] **STEP1** Git ([JA](document/step1.ja.md)/[EN](document/step1.en.md))
+- [x] **STEP1** Git ([JA](document/step1.ja.md)/[EN](document/step1.en.md))
 - [ ] **STEP2** Setup environment ([JA](document/step2.ja.md)
   /[EN](document/step2.en.md))
 - [ ] **STEP3** Develop API ([JA](document/step3.ja.md)
