@@ -44,3 +44,55 @@
 
 
 [GO 公式ドキュメント](https://pkg.go.dev/cmd/go#hdr-The_go_mod_file)
+
+
+## Step3: API
+
+1. API
+### POSTとGETのリクエストの違い
+| メソッド | 意味                                               | 
+| -------- | -------------------------------------------------- | 
+| GET      | 指定したターゲットをサーバから取り出す             | 
+| POST     | 指定したターゲット（プログラム）にデータを送る     | 
+| HEAD     | 指定したターゲットに関連するヘッダー情報を取り出す | 
+| PUT      | サーバ内のファイルを書き込む                       | 
+
+
+
+* `http://127.0.0.1:9000/items`にアクセスしてみると
+    > "status":405,"error":"code=405, message=Method Not Allowed"
+
+    が返ってくる
+
+* 405 : 「送信するクライアント側のメソッドが許可されていない」
+    許可されていないメソッドでアクセスをした場合に出現するエラー
+
+[他のステータスコード](https://www.itmanage.co.jp/column/http-www-request-response-statuscode/)
+
+
+2. エンドポイントの作成
+### Restful API
+[参考](https://docs.microsoft.com/ja-jp/azure/architecture/best-practices/api-design)
+
+* 目的: 
+    1. プラットフォームの独立
+    2. サービスの進化
+
+*  Representational State Transfer (REST)とは
+    - ハイパーメディアに基づき分散システムを構築するアーキテクチャ スタイル
+    - 最も一般的な REST API 実装では、アプリケーション プロトコルとして HTTP を使用
+
+### HTTP を使用した RESTful API の主な設計原則
+* REST API は "リソース" を中心に設計
+
+* リソースには "識別子" がある(URL)
+
+* リソースの "表現" を交換することでサービスと対話。多くのWeb APIでは、交換形式としてJSONを使用
+
+* クライアントとサービスの実装の分離に役立つ統一インターフェイスを使用
+
+* REST API は、表現に含まれているハイパーメディア リンクによって動作
+
+
+
+jsonファイルではなくデータベース(SQLite)にデータを保存する利点は何がありますか？

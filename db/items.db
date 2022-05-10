@@ -1,1 +1,5 @@
-CREATE TABLE items(id int, name string, category string);
+CREATE TABLE `items` (
+    `id` int,
+    `name` string,
+    `category` string
+);

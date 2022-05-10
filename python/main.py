@@ -4,6 +4,21 @@ import pathlib
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+import random
+# import database
+import sqlite3
+
+# データベースを開く
+conn = sqlite3.connect("../db/item.db", check_same_thread=False)
+c = conn.cursor()
+
+#テーブルを作成
+# c.execute("CREATE TABLE `items` (`id` int, `name` string,`category` string);")
+
+# 変更を確定
+conn.commit()
+
+
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -18,13 +33,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+def show_all():
+    c.execute("SELECT * FROM items;")
+    items = c.fetchall()
+
+    for item in items:
+        print(item)
+    
+def add_sql(id,name,category):
+    c.execute("INSERT INTO items(id,name,category) VALUES(?,?,?)", (id,name,category))
+    conn.commit()
+
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
 
+@app.get("/items")
+def show_item():
+    return show_all()
+
 @app.post("/items")
-def add_item(name: str = Form(...)):
+def add_item(name: str = Form(...), category: str = Form(...)):
     logger.info(f"Receive item: {name}")
+    logger.info(f"Receive item: {category}")
+    id = random.randint(1,100)
+    add_sql(id,name,category)
     return {"message": f"item received: {name}"}
 
 @app.get("/image/{items_image}")
