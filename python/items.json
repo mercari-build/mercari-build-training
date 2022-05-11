@@ -1,0 +1,12 @@
+{
+    "items": [
+        {
+            "name": "jacket",
+            "category": "fashion"
+        },
+        {
+            "name": "tshirt",
+            "category": "old"
+        }
+    ]
+}
