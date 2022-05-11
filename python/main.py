@@ -2,6 +2,8 @@ import os
 import logging
 import pathlib
 import json
+import sqlite3
+from unicodedata import category
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,34 +24,38 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    return {"message": "Hello, world!"}
+    return {"message": "Hello, AAA!"}
+
+
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
 
 
 @app.get("/items")
 def get_item():
-    f = open('items.json')
-    file = json.load(f)
-    return file
+
+    conn = sqlite3.connect('../db/mercari.sqlite3')
+    # logger.info("Successfully connect to db")
+    conn.row_factory = dict_factory
+    c = conn.cursor()
+    data = c.execute("SELECT name, category FROM items").fetchall()
+    conn.close()
+    return {"items": f"{data}"}
 
 
-@app.post("/items")
+@ app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...)):
     logger.info(f"Receive item: {name, category}")
-
-    new_item = {"name": name,
-                "category": category}
-
-    with open('items.json', 'r+') as file:
-        # First we load existing data into a dict.
-        file_data = json.load(file)
-        # Join new_data with file_data inside emp_details
-        file_data["items"].append(new_item)
-        # Sets file's current position at offset.
-        file.seek(0)
-        # convert back to json.
-        json.dump(file_data, file, indent=4)
-
-    return {"message": f"item received: {name, category}"}
+    # logger.info("Successfully connect to db")
+    conn = sqlite3.connect('../db/mercari.sqlite3')
+    c = conn.cursor()
+    c.execute(f"INSERT INTO items VALUES ('','{name}','{category}')")
+    conn.commit()
+    conn.close()
+    return {"message": f"List new item {name}"}
 
 
 @ app.get("/image/{items_image}")
