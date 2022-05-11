@@ -66,7 +66,7 @@ def add_item(name: str = Form(...), category: str = Form(...)):
     # logger.info("Successfully connect to db")
     conn = sqlite3.connect('../db/mercari.sqlite3')
     c = conn.cursor()
-    c.execute(f"INSERT INTO items VALUES ('','{name}','{category}')")
+    c.execute(f"INSERT INTO items VALUES ('{name}','{category}')")
     conn.commit()
     conn.close()
     return {"message": f"List new item {name}"}

@@ -6,7 +6,6 @@ c = conn.cursor()
 
 # create a table
 c.execute("""CREATE TABLE items(
-    id integer,
     name text,
     category text
     )""")
