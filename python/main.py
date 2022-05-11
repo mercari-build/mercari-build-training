@@ -3,6 +3,7 @@ import os
 import logging
 import pathlib
 import json
+import hashlib
 import sqlite3
 from fastapi import FastAPI, Form, HTTPException, Query
 from fastapi.responses import FileResponse
@@ -41,9 +42,13 @@ def get_item():
     conn.row_factory = dict_factory
     c = conn.cursor()
     data = c.execute("SELECT name, category FROM items").fetchall()
-    dic = {"items": data}
-    conn.close()
-    return dic
+    if data == []:
+        conn.close()
+        return "No result"
+    else:
+        dic = {"items": data}
+        conn.close()
+        return dic
 
 
 @app.get("/items/{item_id}")
@@ -54,9 +59,12 @@ async def read_item(item_id: str, q: str | None = None):
     c = conn.cursor()
     data = c.execute(
         f"SELECT name, category FROM items WHERE id = {item_id}").fetchall()
-    dic = {"items": data}
-    conn.close()
-    return dic
+    if data == []:
+        conn.close()
+        return "No result"
+    else:
+        conn.close()
+        return data[0]
 
 
 @app.get("/search")
@@ -70,7 +78,6 @@ def search(name: str = Query(..., alias="keyword")):
     if data == []:
         conn.close()
         return "No result"
-
     else:
         dic = {"items": data}
         conn.close()
@@ -81,13 +88,18 @@ id = int(1)
 
 
 @ app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...)):
+def add_item(name: str = Form(...), category: str = Form(...), image: str = Form(...)):
     global id
     logger.info(f"Receive item: {name, category}")
     # logger.info("Successfully connect to db")
     conn = sqlite3.connect('../db/mercari.sqlite3')
     c = conn.cursor()
-    c.execute(f"INSERT INTO items VALUES ('{id}', '{name}','{category}')")
+
+    with open(image, "rb") as f:
+        bytes = f.read()
+        hash = hashlib.sha256(bytes).hexdigest()
+    c.execute(
+        f"INSERT INTO items VALUES ('{id}', '{name}','{category}', '{hash}.jpg')")
     id += 1
     print(id)
     conn.commit()

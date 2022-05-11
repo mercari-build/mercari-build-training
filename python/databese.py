@@ -8,7 +8,8 @@ c = conn.cursor()
 c.execute("""CREATE TABLE items(
     id integer ,
     name text,
-    category text
+    category text,
+    image text
     )""")
 # NULL INTEGER REAL TEXT BLOB
 
