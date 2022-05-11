@@ -1,11 +1,12 @@
 import sqlite3
 
-conn = sqlite3.connect('mercari.sqlite3')
+conn = sqlite3.connect('../db/mercari.sqlite3')
 c = conn.cursor()
 
 
 # create a table
 c.execute("""CREATE TABLE items(
+    id integer ,
     name text,
     category text
     )""")
@@ -19,6 +20,8 @@ c.execute("""CREATE TABLE items(
 # c.execute("SELECT * FROM items")
 # print(c.fetchone()[0])
 
+# c.execute("DROP TABLE items")
+# print("Table dropped... ")
 
 # c.execute("INSERT INTO items VALUES ('123456789', 'Jacket', 'Fashion')")
 # print("Command executed succesefully")

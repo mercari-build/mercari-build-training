@@ -24,7 +24,7 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    return {"message": "Hello, AAA!"}
+    return {"message": "Hello, world!"}
 
 
 def dict_factory(cursor, row):
@@ -36,12 +36,24 @@ def dict_factory(cursor, row):
 
 @app.get("/items")
 def get_item():
-
     conn = sqlite3.connect('../db/mercari.sqlite3')
     # logger.info("Successfully connect to db")
     conn.row_factory = dict_factory
     c = conn.cursor()
     data = c.execute("SELECT name, category FROM items").fetchall()
+    dic = {"items": data}
+    conn.close()
+    return dic
+
+
+@app.get("/items/{item_id}")
+async def read_item(item_id: str, q: str | None = None):
+    conn = sqlite3.connect('../db/mercari.sqlite3')
+    # logger.info("Successfully connect to db")
+    conn.row_factory = dict_factory
+    c = conn.cursor()
+    data = c.execute(
+        f"SELECT name, category FROM items WHERE id = {item_id}").fetchall()
     dic = {"items": data}
     conn.close()
     return dic
@@ -55,18 +67,29 @@ def search(name: str = Query(..., alias="keyword")):
     c = conn.cursor()
     data = c.execute(
         f"SELECT name, category FROM items WHERE name = '{name}'").fetchall()
-    dic = {"items": data}
-    conn.close()
-    return dic
+    if data == []:
+        conn.close()
+        return "No result"
+
+    else:
+        dic = {"items": data}
+        conn.close()
+        return dic
+
+
+id = int(1)
 
 
 @ app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...)):
+    global id
     logger.info(f"Receive item: {name, category}")
     # logger.info("Successfully connect to db")
     conn = sqlite3.connect('../db/mercari.sqlite3')
     c = conn.cursor()
-    c.execute(f"INSERT INTO items VALUES ('{name}','{category}')")
+    c.execute(f"INSERT INTO items VALUES ('{id}', '{name}','{category}')")
+    id += 1
+    print(id)
     conn.commit()
     conn.close()
     return {"message": f"List new item {name}"}
