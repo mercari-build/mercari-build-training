@@ -1,10 +1,10 @@
+from ast import keyword
 import os
 import logging
 import pathlib
 import json
 import sqlite3
-from unicodedata import category
-from fastapi import FastAPI, Form, HTTPException
+from fastapi import FastAPI, Form, HTTPException, Query
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -42,8 +42,22 @@ def get_item():
     conn.row_factory = dict_factory
     c = conn.cursor()
     data = c.execute("SELECT name, category FROM items").fetchall()
+    dic = {"items": data}
     conn.close()
-    return {"items": f"{data}"}
+    return dic
+
+
+@app.get("/search")
+def search(name: str = Query(..., alias="keyword")):
+    conn = sqlite3.connect('../db/mercari.sqlite3')
+    # logger.info("Successfully connect to db")
+    conn.row_factory = dict_factory
+    c = conn.cursor()
+    data = c.execute(
+        f"SELECT name, category FROM items WHERE name = '{name}'").fetchall()
+    dic = {"items": data}
+    conn.close()
+    return dic
 
 
 @ app.post("/items")
