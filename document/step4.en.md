@@ -16,6 +16,12 @@ $ docker run -v $(pwd)/data/text_en.png:/tmp/img.png wakanapo/tesseract-ocr tess
 
 What message was diplayed after running this command?
 
+※If you face the error `libgomp: Thread creation failed: Operation not permitted`, please try the following command.
+
+```shell
+docker run --privileged -v $(pwd)/data/text_en.png:/tmp/img.png wakanapo/tesseract-ocr tesseract /tmp/img.png stdout -l eng
+```
+
 Running this command downlods the corresponding docker image from [the registry](https://hub.docker.com/repository/docker/wakanapo/tesseract-ocr) to your local machine.
 
 This docker image has a functionality to read texts from images (OCR).

@@ -22,6 +22,14 @@ $ docker run -v $(pwd)/data/text_en.png:/tmp/img.png wakanapo/tesseract-ocr tess
 
 メッセージが表示されましたか？
 
+※もし `libgomp: Thread creation failed: Operation not permitted` というエラーが出た場合は
+
+```shell
+docker run --privileged -v $(pwd)/data/text_en.png:/tmp/img.png wakanapo/tesseract-ocr tesseract /tmp/img.png stdout -l eng
+```
+
+として実行してみてください
+
 このコマンドを実行すると[レジストリ](https://hub.docker.com/repository/docker/wakanapo/tesseract-ocr)にある docker image がローカルにダウンロードされ実行されます。
 
 この docker image には画像から文字を読み取る機能 (OCR) が実装されています。
