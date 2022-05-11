@@ -37,9 +37,9 @@ app.add_middleware(
 def show_all():
     c.execute("SELECT * FROM items;")
     items = c.fetchall()
-
-    for item in items:
-        print(item)
+    return items
+    # for item in items:
+    #     print(item)
     
 def add_sql(id,name,category):
     c.execute("INSERT INTO items(id,name,category) VALUES(?,?,?)", (id,name,category))
@@ -51,7 +51,9 @@ def root():
 
 @app.get("/items")
 def show_item():
-    return show_all()
+    content = show_all()
+    # return '{"items":' + content + '}'
+    return {"items": {content}}
 
 @app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...)):
