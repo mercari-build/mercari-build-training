@@ -1,31 +1,169 @@
 import os
 import logging
 import pathlib
+import json
+import sqlite3
+import hashlib
+from sqlite3 import Error
+
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+
+DB_PATH = './mercari.sqlite3'
+
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
 logger.level = logging.INFO
 images = pathlib.Path(__file__).parent.resolve() / "image"
-origins = [ os.environ.get('FRONT_URL', 'http://localhost:3000') ]
+origins = [os.environ.get('FRONT_URL', 'http://localhost:3000')]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=False,
-    allow_methods=["GET","POST","PUT","DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
+# loading inventory
+with open('inventory.json') as js:
+    iv = json.load(js)
+
+# connect to db
+conn = sqlite3.connect(DB_PATH)
+c = conn.cursor()
+
+# create table
+c.execute("""CREATE TABLE IF NOT EXISTS items (
+                id INTEGER PRIMARY KEY,
+                name STRING,
+                category STRING,
+                image STRING
+          )""")
+
+# inv = [('jacket', 'fashion'), ('cat-cage', 'pet'), ('switch', 'entertainment')]
+
+#operations on db
+# c.execute("INSERT INTO items (name,category) VALUES ('jacket', 'fashion')") #insert one
+# c.execute("INSERT INTO items (name,category_id) VALUES ('jacket', '1')") #insert one
+# c.execute('DELETE FROM category;',) #drop all data in table
+# c.execute('DELETE FROM items WHERE id = 6 or 7 or 8') # delete certain item
+# c.executemany("INSERT INTO items(name,category) VALUES(?,?)", inv) #insert many
+# c.execute("""ALTER TABLE items
+# ADD COLUMN image STRING""") # add new column
+# c.execute("""DROP table items""") #drop the table
+# RENAME COLUMN location TO image""")# rename the column
+
+# c.execute("SELECT category_id FROM items")
+# c.execute("UPDATE items SET category_id='1' WHERE category='fashion'")
+
+conn.commit()
+conn.close()
+
+
+# Hash the image
+def hash_image(filepath):
+    with open(filepath, "rb") as f:
+        bts = f.read()  # read entire file as bytes
+        readable_hash = hashlib.sha256(bts).hexdigest();
+        return (f'{readable_hash}.jpg')
+
+
+# print(hash_image('./image/default.jpg'))
+
+# functions of add/get items
+def get_all_items(json_output=False):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        sql = 'SELECT name, category, image FROM items'
+        # c.execute("""SELECT items.name,items.image,category.category_name
+        # FROM items INNER JOIN category
+        # ON items.category_id =category.category_id""")
+        c.execute(sql)
+        r = [dict((c.description[i][0], value) \
+                  for i, value in enumerate(row)) for row in c.fetchall()]
+        conn.commit()
+        conn.close()
+        return r[0] if json_output else r
+    except Error as e:
+        print(e)
+        return None
+
+
+
+def get_specific_items(**args):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        if 'name' in args: c.execute("SELECT name,category,image FROM items WHERE name=?", (args['name'].lower(),))
+        if 'id' in args: c.execute("SELECT name,category,image FROM items WHERE id=?", (args['id'],))
+        r = [dict((c.description[i][0], value) \
+                  for i, value in enumerate(row)) for row in c.fetchall()]
+        conn.commit()
+        conn.close()
+        return r if r else None
+    except Error as e:
+        print(e)
+        return None
+
+
+def add_one_item(name, category, image):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("INSERT INTO items(name,category, image) VALUES (?,?,?)",
+                  (name, category, hash_image(image) if image else None))
+        conn.commit()
+        conn.close()
+        print('add succefully!')
+    except Error as e:
+        print(e)
+        return None
+
+
+# add_one_item('Kirby','game','images/default.jpg')
+# print(get_all_items())
+print(get_specific_items(name='Switch'))
+
+
+# API PART
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
 
+
 @app.post("/items")
-def add_item(name: str = Form(...)):
-    logger.info(f"Receive item: {name}")
+# def add_item(name: str = Form(...)):
+#     logger.info(f"Receive item: {name}")
+#     return {"message": f"item received: {name}"}
+async def add_item(
+        name: str,
+        category: str,
+        image: str = None
+):
+    add_one_item(name, category, image)
+    result = {"name": name, "category": category, "image": image}
+    logger.info(f"Receive item: {result}")
     return {"message": f"item received: {name}"}
+
+
+@app.get("/items")
+def items():
+    return {'items': get_all_items()}
+
+
+@app.get("/search/")
+async def read_item(keyword: str):
+    return {"items": get_specific_items(name=keyword)}
+
+
+@app.get("/items/{item_id}")
+async def read_item(item_id: int):
+    return {"items": get_specific_items(id=item_id)}
+
 
 @app.get("/image/{items_image}")
 async def get_image(items_image):
@@ -40,3 +178,5 @@ async def get_image(items_image):
         image = images / "default.jpg"
 
     return FileResponse(image)
+
+# print(images,type(images))

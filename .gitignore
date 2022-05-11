@@ -8,6 +8,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+#most annoying
+.DS_Store
 
 # C extensions
 *.so
@@ -157,6 +159,8 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# Database
+mercari.sqlite3
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
