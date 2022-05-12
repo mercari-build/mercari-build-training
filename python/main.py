@@ -45,7 +45,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS items (
 
 c.execute("""CREATE TABLE IF NOT EXISTS category (
                category_id INTEGER PRIMARY KEY,
-               name STRING
+               name STRING UNIQUE
           )""")
 
 conn.commit()
