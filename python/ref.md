@@ -7,6 +7,7 @@ https://fastapi.tiangolo.com/tutorial/request-forms/
 Schema design:
 https://dotblogs.com.tw/IanChiu28/2017/05/21/142523
 https://www.sqlitetutorial.net/sqlite-autoincrement/
+https://stackoverflow.com/questions/41939066/python-sqlite-create-id-integer-primary-key-autoincrement
 
 Alias parameters(used in /search):
 https://fastapi.tiangolo.com/tutorial/query-params-str-validations/#alias-parameters

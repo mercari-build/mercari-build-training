@@ -2,12 +2,13 @@ import sqlite3
 
 conn = sqlite3.connect('../db/mercari.sqlite3')
 c = conn.cursor()
-with open('../db/items.db') as f:
-    schema = f.read()
-    c.execute(f"""CREATE TABLE {schema}""")
+
 
 # create a table
 # NULL INTEGER REAL TEXT BLOB
+with open('../db/items.db') as f:
+    schema = f.read()
+    c.execute(f"""CREATE TABLE IF NOT EXISTS {schema}""")
 
 # many_items = [('0', 'a0', 'b0'), ('1', 'a1', 'b1'), ('2', 'a2', 'b2')]
 # c.executemany("INSERT INTO items VALUES (?, ?, ?)", many_items)
@@ -21,7 +22,9 @@ with open('../db/items.db') as f:
 # c.execute("DROP TABLE items")
 # print("Table dropped... ")
 
-# c.execute("INSERT INTO items VALUES ('123456789', 'Jacket', 'Fashion')")
+# Insert test
+# c.execute(
+#     f"INSERT INTO items VALUES (?, ?, ?, ?);", (None, '123456789', 'Jacket', 'Fashion'))
 # print("Command executed succesefully")
 
 conn.commit()

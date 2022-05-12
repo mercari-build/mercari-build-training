@@ -96,7 +96,8 @@ def add_item(name: str = Form(...), category: str = Form(...), image: str = Form
         hash = hashlib.sha256(bytes).hexdigest()
 
     c.execute(
-        f"INSERT INTO items VALUES ('{name}','{category}', '{hash}.jpg')")
+        "INSERT INTO items VALUES(?, ?, ?, ?);", (None,
+                                                  name, category, hash+'.jpg'))
 
     conn.commit()
     conn.close()
