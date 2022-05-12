@@ -84,12 +84,8 @@ def search(name: str = Query(..., alias="keyword")):
         return dic
 
 
-id = int(1)
-
-
 @ app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...), image: str = Form(...)):
-    global id
     logger.info(f"Receive item: {name, category}")
     # logger.info("Successfully connect to db")
     conn = sqlite3.connect('../db/mercari.sqlite3')
@@ -98,10 +94,10 @@ def add_item(name: str = Form(...), category: str = Form(...), image: str = Form
     with open(image, "rb") as f:
         bytes = f.read()
         hash = hashlib.sha256(bytes).hexdigest()
+
     c.execute(
-        f"INSERT INTO items VALUES ('{id}', '{name}','{category}', '{hash}.jpg')")
-    id += 1
-    print(id)
+        f"INSERT INTO items VALUES ('{name}','{category}', '{hash}.jpg')")
+
     conn.commit()
     conn.close()
     return {"message": f"List new item {name}"}

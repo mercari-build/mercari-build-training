@@ -2,15 +2,11 @@ import sqlite3
 
 conn = sqlite3.connect('../db/mercari.sqlite3')
 c = conn.cursor()
-
+with open('../db/items.db') as f:
+    schema = f.read()
+    c.execute(f"""CREATE TABLE {schema}""")
 
 # create a table
-c.execute("""CREATE TABLE items(
-    id integer ,
-    name text,
-    category text,
-    image text
-    )""")
 # NULL INTEGER REAL TEXT BLOB
 
 # many_items = [('0', 'a0', 'b0'), ('1', 'a1', 'b1'), ('2', 'a2', 'b2')]
@@ -21,6 +17,7 @@ c.execute("""CREATE TABLE items(
 # c.execute("SELECT * FROM items")
 # print(c.fetchone()[0])
 
+# Delete table
 # c.execute("DROP TABLE items")
 # print("Table dropped... ")
 
