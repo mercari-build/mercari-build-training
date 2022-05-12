@@ -12,11 +12,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 DB_PATH = './mercari.sqlite3'
 
-
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
 logger.level = logging.INFO
-images = pathlib.Path(__file__).parent.resolve() / "image"
+images = pathlib.Path(__file__).parent.resolve() / "images"
 origins = [os.environ.get('FRONT_URL', 'http://localhost:3000')]
 
 app.add_middleware(
@@ -39,25 +38,15 @@ c = conn.cursor()
 c.execute("""CREATE TABLE IF NOT EXISTS items (
                 id INTEGER PRIMARY KEY,
                 name STRING,
-                category STRING,
-                image STRING
+                category_id INTEGER,
+                image STRING,
+                FOREIGN KEY(category_id) REFERENCES category(category_id)
           )""")
 
-# inv = [('jacket', 'fashion'), ('cat-cage', 'pet'), ('switch', 'entertainment')]
-
-#operations on db
-# c.execute("INSERT INTO items (name,category) VALUES ('jacket', 'fashion')") #insert one
-# c.execute("INSERT INTO items (name,category_id) VALUES ('jacket', '1')") #insert one
-# c.execute('DELETE FROM category;',) #drop all data in table
-# c.execute('DELETE FROM items WHERE id = 6 or 7 or 8') # delete certain item
-# c.executemany("INSERT INTO items(name,category) VALUES(?,?)", inv) #insert many
-# c.execute("""ALTER TABLE items
-# ADD COLUMN image STRING""") # add new column
-# c.execute("""DROP table items""") #drop the table
-# RENAME COLUMN location TO image""")# rename the column
-
-# c.execute("SELECT category_id FROM items")
-# c.execute("UPDATE items SET category_id='1' WHERE category='fashion'")
+c.execute("""CREATE TABLE IF NOT EXISTS category (
+               category_id INTEGER PRIMARY KEY,
+               name STRING
+          )""")
 
 conn.commit()
 conn.close()
@@ -67,40 +56,30 @@ conn.close()
 def hash_image(filepath):
     with open(filepath, "rb") as f:
         bts = f.read()  # read entire file as bytes
-        readable_hash = hashlib.sha256(bts).hexdigest();
-        return (f'{readable_hash}.jpg')
-
-
-# print(hash_image('./image/default.jpg'))
-
-# functions of add/get items
-def get_all_items(json_output=False):
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        sql = 'SELECT name, category, image FROM items'
-        # c.execute("""SELECT items.name,items.image,category.category_name
-        # FROM items INNER JOIN category
-        # ON items.category_id =category.category_id""")
-        c.execute(sql)
-        r = [dict((c.description[i][0], value) \
-                  for i, value in enumerate(row)) for row in c.fetchall()]
-        conn.commit()
-        conn.close()
-        return r[0] if json_output else r
-    except Error as e:
-        print(e)
-        return None
-
+        readable_hash = hashlib.sha256(bts).hexdigest()
+        return f'{readable_hash}.jpg'
 
 
 def get_specific_items(**args):
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
-        if 'name' in args: c.execute("SELECT name,category,image FROM items WHERE name=?", (args['name'].lower(),))
-        if 'id' in args: c.execute("SELECT name,category,image FROM items WHERE id=?", (args['id'],))
-        r = [dict((c.description[i][0], value) \
+        sql = """SELECT items.name,
+             items.image, 
+             category.name as category_name
+             FROM items INNER JOIN category
+             ON items.category_id =category.category_id"""
+        c.execute(sql)
+        conn.row_factory = sqlite3.Row
+        if 'name' in args:
+            suffix = " WHERE items.name=?"
+            print(sql + suffix)
+            c.execute(sql + suffix, (args['name'].lower(),))
+
+        if 'id' in args:
+            suffix = " WHERE items.id=?"
+            c.execute(sql + suffix, (args['id'],))
+        r = [dict((c.description[i][0], value)
                   for i, value in enumerate(row)) for row in c.fetchall()]
         conn.commit()
         conn.close()
@@ -110,12 +89,12 @@ def get_specific_items(**args):
         return None
 
 
-def add_one_item(name, category, image):
+def add_one_item(name, category_id, image):
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
-        c.execute("INSERT INTO items(name,category, image) VALUES (?,?,?)",
-                  (name, category, hash_image(image) if image else None))
+        c.execute("INSERT INTO items(name,category_id, image) VALUES (?,?,?)",
+                  (name, category_id, hash_image(image) if image else None))
         conn.commit()
         conn.close()
         print('add succefully!')
@@ -124,35 +103,56 @@ def add_one_item(name, category, image):
         return None
 
 
-# add_one_item('Kirby','game','images/default.jpg')
-# print(get_all_items())
-print(get_specific_items(name='Switch'))
-
-
 # API PART
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
 
 
+# POST
 @app.post("/items")
-# def add_item(name: str = Form(...)):
-#     logger.info(f"Receive item: {name}")
-#     return {"message": f"item received: {name}"}
-async def add_item(
-        name: str,
-        category: str,
-        image: str = None
-):
-    add_one_item(name, category, image)
-    result = {"name": name, "category": category, "image": image}
+async def add_one_item(name: str,
+                       category_id: int,
+                       image: str = None):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("INSERT INTO items(name,category_id, image) VALUES (?,?,?)",
+                  (name, category_id, hash_image(image) if image else None))
+        conn.commit()
+        conn.close()
+        logger.info('add successfully!')
+    except Error as e:
+        print(e)
+        logger.info(f"failed to add: {name}")
+        return {"message": f"Failed to add: {name}"}
+
+    result = {"name": name, "category_id": category_id, "image": image}
     logger.info(f"Receive item: {result}")
     return {"message": f"item received: {name}"}
 
 
 @app.get("/items")
-def items():
-    return {'items': get_all_items()}
+async def get_all_items():
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        conn.row_factory = sqlite3.Row
+        sql = """SELECT items.name,
+        items.image, 
+        category.name as category_name
+        FROM items INNER JOIN category
+        ON items.category_id =category.category_id"""
+
+        c.execute(sql)
+        r = [dict((c.description[i][0], value)
+                  for i, value in enumerate(row)) for row in c.fetchall()]
+        conn.commit()
+        conn.close()
+        return {'items': r} if r else None
+    except Error as e:
+        print(e)
+        return None
 
 
 @app.get("/search/")
@@ -168,15 +168,15 @@ async def read_item(item_id: int):
 @app.get("/image/{items_image}")
 async def get_image(items_image):
     # Create image path
+
     image = images / items_image
 
     if not items_image.endswith(".jpg"):
         raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
 
     if not image.exists():
-        logger.debug(f"Image not found: {image}")
+
+        logger.info(f"Image not found: {image}")
         image = images / "default.jpg"
 
     return FileResponse(image)
-
-# print(images,type(images))
