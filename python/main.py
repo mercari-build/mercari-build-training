@@ -28,37 +28,34 @@ def root():
     return {"message": "Hello, world!"}
 
 
-def dict_factory(cursor, row):
-    d = {}
-    for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-    return d
-
-
 @app.get("/items")
 def get_item():
     conn = sqlite3.connect('../db/mercari.sqlite3')
-    # logger.info("Successfully connect to db")
-    conn.row_factory = dict_factory
+    conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    data = c.execute("SELECT name, category FROM items").fetchall()
+    data = c.execute(f"""
+            SELECT items.name, category.name AS category
+            FROM items
+            INNER JOIN category ON items.category_id = category.id""").fetchall()
     if data == []:
         conn.close()
         return "No result"
     else:
-        dic = {"items": data}
         conn.close()
-        return dic
+        return {"items": data}
 
 
 @app.get("/items/{item_id}")
 async def read_item(item_id: str, q: str | None = None):
     conn = sqlite3.connect('../db/mercari.sqlite3')
-    # logger.info("Successfully connect to db")
-    conn.row_factory = dict_factory
+    conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    data = c.execute(
-        f"SELECT name, category FROM items WHERE id = {item_id}").fetchall()
+    data = c.execute(f"""
+            SELECT items.name, category.name AS category
+            FROM items
+            INNER JOIN category ON items.category_id=category.id
+            WHERE items.id='{item_id}'""").fetchall()
+    print(data)
     if data == []:
         conn.close()
         return "No result"
@@ -71,37 +68,55 @@ async def read_item(item_id: str, q: str | None = None):
 def search(name: str = Query(..., alias="keyword")):
     conn = sqlite3.connect('../db/mercari.sqlite3')
     # logger.info("Successfully connect to db")
-    conn.row_factory = dict_factory
+    conn.row_factory = sqlite3.Row
     c = conn.cursor()
-    data = c.execute(
-        f"SELECT name, category FROM items WHERE name = '{name}'").fetchall()
+    data = c.execute(f"""
+            SELECT items.name, category.name AS category
+            FROM items
+            INNER JOIN category ON items.category_id=category.id
+            WHERE items.name='{name}'""").fetchall()
+    print(data)
     if data == []:
         conn.close()
         return "No result"
     else:
-        dic = {"items": data}
         conn.close()
-        return dic
+        return {"items": data}
 
 
 @ app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...), image: str = Form(...)):
     logger.info(f"Receive item: {name, category}")
-    # logger.info("Successfully connect to db")
     conn = sqlite3.connect('../db/mercari.sqlite3')
     c = conn.cursor()
-
     with open(image, "rb") as f:
         bytes = f.read()
         hash = hashlib.sha256(bytes).hexdigest()
 
-    c.execute(
-        "INSERT INTO items VALUES(?, ?, ?, ?);", (None,
-                                                  name, category, hash+'.jpg'))
+    cate_data = c.execute(
+        f"SELECT id, name FROM category WHERE name = '{category}'").fetchall()
 
-    conn.commit()
-    conn.close()
-    return {"message": f"List new item {name}"}
+    if(cate_data == []):
+        c.execute("INSERT INTO category VALUES(?, ?);",
+                  (None, category))  # add new category
+        cate_id = c.execute(
+            f"SELECT id, name FROM category WHERE name = '{category}'").fetchall()[0][0]
+
+        c.execute("INSERT INTO items VALUES(?, ?, ?, ?);",
+                  (None, name, cate_id, hash+'.jpg'))
+        conn.commit()
+        conn.close()
+        return {"message": f"List new item {name}"}
+
+    else:
+        cate_id = c.execute(
+            f"SELECT id, name FROM category WHERE name = '{category}'").fetchall()[0][0]
+
+        c.execute("INSERT INTO items VALUES(?, ?, ?, ?);",
+                  (None, name, cate_id, hash+'.jpg'))
+        conn.commit()
+        conn.close()
+        return {"message": f"List new item {name}"}
 
 
 @ app.get("/image/{items_image}")

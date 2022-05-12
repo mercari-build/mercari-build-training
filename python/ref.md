@@ -17,3 +17,6 @@ https://www.pythoncentral.io/hashing-strings-with-python/
 
 Query Parameters:
 https://fastapi.tiangolo.com/tr/tutorial/query-params/
+
+Get dict from sqlite query?
+https://stackoverflow.com/questions/3300464/how-can-i-get-dict-from-sqlite-query
