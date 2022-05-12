@@ -30,16 +30,11 @@ type ItemsArray struct {
 	Items []Item `json:"items"`
 }
 
-// type ItemsJsonObject struct {
-// 	Stuff ItemsArray
-// }
-
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
 }
 
-// TODO: Read existing JSON file, unmarshal and append then marshal and save
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
@@ -83,7 +78,6 @@ func appendItem(itemised Item) []byte {
 	items := []Item{}
 	itemsArray := ItemsArray{items}
 	itemsArray.addToItemArray(itemised)
-	// allItems := ItemsJsonObject{Stuff: itemsArray}
 	jsonData, err := json.Marshal(itemsArray)
 	if err != nil {
 		fmt.Println(err)
