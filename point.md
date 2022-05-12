@@ -95,4 +95,11 @@
 
 
 
-jsonファイルではなくデータベース(SQLite)にデータを保存する利点は何がありますか？
+> jsonファイルではなくデータベース(SQLite)にデータを保存する利点は何がありますか？
+
+
+###  step3-5 search
+
+URIでドメインの後、？の前に来るものがパスパラメータ、?の後に来るのがクエリパラメータ
+
+https://example.com/{pathparameter}?queryparameter1=hogehoge&queryparameter2=fugafuga

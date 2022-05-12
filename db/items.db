@@ -1,5 +1,0 @@
-CREATE TABLE `items` (
-    `id` int,
-    `name` string,
-    `category` string
-);

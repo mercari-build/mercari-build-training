@@ -1,3 +1,4 @@
+import collections
 import os
 import logging
 import pathlib
@@ -5,20 +6,24 @@ from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import random
-# import database
 import sqlite3
-
-# データベースを開く
-conn = sqlite3.connect("../db/item.db", check_same_thread=False)
-c = conn.cursor()
-
-#テーブルを作成
-# c.execute("CREATE TABLE `items` (`id` int, `name` string,`category` string);")
-
-# 変更を確定
-conn.commit()
+import json
 
 
+#----DB-------------------------------
+# # open DB
+# conn = sqlite3.connect("../db/item.db", check_same_thread=False)
+# c = conn.cursor()
+
+# # make table
+# c.execute("DROP TABLE 'items'")
+# c.execute("CREATE TABLE `items` (id int, name string,category string);")
+
+# # commit changes
+# conn.commit()
+
+
+#----config----------------------------
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -33,17 +38,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ----methods----------------------------
 
-def show_all():
-    c.execute("SELECT * FROM items;")
-    items = c.fetchall()
-    return items
-    # for item in items:
-    #     print(item)
-    
+def db_toList(items):
+    objects_list = []
+    for row in items:
+        d = collections.OrderedDict()
+        # d['id'] = row[0]
+        d['name'] = row[1]
+        d['category'] = row[2]
+        objects_list.append(d)   
+    # return json.dumps(items)
+    return objects_list 
+
+
 def add_sql(id,name,category):
-    c.execute("INSERT INTO items(id,name,category) VALUES(?,?,?)", (id,name,category))
+    conn = sqlite3.connect("../db/item.db", check_same_thread=False)
+    c = conn.cursor()
+    c.execute("INSERT INTO items(id,name,category) VALUES(?,?,?);", (id,name,category))
     conn.commit()
+    conn.close()
+
+    
+# ----endpoints--------------------------
 
 @app.get("/")
 def root():
@@ -51,9 +68,12 @@ def root():
 
 @app.get("/items")
 def show_item():
-    content = show_all()
-    # return '{"items":' + content + '}'
-    return {"items": {content}}
+    conn = sqlite3.connect("../db/item.db", check_same_thread=False)
+    c = conn.cursor()
+    items = c.execute("SELECT * FROM items;").fetchall()
+    content = db_toList(items)
+    conn.close()
+    return {"items": f"{json.dumps(content)}"}
 
 @app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...)):
@@ -62,6 +82,17 @@ def add_item(name: str = Form(...), category: str = Form(...)):
     id = random.randint(1,100)
     add_sql(id,name,category)
     return {"message": f"item received: {name}"}
+
+# 'http://127.0.0.1:9000/search?keyword=jacket'
+@app.get("/search")
+def search_item(keyword: str = None):
+    conn = sqlite3.connect("../db/item.db", check_same_thread=False)
+    c = conn.cursor()
+    items = c.execute("SELECT * FROM items WHERE name LIKE '%' + ? + '%';", [keyword]).fetchall()
+    print("a" + "".join(items))
+    content = db_toList(items)
+    conn.close()
+    return {"items": f"{json.dumps(content)}"}
 
 @app.get("/image/{items_image}")
 async def get_image(items_image):
