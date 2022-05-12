@@ -20,3 +20,6 @@ https://fastapi.tiangolo.com/tr/tutorial/query-params/
 
 Get dict from sqlite query?
 https://stackoverflow.com/questions/3300464/how-can-i-get-dict-from-sqlite-query
+
+Logging
+https://docs.python.org/3/howto/logging.html
