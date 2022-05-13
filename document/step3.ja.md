@@ -149,7 +149,7 @@ curl -X POST \
   --url 'http://localhost:9000/items' \
   -d 'name=jacket' \
   -d 'category=fashion' \
-  -d 'image=images/default.jpg'
+  -d 'image=image/default.jpg'
 ```
 
 
