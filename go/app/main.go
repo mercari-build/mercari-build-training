@@ -1,9 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"mercari-build-training-2022/app/item_store"
 	"net/http"
 	"os"
 	"path"
@@ -12,6 +11,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -36,15 +37,34 @@ func root(c echo.Context) error {
 }
 
 func getItems(c echo.Context) error {
-	raw, err := ioutil.ReadFile("./app/items.json")
+	// // step3-3
+	// // get from json
+	// raw, err := ioutil.ReadFile("./app/items.json")
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// 	return err
+	// }
+	// items := Items{}
+	// json.Unmarshal(raw, &items)
+	// res := items
+
+	rows, err := item_store.GetItems()
+	defer rows.Close()
 	if err != nil {
 		fmt.Println(err.Error())
 		return err
 	}
-	items := Items{}
-	json.Unmarshal(raw, &items)
-	res := items
-	return c.JSON(http.StatusOK, res)
+
+	var items Items
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.Name, &item.Category); err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+		items.Items = append(items.Items, item)
+	}
+	return c.JSON(http.StatusOK, items)
 }
 
 func addItem(c echo.Context) error {
@@ -53,28 +73,33 @@ func addItem(c echo.Context) error {
 	category := c.FormValue("category")
 	c.Logger().Infof("Receive item: name:%s, category:%s", name, category)
 
+	// // step3-2
+	// // save to json
+	// raw, err := ioutil.ReadFile("./app/items.json")
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// 	return err
+	// }
+	// items := Items{}
+	// json.Unmarshal(raw, &items)
+	// item := Item{Name: name, Category: category}
+	// items.Items = append(items.Items, item)
+	// b_items, err := json.Marshal(items)
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// 	return err
+	// }
+	// if err = ioutil.WriteFile("./app/items.json", b_items, os.ModePerm); err != nil {
+	// 	fmt.Println(err.Error())
+	// 	return err
+	// }
+
+	if err := item_store.InsertItem(name, category); err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
 	message := fmt.Sprintf("item received: name:%s, category:%s", name, category)
 	res := Response{Message: message}
-
-	// save to json
-	raw, err := ioutil.ReadFile("./app/items.json")
-	if err != nil {
-		fmt.Println(err.Error())
-		return err
-	}
-	items := Items{}
-	json.Unmarshal(raw, &items)
-	item := Item{Name: name, Category: category}
-	items.Items = append(items.Items, item)
-	b_items, err := json.Marshal(items)
-	if err != nil {
-		fmt.Println(err.Error())
-		return err
-	}
-	if err = ioutil.WriteFile("./app/items.json", b_items, os.ModePerm); err != nil {
-		fmt.Println(err.Error())
-		return err
-	}
 
 	return c.JSON(http.StatusOK, res)
 }
