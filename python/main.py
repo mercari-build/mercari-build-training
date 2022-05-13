@@ -25,7 +25,7 @@ app.add_middleware(
 )
 
 
-def add_json(data,file_json='item.json'):
+def add_item_to_json(data,file_json='item.json'):
     path = Path(file_json)
     if not path.is_file():
         file_data={"items": []}
@@ -47,7 +47,7 @@ def root():
 
 @app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...)):
-    add_json({"name": name, "category": category})
+    add_item_to_json({"name": name, "category": category})
     logger.info(f"Receive item: {name} , {category}")
     return {"message": f"item received: {name} , {category}"}
 
@@ -60,8 +60,8 @@ def get_item():
 @app.delete("/items")
 def init_item(file_json='item.json'):
     path = Path(file_json)
-    if os. path. exists(path):
-        os. remove(path)
+    if os.path.exists(path):
+        os.remove(path)
     else:
         print("Can not delete the file as it doesn't exists")
 
