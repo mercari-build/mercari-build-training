@@ -115,6 +115,7 @@ https://example.com/{pathparameter}?queryparameter1=hogehoge&queryparameter2=fug
 
 ### step3-6 image
 
+> sha256以外にどんなハッシュ関数があるか調べてみましょう
 file upload
 (Fast Api　ref)[https://fastapi.tiangolo.com/tutorial/request-files/]
 
@@ -122,3 +123,6 @@ file upload
 sha256 hash
 - hashlib
 (Pythonでハッシュ値を生成するには？)[]https://create-it-myself.com/know-how/generate-hash-from-image-in-python/]
+
+- バイナリファイルの読み書き
+(Pythonでファイルの読み込み、書き込み)[https://note.nkmk.me/python-file-io-open-with/]

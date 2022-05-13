@@ -63,6 +63,7 @@ def db_toList(items):
         # d['id'] = row[0]
         d['name'] = row[1]
         d['category'] = row[2]
+        d['image'] = row[3]
         objects_list.append(d)   
     # return json.dumps(items)
     return objects_list 
@@ -102,10 +103,10 @@ def show_item():
 @app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...), image: bytes = File(...)):
     image_name = image_toHash(image) + ".jpg"
-    file_location = f"../image/{image_name}"
-    with open(file_location, "wb+") as file_object:
-        file_object.write(image.file.read())
-    # return {"info": f"file '{image.filename}' saved at '{file_location}'"}
+    file_location = f"images/{image_name}"
+    with open(file_location, mode="wb") as f:
+        f.write(image)
+        f.close()
     logger.info(f"Receive item: {name}")
     logger.info(f"Receive item: {category}")
     logger.info(f"Receive item: {image_name}") 
@@ -113,7 +114,6 @@ def add_item(name: str = Form(...), category: str = Form(...), image: bytes = Fi
     add_sql(id,name,category,image_name)
     return {"message": f"item received: {name}"}
 
-# 'http://127.0.0.1:9000/search?keyword=jacket'
 @app.get("/search" , response_class=ORJSONResponse)
 def search_item(keyword: str = None):
     conn = sqlite3.connect('../db/item.db')
@@ -122,6 +122,9 @@ def search_item(keyword: str = None):
     content = db_toList(items)
     conn.close()
     return {"items": content}
+
+@app.get("/item/{items_id}")
+
 
 @app.get("/image/{items_image}")
 async def get_image(items_image):
