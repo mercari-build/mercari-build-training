@@ -82,6 +82,16 @@ $ curl -X POST \
 {"items": [{"name": "jacket", "category": "fashion"}, ...]}
 ```
 
+jsonの扱い方
+
+* Read
+  * jsonの構造に沿ってGoで構造体を作成
+  * json.Unmershal(file, &items)でjson -> Go
+* Write
+  * 作りたいjsonの内容を構造体で書く
+  * json.MershalIndentで読み込む
+  * ファイルに書き出し
+
 ## 3. 商品一覧を取得する
 
 GETで`/items`にアクセスしたときに、登録された商品一覧を取得できるようにエンドポイントを実装しましょう。 以下のようなレスポンスを期待しています。
