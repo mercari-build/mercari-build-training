@@ -135,6 +135,15 @@ Change the endpoints `GET /items` and `POST /items` such that items can have ima
 * Hash the image using sha256, and save it with the name `<hash>.jpg`
 * Modify items table such that the image file can be saved as a string
 
+```shell
+# POST .jpg stored in directory 'image'
+curl -X POST \
+  --url 'http://localhost:9000/items' \
+  -d 'name=jacket' \
+  -d 'category=fashion' \
+  -d 'image=image/default.jpg'
+```
+
 Items table example:
 
 | id  | name   | category | image                                        |
