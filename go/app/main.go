@@ -6,6 +6,8 @@ import (
 	"os"
 	"path"
 	"strings"
+	"encoding/json"
+	"io/ioutil"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -20,6 +22,15 @@ type Response struct {
 	Message string `json:"message"`
 }
 
+type Item struct {
+	Name string `json:"name"`
+	Category string `json:"category"`
+}
+
+type Items struct {
+	Items []Item `json:"items"` 
+}
+
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
@@ -28,9 +39,38 @@ func root(c echo.Context) error {
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
-	c.Logger().Infof("Receive item: %s", name)
+	category := c.FormValue("category")
+	item := Item{name, category}
+	c.Logger().Infof("Receive item: %s %s", name, category)
 
-	message := fmt.Sprintf("item received: %s", name)
+	// Read items.json
+	file, err := ioutil.ReadFile("items.json")
+	if err != nil {
+		panic(err)
+	}
+
+	// Add item
+	var items Items
+	if len(file) != 0 {
+		err = json.Unmarshal(file, &items)
+		if err != nil {
+			log.Fatal(err)
+		}
+		items.Items = append(items.Items, item)
+	} else {
+		items.Items = [] Item{item}
+	}
+	output, err := json.MarshalIndent(&items, "", "\t")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Write json
+	err = ioutil.WriteFile("items.json", output, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	message := fmt.Sprintf("item received: %s %s", name, category)
 	res := Response{Message: message}
 
 	return c.JSON(http.StatusOK, res)
