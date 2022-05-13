@@ -26,17 +26,17 @@ async def create_upload_file(file: UploadFile):
     return {"filename": file.filename}
 
 
-#----DB-------------------------------
-# # open DB
-# conn = sqlite3.connect("../db/item.db", check_same_thread=False)
-# c = conn.cursor()
+# ----DB-------------------------------
+# open DB
+conn = sqlite3.connect("../db/item.db", check_same_thread=False)
+c = conn.cursor()
 
-# # make table
+# make table
 # c.execute("DROP TABLE 'items'")
-# c.execute("CREATE TABLE `items` (id int, name string,category string, image string);")
+c.execute("CREATE TABLE `items` (id int, name string,category string, image string);")
 
-# # commit changes
-# conn.commit()
+# commit changes
+conn.commit()
 
 
 #----config----------------------------

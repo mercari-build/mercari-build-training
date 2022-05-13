@@ -1,4 +1,22 @@
-FROM alpine
+#imageのrepoの名前
+# FROM alpine
+FROM python:3.8
 
-# STEP4-4では以下は変更しない
-CMD ["python", "-V"]
+RUN pip install --upgrade pip
+
+
+WORKDIR /app
+
+RUN pip install -U setuptools pip
+RUN pip install Cython
+RUN pip install wheel
+
+COPY requirements.txt requirements.txt
+RUN pip install -r requirements.txt
+COPY . /db
+COPY . /python
+COPY . /image
+
+
+WORKDIR /python
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0","--port", "9000"]
