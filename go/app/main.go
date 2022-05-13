@@ -35,6 +35,18 @@ func root(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+func getItems(c echo.Context) error {
+	raw, err := ioutil.ReadFile("./app/items.json")
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+	items := Items{}
+	json.Unmarshal(raw, &items)
+	res := items
+	return c.JSON(http.StatusOK, res)
+}
+
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
@@ -101,6 +113,7 @@ func main() {
 
 	// Routes
 	e.GET("/", root)
+	e.GET("/items", getItems)
 	e.POST("/items", addItem)
 	e.GET("/image/:itemImg", getImg)
 
