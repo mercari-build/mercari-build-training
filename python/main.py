@@ -91,6 +91,7 @@ def add_sql(id,name,category, image_name):
 def root():
     return {"message": "Hello, world!"}
 
+# curl -X GET 'http://127.0.0.1:9000/items'
 @app.get("/items", response_class=ORJSONResponse)
 def show_item():
     conn = sqlite3.connect("../db/item.db", check_same_thread=False)
@@ -100,6 +101,11 @@ def show_item():
     conn.close()
     return {"items": content}
 
+# curl -X POST \
+#   --url 'http://localhost:9000/items' \
+#   -d 'name=jacket' \
+#   -d 'category=fashion' \
+#   -d 'image=image/default.jpg'
 @app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...), image: bytes = File(...)):
     image_name = image_toHash(image) + ".jpg"
@@ -110,10 +116,11 @@ def add_item(name: str = Form(...), category: str = Form(...), image: bytes = Fi
     logger.info(f"Receive item: {name}")
     logger.info(f"Receive item: {category}")
     logger.info(f"Receive item: {image_name}") 
-    id = random.randint(1,100)
+    id = random.randint(1,30)
     add_sql(id,name,category,image_name)
     return {"message": f"item received: {name}"}
 
+# curl -X GET 'http://127.0.0.1:9000/search?keyword=jacket'
 @app.get("/search" , response_class=ORJSONResponse)
 def search_item(keyword: str = None):
     conn = sqlite3.connect('../db/item.db')
@@ -123,7 +130,16 @@ def search_item(keyword: str = None):
     conn.close()
     return {"items": content}
 
-@app.get("/item/{items_id}")
+# {"items":[{"id":89,"name":"jacket","category":"fashion","image":"ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg"}]}
+# curl -X GET 'http://127.0.0.1:9000/items/89'
+@app.get("/items/", response_class=ORJSONResponse)
+def show_detailById(item_id: int):
+    conn = sqlite3.connect('../db/item.db')
+    c = conn.cursor()
+    items = c.execute('SELECT * FROM items WHERE id = ? ;', (item_id)).fetchall()
+    content = db_toList(items)
+    conn.close()
+    return {"items": content}
 
 
 @app.get("/image/{items_image}")
