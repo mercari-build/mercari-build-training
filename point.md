@@ -96,10 +96,29 @@
 
 
 > jsonファイルではなくデータベース(SQLite)にデータを保存する利点は何がありますか？
+- JSON is data markup format. You use it to define what the data is and means
+- SQL is a data manipulation language. You use it to define the operations you want to perform on the data
 
+[stackoverflow](https://stackoverflow.com/questions/22071735/difference-between-json-and-sql#:~:text=JSON%20is%20the%20data%20format,store%20or%20retrieve%20the%20data.)
 
 ###  step3-5 search
 
 URIでドメインの後、？の前に来るものがパスパラメータ、?の後に来るのがクエリパラメータ
 
 https://example.com/{pathparameter}?queryparameter1=hogehoge&queryparameter2=fugafuga
+
+
+- 出力がJson形式で返ってこない問題
+
+(ORJSONResponce)[https://fastapi.tiangolo.com/ja/advanced/custom-response/]で解決
+
+
+### step3-6 image
+
+file upload
+(Fast Api　ref)[https://fastapi.tiangolo.com/tutorial/request-files/]
+
+
+sha256 hash
+- hashlib
+(Pythonでハッシュ値を生成するには？)[]https://create-it-myself.com/know-how/generate-hash-from-image-in-python/]
