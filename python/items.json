@@ -1,0 +1,24 @@
+{
+    "items": [
+        {
+            "name": "jacket",
+            "category": "fashion"
+        },
+        {
+            "name": "tshirt",
+            "category": "old"
+        },
+        {
+            "name": "tshirt",
+            "category": "old"
+        },
+        {
+            "name": "tshirt",
+            "category": "old"
+        },
+        {
+            "name": "tshirt",
+            "category": "old"
+        }
+    ]
+}

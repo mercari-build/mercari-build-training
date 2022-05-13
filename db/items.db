@@ -1,0 +1,6 @@
+items(
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    name TEXT NOT NULL,
+    category_id	INTEGER NOT NULL,
+    image TEXT NOT NULL
+    )
