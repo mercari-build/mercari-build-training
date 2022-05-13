@@ -116,7 +116,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: bytes = Fi
     logger.info(f"Receive item: {name}")
     logger.info(f"Receive item: {category}")
     logger.info(f"Receive item: {image_name}") 
-    id = random.randint(1,30)
+    id = random.randint(1,1000)
     add_sql(id,name,category,image_name)
     return {"message": f"item received: {name}"}
 
@@ -125,7 +125,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: bytes = Fi
 def search_item(keyword: str = None):
     conn = sqlite3.connect('../db/item.db')
     c = conn.cursor()
-    items = c.execute('SELECT * FROM items WHERE name LIKE  ? ;', (keyword,)).fetchall()
+    items = c.execute('SELECT * FROM items WHERE name LIKE  ? ;', (f"%{keyword}%",)).fetchall()
     content = db_toList(items)
     conn.close()
     return {"items": content}
