@@ -119,6 +119,27 @@ func getImg(c echo.Context) error {
 	return c.File(imgPath)
 }
 
+func searchNameByKwd(c echo.Context) error {
+	keyword := c.FormValue("keyword")
+	rows, err := item_store.SerchItems(keyword)
+	defer rows.Close()
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+
+	var items Items
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.Name, &item.Category); err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+		items.Items = append(items.Items, item)
+	}
+	return c.JSON(http.StatusOK, items)
+}
+
 func main() {
 	e := echo.New()
 
@@ -141,6 +162,7 @@ func main() {
 	e.GET("/items", getItems)
 	e.POST("/items", addItem)
 	e.GET("/image/:itemImg", getImg)
+	e.GET("/search", searchNameByKwd)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
