@@ -110,19 +110,19 @@ https://example.com/{pathparameter}?queryparameter1=hogehoge&queryparameter2=fug
 
 - 出力がJson形式で返ってこない問題
 
-(ORJSONResponce)[https://fastapi.tiangolo.com/ja/advanced/custom-response/]で解決
+[ORJSONResponce](https://fastapi.tiangolo.com/ja/advanced/custom-response/)で解決
 
 
 ### step3-6 image
 
 > sha256以外にどんなハッシュ関数があるか調べてみましょう
 file upload
-(Fast Api　ref)[https://fastapi.tiangolo.com/tutorial/request-files/]
+[Fast Api　re](https://fastapi.tiangolo.com/tutorial/request-files/)
 
 
 sha256 hash
 - hashlib
-(Pythonでハッシュ値を生成するには？)[]https://create-it-myself.com/know-how/generate-hash-from-image-in-python/]
+[Pythonでハッシュ値を生成するには？](https://create-it-myself.com/know-how/generate-hash-from-image-in-python/)
 
 - バイナリファイルの読み書き
-(Pythonでファイルの読み込み、書き込み)[https://note.nkmk.me/python-file-io-open-with/]
+[Pythonでファイルの読み込み、書き込み](https://note.nkmk.me/python-file-io-open-with/)
