@@ -37,6 +37,7 @@ def add_json(data,file_json='item.json'):
     with open(file_json, 'w') as f:
         file_data["items"].append(data)
         json.dump(file_data, f)
+    print (file_data)
 
 
 @app.get("/")
@@ -49,6 +50,21 @@ def add_item(name: str = Form(...), category: str = Form(...)):
     add_json({"name": name, "category": category})
     logger.info(f"Receive item: {name} , {category}")
     return {"message": f"item received: {name} , {category}"}
+
+@app.get("/items")
+def get_item():
+    with open("item.json",'r')as f:
+        file_data=json.load(f)
+    return file_data
+
+@app.delete("/items")
+def init_item(file_json='item.json'):
+    path = Path(file_json)
+    if os. path. exists(path):
+        os. remove(path)
+    else:
+        print("Can not delete the file as it doesn't exists")
+
 
 @app.get("/image/{items_image}")
 async def get_image(items_image):
