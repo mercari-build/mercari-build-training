@@ -36,6 +36,12 @@ func root(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+func handleError(c echo.Context, error_message string) error {
+	c.Logger().Errorf("%s", error_message)
+	res := Response{Message: error_message} 
+ 	return c.JSON(http.StatusBadRequest, res) 
+}
+
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
@@ -44,9 +50,15 @@ func addItem(c echo.Context) error {
 	c.Logger().Infof("Receive item: %s %s", name, category)
 
 	// Read items.json
-	file, err := ioutil.ReadFile("items.json")
+	fp, err := os.OpenFile("items.json", os.O_RDWR|os.O_CREATE, 0664)
 	if err != nil {
-		panic(err)
+		handleError(c, "Failed to open items.json")
+	}
+	defer fp.Close()
+
+	file, err := ioutil.ReadAll(fp)
+	if err != nil {
+		handleError(c, "Failed to read the file")
 	}
 
 	// Add item
@@ -54,7 +66,7 @@ func addItem(c echo.Context) error {
 	if len(file) != 0 {
 		err = json.Unmarshal(file, &items)
 		if err != nil {
-			log.Fatal(err)
+			handleError(c, "Failed to encode items to a JSON string")
 		}
 		items.Items = append(items.Items, item)
 	} else {
@@ -62,17 +74,16 @@ func addItem(c echo.Context) error {
 	}
 	output, err := json.Marshal(&items)
 	if err != nil {
-		log.Fatal(err)
+		handleError(c, "Failed to encode items to a JSON string")
 	}
 
 	// Write json
 	err = ioutil.WriteFile("items.json", output, 0644)
 	if err != nil {
-		log.Fatal(err)
+		handleError(c, "Failed to save data in json file")
 	}
 	message := fmt.Sprintf("item received: %s %s", name, category)
 	res := Response{Message: message}
-
 	return c.JSON(http.StatusOK, res)
 }
 
