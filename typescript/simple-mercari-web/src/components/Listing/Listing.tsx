@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 
 const server = process.env.API_URL || 'http://127.0.0.1:9000';
 
-export const Listing: React.FC<{}> = () => {
+interface Prop {
+  onListingCompleted?: () => void;
+}
+
+export const Listing: React.FC<Prop> = (props) => {
+  const { onListingCompleted } = props;
   const initialState = {
     name: "",
     category: "",
@@ -28,6 +33,7 @@ export const Listing: React.FC<{}> = () => {
     .then(response => response.json())
     .then(data => {
       console.log('POST success:', data);
+      onListingCompleted && onListingCompleted();
     })
     .catch((error) => {
       console.error('POST error:', error);
@@ -44,6 +50,5 @@ export const Listing: React.FC<{}> = () => {
         </div>
       </form>
     </div>
-
   );
 }
