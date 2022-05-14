@@ -89,14 +89,21 @@ func addItem(c echo.Context) error {
 
 func showItems(c echo.Context) error {
 	// Read items.json
-	file, err := ioutil.ReadFile("items.json")
+	fp, err := os.OpenFile("items.json", os.O_RDWR|os.O_CREATE, 0664)
 	if err != nil {
-		panic(err)
+		handleError(c, "Failed to open items.json")
 	}
+	defer fp.Close()
+
+	file, err := ioutil.ReadAll(fp)
+	if err != nil {
+		handleError(c, "Failed to read the file")
+	}
+
 	var items Items
 	err = json.Unmarshal(file, &items)
 	if err != nil {
-		log.Fatal(err)
+		handleError(c, "Failed to encode items to a JSON string")
 	}
 	// Print item
 	return c.JSON(http.StatusOK, items)
