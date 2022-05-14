@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	ImgDir = "image"
+	ImgDir = "images"
 )
 
 type Response struct {
@@ -71,7 +71,7 @@ func main() {
 	// Routes
 	e.GET("/", root)
 	e.POST("/items", addItem)
-	e.GET("/image/:itemImg", getImg)
+	e.GET("/images/:itemImg", getImg)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
