@@ -29,7 +29,7 @@ Check if you can see `{"message": "Hello, world!"}` on your console.
 In the example implementation, you can see `/items` endpoint. Use `curl` to call this endpoints.
 
 ```shell
-$ curl -X GET 'http://127.0.0.1:9000/items'
+$ curl -X POST 'http://127.0.0.1:9000/items'
 ```
 
 This endpoint expects to return `{"message": "item received: <name>"}`, but you should be seeing something different.
@@ -134,6 +134,16 @@ Change the endpoints `GET /items` and `POST /items` such that items can have ima
 * Make a directory called `images`
 * Hash the image using sha256, and save it with the name `<hash>.jpg`
 * Modify items table such that the image file can be saved as a string
+
+```shell
+# POST the jpg file
+curl -X POST \
+  --url 'http://localhost:9000/items' \
+  -d 'name=jacket' \
+  -d 'category=fashion' \
+  -d 'image=images/default.jpg'
+```
+
 
 Items table example:
 
