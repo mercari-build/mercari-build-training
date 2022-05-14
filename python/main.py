@@ -26,17 +26,6 @@ app = FastAPI()
 #     return {"filename": file.filename}
 
 
-# ----DB-------------------------------
-# # open DB
-# conn = sqlite3.connect("../db/item.db", check_same_thread=False)
-# c = conn.cursor()
-
-# # make table
-# # c.execute("DROP TABLE 'items'")
-# c.execute("CREATE TABLE `items` (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, name VARCHAR(255) NOT NULL, category VARCHAR(255), image text);")
-
-# # commit changes
-# conn.commit()
 
 
 #----config----------------------------
@@ -60,7 +49,7 @@ def db_toList(items):
     objects_list = []
     for row in items:
         d = collections.OrderedDict()
-        d['id'] = row[0]
+        #d['id'] = row[0]
         d['name'] = row[1]
         d['category'] = row[2]
         d['image'] = row[3]
@@ -138,8 +127,8 @@ def search_item(keyword: str = None):
     conn.close()
     return {"items": content}
 
-# {"items":[{"id":89,"name":"jacket","category":"fashion","image":"ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg"}]}
-# curl -X GET 'http://127.0.0.1:9000/items/89'
+
+# curl -X GET 'http://127.0.0.1:9000/items/(id)'
 @app.get("/items/", response_class=ORJSONResponse)
 def show_detailById(item_id: int):
     conn = sqlite3.connect('../db/item.db')
