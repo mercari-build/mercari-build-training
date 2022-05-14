@@ -3,6 +3,7 @@ import logging
 import pathlib
 import sqlite3
 import hashlib
+
 from sqlite3 import Error
 
 from fastapi import FastAPI, Form, HTTPException
@@ -54,7 +55,7 @@ def hash_image(string):
 
 
 # function to search items by name/id
-def get_specific_items(name=None,id=None):
+def get_specific_items(name=None, id=None):
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
@@ -158,3 +159,4 @@ async def get_image(items_image):
         image = images / "default.jpg"
 
     return FileResponse(image)
+
