@@ -70,6 +70,28 @@ func getItems(c echo.Context) error {
 	return c.JSON(http.StatusOK, items)
 }
 
+func findItem(c echo.Context) error {
+	var item Item
+	var name string
+	var category string
+	var image string
+
+	// Init DB
+	db := db.DbConnection
+
+	// Exec Query
+	itemId := c.Param("id")
+	c.Logger().Infof("SELECT name, category, image FROM items WHERE id = %s", itemId)
+	err := db.QueryRow("SELECT name, category, image FROM items WHERE id = $1", itemId).Scan(&name, &category, &image)
+	if err != nil {
+		c.Logger().Error("Couldn't find data from DB: %s", err)
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	item = Item{Name: name, Category: category, Image: image}
+
+	return c.JSON(http.StatusOK, item)
+}
+
 func addItem(c echo.Context) error {
 	// Inintialize Item
 	var item Item
@@ -197,6 +219,7 @@ func main() {
 	// Routes
 	e.GET("/", root)
 	e.GET("/items", getItems)
+	e.GET("/items/:id", findItem)
 	e.POST("/items", addItem)
 	e.GET("/image/:itemImg", getImg)
 	e.GET("/items/search", searchItems)
