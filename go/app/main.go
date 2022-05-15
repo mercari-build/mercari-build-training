@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"io"
 	"path"
 	"strings"
+	"encoding"
+	"crypto/sha256"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -21,6 +24,7 @@ const (
 type Item struct {
 	Name string `json:"name"`
 	Category string `json:"category"`
+	Image string `json:"image"`
 }
 
 type Items struct {
@@ -41,10 +45,9 @@ func getItems(c echo.Context) error {
 
 	// Init DB
 	db := db.DbConnection
-	defer db.Close()
 
 	// Exec Query
-	rows, err := db.Query(`SELECT name, category FROM items`)
+	rows, err := db.Query(`SELECT name, category, image FROM items`)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -53,14 +56,15 @@ func getItems(c echo.Context) error {
 	for rows.Next() {
 		var name string
 		var category string
+		var image string
 
 		// カーソルから値を取得
-		if err := rows.Scan(&name, &category); err != nil {
+		if err := rows.Scan(&name, &category, &image); err != nil {
 			return c.JSON(http.StatusInternalServerError, err)
 		}
 
-		fmt.Printf("name: %d, category: %s\n", name, category)
-		items.Items = append(items.Items, Item{Name: name, Category: category})
+		fmt.Printf("name: %d, category: %s, image: %s\n", name, category, image)
+		items.Items = append(items.Items, Item{Name: name, Category: category, Image: image})
 	}
 
 	return c.JSON(http.StatusOK, items)
@@ -72,17 +76,50 @@ func addItem(c echo.Context) error {
 	// Get form data
 	item.Name = c.FormValue("name")
 	item.Category = c.FormValue("category")
+	file, err := c.FormFile("image")
+	if err != nil {
+		c.Logger().Error("Read Image File Error: %s", err)
+		return c.JSON(http.StatusInternalServerError, err)
+	}
 
-	c.Logger().Infof("Receive item: %s which belongs to the category %s", item.Name, item.Category)
+	// Open Image File
+	imageFile, err := file.Open()
+	if err != nil {
+		c.Logger().Error("Open Image File Error: : %s", err)
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	defer imageFile.Close()
 
-	message := fmt.Sprintf("item received: %s which belongs to the category %s", item.Name, item.Category)
+	// Read Image Bytes
+	imageBytes, err := io.ReadAll(imageFile)
+	if err != nil {
+		c.Logger().Error("Open Image Bytes Error: : %s", err)
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	// Encode Image
+	sha := sha256.New()
+	sha.Write([]byte(imageBytes))
+	marshaler, ok := sha.(encoding.BinaryMarshaler)
+	if !ok {
+		c.Logger().Error("Encode Image File Error: : %s", err)
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	encodedImage, err := marshaler.MarshalBinary()
+	if err != nil {
+		c.Logger().Error("Open Image File Error: : %s", err)
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	c.Logger().Infof("Receive item: %s which belongs to the category %s. image name is %s", item.Name, item.Category, item.Image)
+
+	message := fmt.Sprintf("item received: %s which belongs to the category %s. image name is %s", item.Name, item.Category, item.Image)
 
 	// Init DB
 	db := db.DbConnection
-	c.Logger().Infof("DB Initialized")
 
 	// Exec Query
-	_, err := db.Exec(`INSERT INTO items (name, category) VALUES (?, ?)`, item.Name, item.Category)
+	_, err = db.Exec(`INSERT INTO items (name, category, image) VALUES (?, ?, ?)`, item.Name, item.Category, string(encodedImage) + ".jpg")
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -123,14 +160,14 @@ func searchItems(c echo.Context) error {
 	for rows.Next() {
 		var name string
 		var category string
+		var image string
 
 		// カーソルから値を取得
-		if err := rows.Scan(&name, &category); err != nil {
+		if err := rows.Scan(&name, &category, &image); err != nil {
 			return c.JSON(http.StatusInternalServerError, err)
 		}
 
-		fmt.Printf("name: %d, category: %s\n", name, category)
-		items.Items = append(items.Items, Item{Name: name, Category: category})
+		items.Items = append(items.Items, Item{Name: name, Category: category, Image: image})
 	}
 
 	return c.JSON(http.StatusOK, items)

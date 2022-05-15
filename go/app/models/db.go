@@ -21,10 +21,11 @@ func init() {
     }
     // CREATE DB TABLE
     cmd := fmt.Sprintf(`
-    CREATE TABLE IF NOT EXISTS [items] (
-        id INTEGER PRIMARY KEY NOT NULL,
-        name STRING,
-        category STRING
+		CREATE TABLE IF NOT EXISTS [items] (
+			id INTEGER PRIMARY KEY NOT NULL,
+			name STRING,
+			category STRING,
+			image STRING
         )`)
     _, err = DbConnection.Exec(cmd)
 	if err != nil {
