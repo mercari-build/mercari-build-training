@@ -1,4 +1,4 @@
-# test
+# uvicorn main:app --reload --port 9000 で起動
 import os
 import logging
 import pathlib
@@ -6,7 +6,7 @@ from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-import json
+import sqlite3
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -21,26 +21,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-file_json = 'items.json'
-if not os.path.isfile(file_json):
-    initial_items_data = {"items": []}
-    with open(file_json, 'w') as outfile:
-        json.dump(initial_items_data, outfile)
+db_file = pathlib.Path(__file__).parent.resolve() / ".." / "db" / "items.db"
+sqlite3_file = pathlib.Path(__file__).parent.resolve() / ".." / "db" / "mercari.sqlite3"
 
-def add_item_to_json(item, file_json):
-    try:
-        with open(file_json, 'r') as f:
-            items_data = json.load(f)
-    except json.JSONDecodeError as e:
-        print('JSONDecodeError', e)
+@app.on_event("startup")
+def start_app() -> None:
+    logger.info("Stating the app...")
+    if not os.path.exists(db_file):
+        raise FileNotFoundError
     
-    items_data["items"].append(item)
+    if not os.path.exists(sqlite3_file):
+        sqlite3_file.touch()
 
-    with open('items.json', 'w') as outfile:
-        json.dump(items_data, outfile)
+    conn = sqlite3.connect(sqlite3_file)
+    cur = conn.cursor()
 
-    print(f'added {item} to {file_json}')
+    with open(db_file, 'r') as file:
+        schema = file.read()
 
+    cur.execute(f"""
+        {schema}
+    """)
+    conn.commit()
+    conn.close()
 
 @app.get("/")
 def root():
@@ -50,19 +53,49 @@ def root():
 def add_item(name: str = Form(...), category: str = Form(...)):
     logger.info(f"Receive item: {name}, {category}")
     item = {"name": name, "category": category}
-    add_item_to_json(item, file_json)
+
+    conn = sqlite3.connect(sqlite3_file)
+    cur = conn.cursor()
+
+    cur.execute(f"""
+        INSERT INTO items (name, category) VALUES ('{name}', '{category}')
+    """)
+
+    conn.commit()
+    conn.close()
+
     return {"name": name, "category": category}
 
 @app.get("/items")
 def get_items():
-    if not os.path.isfile(file_json):
-        print('')
-    try:
-        with open('items.json', 'r') as f:
-            data = json.load(f)
-    except json.JSONDecodeError as e:
-        print('JSONDecodeError', e)
-    print(data)
+    conn = sqlite3.connect(sqlite3_file)
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT * FROM items
+    """)
+
+    data = cur.fetchall()
+
+    conn.close()
+
+    return data
+
+@app.get("/search")
+def search_items(keyword: str):
+    conn = sqlite3.connect(sqlite3_file)
+    print(keyword)
+    print('here')
+    cur = conn.cursor()
+
+    cur.execute(f"""
+        SELECT * FROM items WHERE name='{keyword}' OR category='{keyword}'
+    """)
+
+    data = cur.fetchall()
+
+    conn.close()
+
     return data
 
 @app.get("/image/{items_image}")
@@ -78,3 +111,7 @@ async def get_image(items_image):
         image = images / "default.jpg"
 
     return FileResponse(image)
+
+@app.on_event("shutdown")
+def close_app():
+    logger.info("Closing the app...")
