@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 import sqlite3
+import hashlib
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -50,15 +51,25 @@ def root():
     return {"message": "Hello, world!"}
 
 @app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...)):
+def add_item(name: str = Form(...), category: str = Form(...), image: str = Form(...)):
     logger.info(f"Receive item: {name}, {category}")
-    item = {"name": name, "category": category}
+
+    image = image.split('/')[-1]
+
+    if not image.endswith('.jpg'):
+        raise HTTPException(
+            status_code=400, detail="Image is not in \".jpg\" format"
+        )
+
+    hash_filename = hashlib.sha256(image.encode()).hexdigest() + '.jpg'
+    item = {"name": name, "category": category, "image": hash_filename}
+    print(hash_filename)
 
     conn = sqlite3.connect(sqlite3_file)
     cur = conn.cursor()
 
     cur.execute(f"""
-        INSERT INTO items (name, category) VALUES ('{name}', '{category}')
+        INSERT INTO items (name, category, image) VALUES ('{item["name"]}', '{item["category"]}', '{item["image"]}')
     """)
 
     conn.commit()
@@ -76,7 +87,24 @@ def get_items():
     """)
 
     data = cur.fetchall()
+    conn.close()
 
+    return data
+
+@app.get("/items/{item_id}")
+def get_by_item_id(item_id: int):
+    conn = sqlite3.connect(sqlite3_file)
+    cur = conn.cursor()
+
+    print(f"""
+        SELECT * FROM items WHERE id={item_id}
+    """)
+
+    cur.execute(f"""
+        SELECT name, category, image FROM items WHERE id={item_id}
+    """)
+
+    data = cur.fetchall()
     conn.close()
 
     return data
@@ -93,7 +121,6 @@ def search_items(keyword: str):
     """)
 
     data = cur.fetchall()
-
     conn.close()
 
     return data
