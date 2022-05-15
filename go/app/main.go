@@ -38,20 +38,6 @@ func root(c echo.Context) error {
 
 func getItems(c echo.Context) error {
 	var items Items
-	// path := "./items.json"
-
-	// Open JSON file and read raw binanry
-	// raw, err := os.ReadFile(path)
-	// if _, err := os.Stat(path); os.IsNotExist(err) {
-	// 	res := Response{Message: "No items"}
-	// 	return c.JSON(http.StatusOK, res)
-	// }
-
-	// Covert raw binary to the Items struct
-	// err = json.Unmarshal([]byte(raw), &items)
-	// if err != nil {
-	// 	return c.JSON(http.StatusInternalServerError, err)
-	// }
 
 	// Init DB
 	db := db.DbConnection
@@ -81,8 +67,6 @@ func getItems(c echo.Context) error {
 }
 
 func addItem(c echo.Context) error {
-	// IInintialize Items
-	// var items Items
 	// Inintialize Item
 	var item Item
 	// Get form data
@@ -93,46 +77,9 @@ func addItem(c echo.Context) error {
 
 	message := fmt.Sprintf("item received: %s which belongs to the category %s", item.Name, item.Category)
 
-	// Read raw data of items from items.json
-	// path := "./items.json"
-	// if _, err := os.Stat(path); os.IsNotExist(err) {
-	// 	_, err := os.Create(path)
-	// 	if err != nil {
-	// 		return c.JSON(http.StatusInternalServerError, err)
-	// 	}
-	// }
-	// raw, err := os.ReadFile(path)
-	// if err != nil {
-	// 	return c.JSON(http.StatusInternalServerError, err)
-	// }
-	
-	// if len(raw) != 0 {
-	// 	// Convert raw data to the Items struct
-	// 	err = json.Unmarshal([]byte(raw), &items)
-	// 	if err != nil {
-	// 		return c.JSON(http.StatusInternalServerError, err)
-	// 	}
-	// }
-
-	// Add Item to items
-	// items.Items = append(items.Items, item)
-
-	// Convert Items to raw JSON data
-	// raw, err = json.MarshalIndent(items, "", " ")
-	// if err != nil {
-	// 	return c.JSON(http.StatusInternalServerError, err)
-	// }
-
-	// Write Items to items.json
-	// err = os.WriteFile("./items.json", raw, 0644)
-	// if err != nil {
-	// 	return c.JSON(http.StatusInternalServerError, err)
-	// }
-
 	// Init DB
 	db := db.DbConnection
 	c.Logger().Infof("DB Initialized")
-	defer db.Close()
 
 	// Exec Query
 	_, err := db.Exec(`INSERT INTO items (name, category) VALUES (?, ?)`, item.Name, item.Category)
@@ -160,6 +107,35 @@ func getImg(c echo.Context) error {
 	return c.File(imgPath)
 }
 
+func searchItems(c echo.Context) error {
+	var items Items
+
+	keyWord := c.QueryParam("keyword")
+	db := db.DbConnection
+
+	// Exec Query
+	rows, err := db.Query(`SELECT name, category FROM items WHERE name LIKE ?`, keyWord + "%")
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var name string
+		var category string
+
+		// カーソルから値を取得
+		if err := rows.Scan(&name, &category); err != nil {
+			return c.JSON(http.StatusInternalServerError, err)
+		}
+
+		fmt.Printf("name: %d, category: %s\n", name, category)
+		items.Items = append(items.Items, Item{Name: name, Category: category})
+	}
+
+	return c.JSON(http.StatusOK, items)
+}
+
 func main() {
 	e := echo.New()
 
@@ -177,11 +153,16 @@ func main() {
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 
+	// Initialize DB
+	db := db.DbConnection
+	defer db.Close()
+
 	// Routes
 	e.GET("/", root)
 	e.GET("/items", getItems)
 	e.POST("/items", addItem)
 	e.GET("/image/:itemImg", getImg)
+	e.GET("/items/search", searchItems)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
