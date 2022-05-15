@@ -6,6 +6,8 @@ import (
 	"os"
 	"path"
 	"strings"
+	"encoding/json"
+	"io/ioutil"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -18,6 +20,15 @@ const (
 
 type Response struct {
 	Message string `json:"message"`
+}
+
+type Item struct {
+	Name string `json:"name"`
+	Category string `json:"category"`
+}
+
+type Items struct {
+	Items []Item `json:"items"` 
 }
 
 func root(c echo.Context) error {
@@ -44,6 +55,12 @@ func addItem(c echo.Context) error {
 		handleError(c, "Failed to open items.json")
 	}
 	defer fp.Close()
+
+	file, err := ioutil.ReadAll(fp)
+	if err != nil {
+		handleError(c, "Failed to read the file")
+	}
+
 
 	file, err := ioutil.ReadAll(fp)
 	if err != nil {
