@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS items(id integer primary key, name text, category text); 

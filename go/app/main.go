@@ -8,10 +8,10 @@ import (
 	"strings"
 	"encoding/json"
 	"io/ioutil"
-
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	"mercari-build-training-2022/app/model"
 )
 
 const (
@@ -46,43 +46,14 @@ func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
 	category := c.FormValue("category")
-	item := Item{name, category}
+	item := model.Item{name, category}
 	c.Logger().Infof("Receive item: %s %s", name, category)
-
-	// Read items.json
-	fp, err := os.OpenFile("items.json", os.O_RDWR|os.O_CREATE, 0664)
+	// Add item to db
+	err := model.AddItem(item)
 	if err != nil {
-		handleError(c, "Failed to open items.json")
+		handleError(c, err.Error())
 	}
-	defer fp.Close()
-
-	file, err := ioutil.ReadAll(fp)
-	if err != nil {
-		handleError(c, "Failed to read the file")
-	}
-
-	// Add item
-	var items Items
-	if len(file) != 0 {
-		err = json.Unmarshal(file, &items)
-		if err != nil {
-			handleError(c, "Failed to encode items to a JSON string")
-		}
-		items.Items = append(items.Items, item)
-	} else {
-		items.Items = [] Item{item}
-	}
-	output, err := json.Marshal(&items)
-	if err != nil {
-		handleError(c, "Failed to encode items to a JSON string")
-	}
-
-	// Write json
-	err = ioutil.WriteFile("items.json", output, 0644)
-	if err != nil {
-		handleError(c, "Failed to save data in json file")
-	}
-	message := fmt.Sprintf("item received: %s %s", name, category)
+	message := fmt.Sprintf("item added: %s %s", name, category)
 	res := Response{Message: message}
 	return c.JSON(http.StatusOK, res)
 }
@@ -91,7 +62,7 @@ func showItems(c echo.Context) error {
 	// Read items.json
 	fp, err := os.OpenFile("items.json", os.O_RDWR|os.O_CREATE, 0664)
 	if err != nil {
-		handleError(c, "Failed to open items.json")
+		handleError(c, err.Error())
 	}
 	defer fp.Close()
 
@@ -125,6 +96,12 @@ func getImg(c echo.Context) error {
 }
 
 func main() {
+	sqlDB, err := model.DBConnection()
+	if err != nil {
+		fmt.Println("database error: ",err,"\n")
+	}
+	fmt.Println(sqlDB)
+	// defer sqlDB.Close()
 	e := echo.New()
 
 	// Middleware
