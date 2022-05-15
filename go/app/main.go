@@ -6,8 +6,6 @@ import (
 	"os"
 	"path"
 	"strings"
-	//"encoding/json"
-	//"io/ioutil"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -69,6 +67,20 @@ func showItems(c echo.Context) error {
 	return c.JSON(http.StatusOK, items)
 }
 
+func searchItem(c echo.Context) error {
+	// Get a parameter
+	var items model.Items
+	var err error
+	name := c.QueryParam("keyword")
+	fmt.Println("name is : %s", name)
+	// Search items in items.db
+	items.Items, err = model.SearchItem(name)
+	if err != nil {
+		handleError(c, err.Error())
+	}
+	return c.JSON(http.StatusOK, items)
+}
+
 func getImg(c echo.Context) error {
 	// Create image path
 	imgPath := path.Join(ImgDir, c.Param("itemImg"))
@@ -89,8 +101,7 @@ func main() {
 	if err != nil {
 		fmt.Println("database error: ",err,"\n")
 	}
-	fmt.Println(sqlDB)
-	// defer sqlDB.Close()
+	defer sqlDB.Close()
 	e := echo.New()
 
 	// Middleware
@@ -111,6 +122,7 @@ func main() {
 	e.GET("/", root)
 	e.GET("/items", showItems)
 	e.POST("/items", addItem)
+	e.GET("/search", searchItem)
 	e.GET("/image/:itemImg", getImg)
 
 	// Start server

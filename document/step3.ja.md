@@ -157,6 +157,7 @@ $ curl -X GET 'http://127.0.0.1:9000/search?keyword=jacket'
 {"items": [{"name": "jacket", "category": "fashion"}, ...]}
 ```
 
+- [`QueryParameter`](https://echo.labstack.com/guide/#:~:text=Query%20Parameters-,%F0%9F%94%97,-/show%3Fteam%3Dx)を使う　
 ## 6. 画像を登録する
 
 商品情報に画像(image)を登録できるように、`GET /items`と`POST /items`のエンドポイントを変更します。

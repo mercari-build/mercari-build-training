@@ -54,13 +54,10 @@ func GetItems() ([]Item, error) {
 	cmd := "SELECT * FROM items"
 	rows, _ := db.Query(cmd)
 	defer rows.Close()
-	//structを作成
 	var item_list []Item
-	//取得したデータをループでスライスに追加　for rows.Next()
 	for rows.Next() {
 		var item Item
 		var id uuid.UUID
-		//scan データ追加
 		err = rows.Scan(&id, &item.Name, &item.Category)
 		if err != nil {
 			return nil, err
@@ -77,20 +74,42 @@ func GetItems() ([]Item, error) {
 func AddItem(item Item) error {
 	id, err :=  uuid.NewUUID()
 	if err != nil {
-		return fmt.Errorf("Error: %s\n", "canot make a new uuid")
+		return err
 	}
 	if db == nil {
-		return fmt.Errorf("Error: %s\n", "db is nil")
+		return err
 	}
 	stmt, err := db.Prepare("INSERT INTO items (id, name, category) VALUES (?,?,?)")
 	if err != nil {
-		return fmt.Errorf("Error: %s\n", "cannot use prepare function")
+		return err
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec(id, item.Name, item.Category)
 	if err != nil {
-		return fmt.Errorf("Error: %s\n", "cannot add a new item to db")
+		return err
 	}	
 	return nil
+}
+
+func SearchItem(name string) ([]Item, error) {
+	rows, err := db.Query("SELECT * FROM items WHERE name = $1", name)
+	defer rows.Close()
+	var item_list []Item
+	//Add items to a list in a for roop
+	for rows.Next() {
+		var item Item
+		var id uuid.UUID
+		// Add data
+		err = rows.Scan(&id, &item.Name, &item.Category)
+		if err != nil {
+			return nil, err
+		}
+		item_list = append(item_list, item)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return item_list, nil
 }
 
