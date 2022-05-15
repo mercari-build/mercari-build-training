@@ -63,23 +63,9 @@ func showItems(c echo.Context) error {
 	var err error
 	// Get a list of items
 	items.Items, err = model.GetItems()
-	// // Read items.json
-	// fp, err := os.OpenFile("items.json", os.O_RDWR|os.O_CREATE, 0664)
-	// if err != nil {
-	// 	handleError(c, err.Error())
-	// }
-	// defer fp.Close()
-
-	// file, err := ioutil.ReadAll(fp)
 	if err != nil {
 		handleError(c, err.Error())
 	}
-
-	//err = json.Unmarshal(file, &items)
-	// if err != nil {
-	// 	handleError(c, "Failed to encode items to a JSON string")
-//   }
-	// Print item
 	return c.JSON(http.StatusOK, items)
 }
 
