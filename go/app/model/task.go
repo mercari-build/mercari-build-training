@@ -49,8 +49,29 @@ func DBConnection() (*sql.DB, error) {
 	return db, nil
 }
 
-func GetItems([]Item, error) {
-
+func GetItems() ([]Item, error) {
+	var err error
+	cmd := "SELECT * FROM items"
+	rows, _ := db.Query(cmd)
+	defer rows.Close()
+	//structを作成
+	var item_list []Item
+	//取得したデータをループでスライスに追加　for rows.Next()
+	for rows.Next() {
+		var item Item
+		var id uuid.UUID
+		//scan データ追加
+		err = rows.Scan(&id, &item.Name, &item.Category)
+		if err != nil {
+			return nil, err
+		}
+		item_list = append(item_list, item)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return item_list, nil
 }
 
 func AddItem(item Item) error {

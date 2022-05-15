@@ -6,8 +6,8 @@ import (
 	"os"
 	"path"
 	"strings"
-	"encoding/json"
-	"io/ioutil"
+	//"encoding/json"
+	//"io/ioutil"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -59,23 +59,26 @@ func addItem(c echo.Context) error {
 }
 
 func showItems(c echo.Context) error {
-	// Read items.json
-	fp, err := os.OpenFile("items.json", os.O_RDWR|os.O_CREATE, 0664)
+	var items model.Items
+	var err error
+	// Get a list of items
+	items.Items, err = model.GetItems()
+	// // Read items.json
+	// fp, err := os.OpenFile("items.json", os.O_RDWR|os.O_CREATE, 0664)
+	// if err != nil {
+	// 	handleError(c, err.Error())
+	// }
+	// defer fp.Close()
+
+	// file, err := ioutil.ReadAll(fp)
 	if err != nil {
 		handleError(c, err.Error())
 	}
-	defer fp.Close()
 
-	file, err := ioutil.ReadAll(fp)
-	if err != nil {
-		handleError(c, "Failed to read the file")
-	}
-
-	var items Items
-	err = json.Unmarshal(file, &items)
-	if err != nil {
-		handleError(c, "Failed to encode items to a JSON string")
-	}
+	//err = json.Unmarshal(file, &items)
+	// if err != nil {
+	// 	handleError(c, "Failed to encode items to a JSON string")
+//   }
 	// Print item
 	return c.JSON(http.StatusOK, items)
 }
