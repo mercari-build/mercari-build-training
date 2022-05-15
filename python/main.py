@@ -4,6 +4,7 @@ import pathlib
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+import json
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -23,9 +24,30 @@ def root():
     return {"message": "Hello, world!"}
 
 @app.post("/items")
-def add_item(name: str = Form(...)):
+def add_item(name: str = Form(...), category: str = Form(...)):
     logger.info(f"Receive item: {name}")
+
+    items_list = {"items" : []}
+    if os.path.isfile('items.json') == True:
+        with open('items.json') as items_json_file:
+            item_list = json.load(items_json_file)
+
+    new_data = {"name" : name, "category" : category}
+    items_list["items"].append(new_data)
+
+    with open("items.json", "w") as items_json_file:
+        json.dump(items_list, items_json_file)
+
     return {"message": f"item received: {name}"}
+
+@app.get("/items")
+def get_item():
+    items_list = {"items" : []}
+    if os.path.isfile("items.json") == True:
+        with open("items.json") as items_json_file:
+            items_list = json.load(items_json_file)
+
+    return items_list
 
 @app.get("/image/{items_image}")
 async def get_image(items_image):
