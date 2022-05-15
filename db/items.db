@@ -1,0 +1,1 @@
+CREATE TABLE items(id integer, name string, category string);
