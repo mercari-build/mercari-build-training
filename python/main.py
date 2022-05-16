@@ -9,7 +9,7 @@ import hashlib
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
-logger.level = logging.INFO
+logger.level = logging.DEBUG
 images = pathlib.Path(__file__).parent.resolve() / "image"
 origins = [os.environ.get('FRONT_URL', 'http://localhost:3000')]
 app.add_middleware(
@@ -72,7 +72,7 @@ async def get_image(image_filename):
             status_code=400, detail="Image path does not end with .jpg")
 
     if not image.exists():
-        logger.info(f"Image not found: {image}")
+        logger.debug(f"Image not found: {image}")
         image = images / "default.jpg"
 
     return FileResponse(image)
