@@ -6,7 +6,10 @@ import (
 	"os"
 	"path"
 	"strings"
+	"encoding/json"
+	"io/ioutil"
 
+	"github.com/sirupsen/logrus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -20,17 +23,70 @@ type Response struct {
 	Message string `json:"message"`
 }
 
+type Items struct{
+	Name string `json:"name"`
+	Category string `json:"category"`
+}
+
+type ResItem struct{
+	Item [] Items
+}
+
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
 }
 
+func checkFile(filename string) error {
+    _, err := os.Stat(filename)
+    if os.IsNotExist(err) {
+        _, err := os.Create(filename)
+        if err != nil {
+            return err
+        }
+    }
+    return nil
+}
+
+func readFile(filename string) []Items{
+  err := checkFile(filename)
+  if err != nil {
+      logrus.Error(err)
+  }
+
+  file, err := ioutil.ReadFile(filename)
+  if err != nil {
+      logrus.Error(err)
+  }
+
+  data := []Items{}
+
+  json.Unmarshal(file, &data)
+	return data
+}
+// POST request and adds onto JSON file with one table
 func addItem(c echo.Context) error {
 	// Get form data
-	name := c.FormValue("name")
-	c.Logger().Infof("Receive item: %s", name)
 
-	message := fmt.Sprintf("item received: %s", name)
+	filename := "items.json"
+	data := readFile("items.json")
+
+	newItem := &Items{Name: c.FormValue("name"), Category: c.FormValue("category")}
+
+  data = append(data, *newItem)
+
+  // Preparing the data to be marshalled and written.
+  dataBytes, err := json.Marshal(data)
+  if err != nil {
+      logrus.Error(err)
+  }
+
+  err = ioutil.WriteFile(filename, dataBytes, 0644)
+  if err != nil {
+      logrus.Error(err)
+  }
+
+	message := fmt.Sprintf("item received: %s", newItem.Name)
 	res := Response{Message: message}
 
 	return c.JSON(http.StatusOK, res)
@@ -49,6 +105,14 @@ func getImg(c echo.Context) error {
 		imgPath = path.Join(ImgDir, "default.jpg")
 	}
 	return c.File(imgPath)
+}
+
+// GET request and retrievs from JSON file with one table 
+func getItems(c echo.Context) error {
+	data := readFile("items.json")
+	res := ResItem{Item: data}
+
+	return c.JSON(http.StatusOK, res)
 }
 
 func main() {
@@ -72,6 +136,7 @@ func main() {
 	e.GET("/", root)
 	e.POST("/items", addItem)
 	e.GET("/image/:itemImg", getImg)
+	e.GET("/items", getItems)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
