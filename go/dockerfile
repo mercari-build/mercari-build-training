@@ -9,15 +9,15 @@ RUN apk update && \
     apk add gcc musl-dev gcompat
 
 RUN mkdir /go/src/db
-RUN mkdir /go/src/app
-WORKDIR /go/src/app
+RUN mkdir /go/src/go
+WORKDIR /go/src/go
 
 ADD db /go/src/db
-ADD go /go/src/app
+ADD go /go/src/go
 
 RUN go mod tidy && \
     go install github.com/cosmtrek/air@latest
 
-WORKDIR /go/src/app/app
+WORKDIR /go/src/go/app
 
 CMD ["air"]
