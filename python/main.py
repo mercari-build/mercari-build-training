@@ -40,9 +40,11 @@ def start_app() -> None:
     with open(db_file, 'r') as file:
         schema = file.read()
 
-    cur.execute(f"""
-        {schema}
-    """)
+    print(schema)
+
+    cur.executescript(f"""
+            {schema}
+        """)
     conn.commit()
     conn.close()
 
@@ -61,16 +63,19 @@ def add_item(name: str = Form(...), category: str = Form(...), image: str = Form
             status_code=400, detail="Image is not in \".jpg\" format"
         )
 
-    hash_filename = hashlib.sha256(image.encode()).hexdigest() + '.jpg'
-    item = {"name": name, "category": category, "image": hash_filename}
+    hash_filename = hashlib.sha256(image.encode('utf-8')).hexdigest() + '.jpg'
     print(hash_filename)
 
     conn = sqlite3.connect(sqlite3_file)
     cur = conn.cursor()
 
-    cur.execute(f"""
-        INSERT INTO items (name, category, image) VALUES ('{item["name"]}', '{item["category"]}', '{item["image"]}')
-    """)
+    cur.execute(f"INSERT OR IGNORE INTO category (name) VALUES ('{category}')")
+    cur.execute(f"SELECT id FROM category WHERE name='{category}'")
+
+    category_id = cur.fetchone()[0]
+    print(f'category_id: {category_id}')
+
+    cur.execute(f"INSERT INTO items (name, category_id, image) VALUES ('{name}', '{category_id}', '{hash_filename}')")
 
     conn.commit()
     conn.close()
@@ -82,9 +87,7 @@ def get_items():
     conn = sqlite3.connect(sqlite3_file)
     cur = conn.cursor()
 
-    cur.execute("""
-        SELECT * FROM items
-    """)
+    cur.execute("SELECT * FROM items")
 
     data = cur.fetchall()
     conn.close()
@@ -96,13 +99,9 @@ def get_by_item_id(item_id: int):
     conn = sqlite3.connect(sqlite3_file)
     cur = conn.cursor()
 
-    print(f"""
-        SELECT * FROM items WHERE id={item_id}
-    """)
+    print(f"SELECT * FROM items WHERE id={item_id}")
 
-    cur.execute(f"""
-        SELECT name, category, image FROM items WHERE id={item_id}
-    """)
+    cur.execute(f"SELECT name, category, image FROM items WHERE id={item_id}")
 
     data = cur.fetchall()
     conn.close()
@@ -116,9 +115,7 @@ def search_items(keyword: str):
     print('here')
     cur = conn.cursor()
 
-    cur.execute(f"""
-        SELECT * FROM items WHERE name='{keyword}' OR category='{keyword}'
-    """)
+    cur.execute(f"SELECT * FROM items WHERE name='{keyword}' OR category='{keyword}'")
 
     data = cur.fetchall()
     conn.close()
