@@ -11,7 +11,8 @@ import sqlite3
 # CREATE TABLE IF NOT EXISTS items (
 #     id INTEGER PRIMARY KEY,
 #     name TEXT,
-#     category TEXT
+#     category TEXT,
+#     image TEXT
 # )
 # """)
 
@@ -21,15 +22,18 @@ import sqlite3
 # # close connection
 # connection.close()
 
-def add_item(id, name, category):
+
+def add_item(name, category, image_hash):
     connection = sqlite3.connect("../db/mercari.sqlite3")
     cursor = connection.cursor()
+    image = image_hash + ".jpg"
     cursor.execute("""
-    INSERT INTO items (id, name, category)
+    INSERT INTO items (name, category, image)
     VALUES (?, ?, ?)
-    """, (id, name, category))
+    """, (name, category, image))
     connection.commit()
     connection.close()
+
 
 def get_items():
     connection = sqlite3.connect("../db/mercari.sqlite3")
@@ -40,6 +44,7 @@ def get_items():
     items = cursor.fetchall()
     connection.close()
     return items
+
 
 def get_item(item_id):
     connection = sqlite3.connect("../db/mercari.sqlite3")
@@ -52,6 +57,7 @@ def get_item(item_id):
     connection.close()
     return item
 
+
 def search_items(keyword):
     connection = sqlite3.connect("../db/mercari.sqlite3")
     cursor = connection.cursor()
@@ -62,3 +68,26 @@ def search_items(keyword):
     items = cursor.fetchall()
     connection.close()
     return items
+
+def delete_item(item_id):
+    connection = sqlite3.connect("../db/mercari.sqlite3")
+    cursor = connection.cursor()
+    cursor.execute("""
+    DELETE FROM items
+    WHERE id = ?
+    """, (item_id,))
+    connection.commit()
+    connection.close()
+
+# Delete a table
+
+# connection = sqlite3.connect("../db/mercari.sqlite3")
+# cursor = connection.cursor()
+# # drop a table
+# cursor.execute("""
+# DROP TABLE items
+# """)
+# # commit changes
+# connection.commit()
+# # close connection
+# connection.close()

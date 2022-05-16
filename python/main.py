@@ -5,6 +5,7 @@ from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import db
+import hashlib
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -31,7 +32,7 @@ async def read_items():
     items = db.get_items()
     for item in items:
         all_items["items"].append(
-            {"id": item[0], "name": item[1], "category": item[2]})
+            {"id": item[0], "name": item[1], "category": item[2], "image": item[3]})
     return all_items
 
 
@@ -40,7 +41,7 @@ async def read_item(item_id: int):
     item = db.get_item(item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    return {"id": item[0], "name": item[1], "category": item[2]}
+    return {"id": item[0], "name": item[1], "category": item[2], "image": item[3]}
 
 
 @app.get("/search")
@@ -49,13 +50,14 @@ async def read_items(keyword: str):
     items = db.search_items(keyword)
     for item in items:
         all_items["items"].append(
-            {"id": item[0], "name": item[1], "category": item[2]})
+            {"id": item[0], "name": item[1], "category": item[2], "image": item[3]})
     return all_items
 
 
 @app.post("/items")
-def add_item(id: int, name: str, category: str):
-    db.add_item(id, name, category)
+def add_item(name: str, category: str, image: str):
+    image_hash = hash_image(image)
+    db.add_item(name, category, image_hash)
     logger.info(f"Receive item: {name}, {category}")
     return {"message": f"Item {name} added"}
 
@@ -63,14 +65,40 @@ def add_item(id: int, name: str, category: str):
 @app.get("/image/{image_filename}")
 async def get_image(image_filename):
     # Create image path
-    image = images / image_filename
-
+    image = pathlib.Path(
+        __file__).parent.resolve() / "images" / image_filename
     if not image_filename.endswith(".jpg"):
         raise HTTPException(
             status_code=400, detail="Image path does not end with .jpg")
 
     if not image.exists():
-        logger.debug(f"Image not found: {image}")
+        logger.info(f"Image not found: {image}")
         image = images / "default.jpg"
 
     return FileResponse(image)
+
+
+@app.delete("/items/{item_id}")
+def delete_item(item_id: int):
+    item = db.get_item(item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    db.delete_item(item_id)
+    logger.info(f"Delete item: {item_id}")
+    return {"message": f"Item {item_id} deleted"}
+
+# hash image and save to /images
+
+
+def hash_image(image):
+    filename = ""
+    filename = filename + image
+    readable_hash = ""
+    # filename = "images/test.jpg"
+    with open(filename, "rb") as f:
+        bytes = f.read()
+        readable_hash = readable_hash + hashlib.sha256(bytes).hexdigest()
+        # print(readable_hash + ".jpg")
+    with open("images/" + readable_hash + ".jpg", "wb") as f:
+        f.write(bytes)
+    return readable_hash
