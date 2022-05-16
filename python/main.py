@@ -94,6 +94,23 @@ def get_item():
 
     return items_list
 
+@app.get("/search")
+def search_item(keyword: str):
+    dbname = '../db/mercari.sqlite3'
+    # DBを作成する（既に作成されていたらこのDBに接続する）
+    conn = sqlite3.connect(dbname)
+    cur = conn.cursor()
+    
+    cur.execute(f"SELECT name, category FROM items WHERE name LIKE '%{keyword}%'")
+    items = cur.fetchall()
+    
+    result_dict = {}
+    result_dict['items'] = [{'name': name, 'category': category} for name, category in items]
+
+    conn.commit()
+    conn.close()
+    return result_dict
+
 @app.get("/image/{items_image}")
 async def get_image(items_image):
     # Create image path
