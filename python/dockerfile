@@ -1,4 +1,6 @@
-FROM alpine
+FROM python:3.10.4-alpine
+
+WORKDIR ./python/
 
 # STEP4-4では以下は変更しない
 CMD ["python", "-V"]
