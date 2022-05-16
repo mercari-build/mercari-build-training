@@ -1,4 +1,23 @@
-FROM alpine
+FROM golang:1.17-alpine
 
-# STEP4-4では以下は変更しない
-CMD ["go", "version"]
+ENV GOPATH /go
+ENV GO111MODULE on
+
+RUN apk update && \
+    apk --no-cache add git && \
+    apk add --no-cache sqlite && \
+    apk add gcc musl-dev gcompat
+
+RUN mkdir /go/src/db
+RUN mkdir /go/src/app
+WORKDIR /go/src/app
+
+ADD db /go/src/db
+ADD go /go/src/app
+
+RUN go mod tidy && \
+    go install github.com/cosmtrek/air@latest
+
+WORKDIR /go/src/app/app
+
+CMD ["air"]
