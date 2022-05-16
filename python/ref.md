@@ -23,3 +23,7 @@ https://stackoverflow.com/questions/3300464/how-can-i-get-dict-from-sqlite-query
 
 Logging
 https://docs.python.org/3/howto/logging.html
+
+DockerFile
+https://hub.docker.com/_/python
+https://stackoverflow.com/questions/46517241/docker-build-requires-exactly-1-arguments
