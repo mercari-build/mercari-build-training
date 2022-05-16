@@ -56,6 +56,7 @@ func addItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+
 func showItems(c echo.Context) error {
 	var items model.Items
 	var err error
@@ -83,7 +84,7 @@ func searchItem(c echo.Context) error {
 
 func getImg(c echo.Context) error {
 	// Create image path
-	imgPath := path.Join(ImgDir, c.Param("itemImg"))
+	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
 
 	if !strings.HasSuffix(imgPath, ".jpg") {
 		res := Response{Message: "Image path does not end with .jpg"}
