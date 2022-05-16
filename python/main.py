@@ -27,12 +27,12 @@ def add_item(name: str = Form(...)):
     logger.info(f"Receive item: {name}")
     return {"message": f"item received: {name}"}
 
-@app.get("/image/{items_image}")
-async def get_image(items_image):
+@app.get("/image/{image_filename}")
+async def get_image(image_filename):
     # Create image path
-    image = images / items_image
+    image = images / image_filename
 
-    if not items_image.endswith(".jpg"):
+    if not image_filename.endswith(".jpg"):
         raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
 
     if not image.exists():

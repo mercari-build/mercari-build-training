@@ -140,25 +140,25 @@ $ curl -X GET 'http://127.0.0.1:9000/search?keyword=jacket'
 商品情報に画像(image)を登録できるように、`GET /items`と`POST /items`のエンドポイントを変更します。
 
 * 画像は `images` というフォルダを作成し保存します
-* ポストされた画像を sha256 で hash化し、`<hash>.jpg`という名前で保存します
+* ポストされた画像のファイル名を sha256 で hash化し、`<hash>.jpg`という名前で保存します
 * itemsテーブルに画像のファイル名をstringで保存できるように変更を加えます
 
 ```shell
-# ディレクトリに保存された.jpgをポストする
+# ローカルから.jpgをポストする
 curl -X POST \
   --url 'http://localhost:9000/items' \
-  -d 'name=jacket' \
-  -d 'category=fashion' \
-  -d 'image=images/default.jpg'
+  -F 'name=jacket' \
+  -F 'category=fashion' \
+  -F 'image=@images/local_image.jpg'
 ```
 
 
 Items table example:
 
-| id  | name   | category | image                                        |
-|:----|:-------|:---------|:---------------------------------------------|
-| 1   | jacket | fashion | 510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg |
-| 2   | ...    |          |                                              |
+| id   | name   | category | image_filename                                                       |
+| :--- | :----- | :------- | :------------------------------------------------------------------- |
+| 1    | jacket | fashion  | 510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg |
+| 2    | ...    |          |                                                                      |
 
 **:beginner: Point**
 
@@ -171,7 +171,7 @@ Items table example:
 
 ```shell
 $ curl -X GET 'http://127.0.0.1:9000/items/1'
-{"name": "jacket", "category": "fashion", "image": "..."}
+{"name": "jacket", "category": "fashion", "image_filename": "..."}
 ```
 
 ## 8. (Optional) カテゴリの情報を別のテーブルに移す
@@ -182,17 +182,17 @@ $ curl -X GET 'http://127.0.0.1:9000/items/1'
 
 **items table**
 
-| id  | name   | category_id | image                                        |
-|:----|:-------|:------------|:---------------------------------------------|
-| 1   | jacket | 1           | 510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg |
-| 2   | ...    |             |                                              |
+| id   | name   | category_id | image_filename                                                       |
+| :--- | :----- | :---------- | :------------------------------------------------------------------- |
+| 1    | jacket | 1           | 510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg |
+| 2    | ...    |             |                                                                      |
 
 **category table**
 
-| id  | name    | 
-|:----|:--------|
-| 1   | fashion |
-| ...|         |
+| id   | name    |
+| :--- | :------ |
+| 1    | fashion |
+| ...  |         |
 
 **:beginner: Point**
 * データベースの**正規化**とは何でしょうか？
