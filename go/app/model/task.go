@@ -1,21 +1,21 @@
 package model
 
 import (
-	"fmt"
 	"database/sql"
+	"fmt"
 	"os"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/google/uuid"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Item struct {
-	Name string `json:"name"`
+	Name     string `json:"name"`
 	Category string `json:"category"`
 }
 
 type Items struct {
-	Items []Item `json:"items"` 
+	Items []Item `json:"items"`
 }
 
 var db *sql.DB
@@ -38,12 +38,12 @@ func DBConnection() (*sql.DB, error) {
 	defer file.Close()
 
 	schema, err := os.ReadFile(dbSchema)
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 
 	_, err = db.Exec(string(schema))
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	return db, nil
@@ -72,7 +72,7 @@ func GetItems() ([]Item, error) {
 }
 
 func AddItem(item Item) error {
-	id, err :=  uuid.NewUUID()
+	id, err := uuid.NewUUID()
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func AddItem(item Item) error {
 	_, err = stmt.Exec(id, item.Name, item.Category)
 	if err != nil {
 		return err
-	}	
+	}
 	return nil
 }
 
@@ -112,4 +112,3 @@ func SearchItem(name string) ([]Item, error) {
 	}
 	return item_list, nil
 }
-

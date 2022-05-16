@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-	"os"
-	"path"
-	"strings"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 	"mercari-build-training-2022/app/model"
+	"net/http"
+	"os"
+	"path"
+	"strings"
 )
 
 const (
@@ -21,12 +21,12 @@ type Response struct {
 }
 
 type Item struct {
-	Name string `json:"name"`
+	Name     string `json:"name"`
 	Category string `json:"category"`
 }
 
 type Items struct {
-	Items []Item `json:"items"` 
+	Items []Item `json:"items"`
 }
 
 func root(c echo.Context) error {
@@ -36,8 +36,8 @@ func root(c echo.Context) error {
 
 func handleError(c echo.Context, error_message string) error {
 	c.Logger().Errorf("%s", error_message)
-	res := Response{Message: error_message} 
- 	return c.JSON(http.StatusBadRequest, res) 
+	res := Response{Message: error_message}
+	return c.JSON(http.StatusBadRequest, res)
 }
 
 func addItem(c echo.Context) error {
@@ -55,7 +55,6 @@ func addItem(c echo.Context) error {
 	res := Response{Message: message}
 	return c.JSON(http.StatusOK, res)
 }
-
 
 func showItems(c echo.Context) error {
 	var items model.Items
@@ -100,7 +99,7 @@ func getImg(c echo.Context) error {
 func main() {
 	sqlDB, err := model.DBConnection()
 	if err != nil {
-		fmt.Println("database error: ",err,"\n")
+		fmt.Println("database error: ", err, "\n")
 	}
 	defer sqlDB.Close()
 	e := echo.New()
