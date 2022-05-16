@@ -28,6 +28,8 @@ The following icons indicate pointers for
   /[EN](document/step2.en.md))
 - [ ] **STEP3** Develop API ([JA](document/step3.ja.md)
   /[EN](document/step3.en.md))
+   - [x] Step3-1 ~ Step3-8
+   - [ ] Step3-9
 - [ ] **STEP4** Docker ([JA](document/step4.ja.md)/[EN](document/step4.en.md))
 - [ ] **STEP5** (Stretch) Frontend ([JA](document/step5.ja.md)
   /[EN](document/step5.en.md))
