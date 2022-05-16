@@ -1,3 +1,4 @@
-*
+.gitignore
 !.gitignore
 !default.jpg
+mercari.sqlite3
