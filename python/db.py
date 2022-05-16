@@ -1,3 +1,4 @@
+from multiprocessing import connection
 import sqlite3
 
 # # connect to database
@@ -11,8 +12,16 @@ import sqlite3
 # CREATE TABLE IF NOT EXISTS items (
 #     id INTEGER PRIMARY KEY,
 #     name TEXT,
-#     category TEXT,
+#     category INTEGER,
 #     image TEXT
+# )
+# """)
+
+# # create category table
+# cursor.execute("""
+# CREATE TABLE IF NOT EXISTS category (
+#     id INTEGER PRIMARY KEY,
+#     name TEXT
 # )
 # """)
 
@@ -23,51 +32,62 @@ import sqlite3
 # connection.close()
 
 
-def add_item(name, category, image_hash):
+def add_item(name, category_id, image_hash):
     connection = sqlite3.connect("../db/mercari.sqlite3")
     cursor = connection.cursor()
     image = image_hash + ".jpg"
     cursor.execute("""
     INSERT INTO items (name, category, image)
     VALUES (?, ?, ?)
-    """, (name, category, image))
+    """, (name, category_id, image))
     connection.commit()
     connection.close()
 
 
+# get items and combine item category with category
 def get_items():
     connection = sqlite3.connect("../db/mercari.sqlite3")
     cursor = connection.cursor()
     cursor.execute("""
-    SELECT * FROM items
+    SELECT items.id, items.name, category.name AS category_name, items.image
+    FROM items
+    LEFT JOIN category
+    ON items.category = category.id
     """)
     items = cursor.fetchall()
     connection.close()
     return items
 
-
+# get item and combine with category
 def get_item(item_id):
     connection = sqlite3.connect("../db/mercari.sqlite3")
     cursor = connection.cursor()
     cursor.execute("""
-    SELECT * FROM items
-    WHERE id = ?
+    SELECT items.id, items.name, category.name AS category_name, items.image
+    FROM items
+    LEFT JOIN category
+    ON items.category = category.id
+    WHERE items.id = ?
     """, (item_id,))
     item = cursor.fetchone()
     connection.close()
     return item
 
-
+# search item and combine with category
 def search_items(keyword):
     connection = sqlite3.connect("../db/mercari.sqlite3")
     cursor = connection.cursor()
     cursor.execute("""
-    SELECT * FROM items
-    WHERE name LIKE ?
+    SELECT items.id, items.name, items.category, category.name AS category_name, items.image
+    FROM items
+    LEFT JOIN category
+    ON items.category = category.id
+    WHERE items.name LIKE ?
     """, ("%" + keyword + "%",))
     items = cursor.fetchall()
     connection.close()
     return items
+
 
 def delete_item(item_id):
     connection = sqlite3.connect("../db/mercari.sqlite3")
@@ -85,9 +105,19 @@ def delete_item(item_id):
 # cursor = connection.cursor()
 # # drop a table
 # cursor.execute("""
-# DROP TABLE items
+# DROP TABLE category
 # """)
 # # commit changes
 # connection.commit()
 # # close connection
+# connection.close()
+
+# add an item to category table
+# connection = sqlite3.connect("../db/mercari.sqlite3")
+# cursor = connection.cursor()
+# cursor.execute("""
+# INSERT INTO category (name)
+# VALUES (?)
+# """, ("fashion",))
+# connection.commit()
 # connection.close()

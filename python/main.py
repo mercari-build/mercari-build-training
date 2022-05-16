@@ -56,8 +56,9 @@ async def read_items(keyword: str):
 
 @app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...), image: str = Form(...)):
+    category_id = int(category)
     image_hash = hash_image(image)
-    db.add_item(name, category, image_hash)
+    db.add_item(name, category_id, image_hash)
     logger.info(f"Receive item: {name}, {category}")
     return {"message": f"Item {name} added"}
 

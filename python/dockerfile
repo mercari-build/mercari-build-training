@@ -1,4 +1,16 @@
-FROM alpine
+FROM python
 
-# STEP4-4では以下は変更しない
-CMD ["python", "-V"]
+COPY ./db ./db
+
+WORKDIR /code
+
+COPY ./requirements.txt /code/requirements.txt
+
+RUN pip3 install --no-cache-dir --upgrade -r /code/requirements.txt
+
+COPY ./main.py /code/main.py
+COPY ./db.py /code/db.py
+COPY ./images /code/images
+COPY ./image /code/image
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000", "--reload"]
