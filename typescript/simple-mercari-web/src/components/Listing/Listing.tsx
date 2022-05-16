@@ -21,8 +21,15 @@ export const Listing: React.FC<Prop> = (props) => {
   };
   const [values, setValues] = useState<formDataType>(initialState);
 
-  const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setValues({ ...values, [event.target.name]: event.target.value });
+  const onValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setValues({
+      ...values, [event.target.name]: event.target.value,
+    })
+  };
+  const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setValues({
+      ...values, [event.target.name]: event.target.files![0],
+    })
   };
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -36,9 +43,8 @@ export const Listing: React.FC<Prop> = (props) => {
       mode: 'cors',
       body: data,
     })
-      .then(response => response.json())
-      .then(data => {
-        console.log('POST success:', data);
+      .then(response => {
+        console.log('POST status:', response.statusText);
         onListingCompleted && onListingCompleted();
       })
       .catch((error) => {
@@ -49,9 +55,9 @@ export const Listing: React.FC<Prop> = (props) => {
     <div className='Listing'>
       <form onSubmit={onSubmit}>
         <div>
-          <input type='text' name='name' id='name' placeholder='name' onChange={onChange} required />
-          <input type='text' name='category' id='category' placeholder='category' onChange={onChange} />
-          <input type='file' name='image' id='image' placeholder='image' onChange={onChange} />
+          <input type='text' name='name' id='name' placeholder='name' onChange={onValueChange} required />
+          <input type='text' name='category' id='category' placeholder='category' onChange={onValueChange} />
+          <input type='file' name='image' id='image' onChange={onFileChange} required />
           <button type='submit'>List this item</button>
         </div>
       </form>
