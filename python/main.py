@@ -15,7 +15,7 @@ DB_PATH = '../db/mercari.sqlite3'
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
 logger.level = logging.INFO
-images = pathlib.Path(__file__).parent.resolve() / "images"
+images = pathlib.Path(__file__).parent.resolve() / "image"
 origins = [os.environ.get('FRONT_URL', 'http://localhost:3000')]
 
 app.add_middleware(
@@ -111,7 +111,6 @@ async def add_one_item(name: str = Form(...),
     logger.info(f"Receive item: {result}")
     return {"message": f"item received: {name}"}
 
-<<<<<<< HEAD
 
 @app.get("/items")
 async def get_all_items():
