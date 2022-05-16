@@ -30,30 +30,9 @@ app.add_middleware(
 )
 
 
-def add_item_to_json(data, file_json="item.json"):
-    path = Path(file_json)
-    if not path.is_file():
-        file_data = {"items": []}
-    else:
-        with open(file_json, "r") as f:
-            file_data = json.load(f)
-
-    with open(file_json, "w") as f:
-        file_data["items"].append(data)
-        json.dump(file_data, f)
-    print(file_data)
-
-
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
-
-
-# @app.post("/items")
-# def add_item(name: str = Form(...), category: str = Form(...)):
-#     add_item_to_json({"name": name, "category": category})
-#     logger.info(f"Receive item: {name} , {category}")
-#     return {"message": f"item received: {name} , {category}"}
 
 
 @app.post("/items")
@@ -73,6 +52,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: str = Form
         (name, category_id, hashed_filename),
     )
     conn.commit()
+    cur.close()
     conn.close()
     logger.info(f"Receive item: {name,category,hashed_filename}")
 
