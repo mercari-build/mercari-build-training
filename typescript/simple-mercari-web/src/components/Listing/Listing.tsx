@@ -17,7 +17,7 @@ export const Listing: React.FC<Prop> = (props) => {
   const initialState = {
     name: "",
     category: "",
-    image: "",
+    image: "image/",
   };
   const [values, setValues] = useState<formDataType>(initialState);
 

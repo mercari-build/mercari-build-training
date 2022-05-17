@@ -1,3 +1,6 @@
+# "docker build -t build2022/app:latest -f python/dockerfile ."
+# "docker run -d -p 9000:9000 build2022/app:latest"
+
 FROM python
 
 COPY db ./db
