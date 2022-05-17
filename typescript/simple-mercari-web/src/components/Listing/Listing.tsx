@@ -6,13 +6,20 @@ export const Listing: React.FC<{}> = () => {
   const initialState = {
     name: "",
     category: "",
-    image: "",
+    image: new File([new Blob()], "", {lastModified: 0}),
   };
   const [values, setValues] = useState(initialState);
   
-  const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const onValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       setValues({ ...values, [event.target.name]: event.target.value });
   };
+
+  const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setValues({
+      ...values, [event.target.name]: event.target.files![0],
+    })
+  };
+
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const data = new FormData()
@@ -37,9 +44,9 @@ export const Listing: React.FC<{}> = () => {
     <div className='Listing'>
       <form onSubmit={onSubmit}>
         <div>
-            <input type='text' name='name' id='name' placeholder='name' onChange={onChange} required/>
-            <input type='text' name='category' id='category' placeholder='category' onChange={onChange}/>
-            <input type='file' name='image' id='image' placeholder='image' onChange={onChange}/>
+            <input type='text' name='name' id='name' placeholder='name' onChange={onValueChange} required/>
+            <input type='text' name='category' id='category' placeholder='category' onChange={onValueChange}/>
+            <input type='file' name='image' id='image' placeholder='image' onChange={onFileChange}/>
             <button type='submit'>List this item</button>
         </div>
       </form>

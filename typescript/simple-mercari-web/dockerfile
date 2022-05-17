@@ -1,3 +1,7 @@
 FROM node:16-alpine
+
 WORKDIR /app
-CMD ["node", "-v"]
+ADD ./typescript/simple-mercari-web /app
+
+CMD ["npm", "ci"]
+CMD ["npm", "start"]
