@@ -106,7 +106,7 @@ Run the image with the modified `dockerfile`, check if the same message is displ
 
 ## 6. Run the listing API on Docker
 
-The environment within the docker image should be the same as STEP2-2 after STEP4-4.
+The environment within the docker image should be the same as STEP2-2 after STEP4-5.
 
 **Mofify `dockerfile` to copy necessary files and install dependencies such that you can run the listing API on docker**
 
