@@ -22,8 +22,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-db_file = pathlib.Path(__file__).parent.resolve() / ".." / "db" / "items.db"
-sqlite3_file = pathlib.Path(__file__).parent.resolve() / ".." / "db" / "mercari.sqlite3"
+db_file = pathlib.Path(__file__).parent.resolve() / "db" / "items.db"
+sqlite3_file = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
 
 @app.on_event("startup")
 def start_app() -> None:
