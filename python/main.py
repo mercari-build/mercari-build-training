@@ -4,8 +4,10 @@ import pathlib
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-import json
+# import json
 import sqlite3
+import hashlib
+import database
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -19,90 +21,37 @@ app.add_middleware(
     allow_methods=["GET","POST","PUT","DELETE"],
     allow_headers=["*"],
 )
-# items = []
 
+"""
+Gets the list of all items
+"""
 @app.get("/")
 def root():
-    # print("root is called")
-    # print(json.dumps({"items": items}))
-
-    # connect
-    db_connect = sqlite3.connect('../db/mercari.sqlite3')
-
-    # cursor
-    db_cursor = db_connect.cursor()
- 
-    # insert new data
-    sql = 'SELECT name, category FROM items'
-
-    # execute
-    db_cursor.execute(sql)
-
-    # get the list of tuples
-    items = db_cursor.fetchall()
-    # print(items)
-
-    # close the connection
-    db_connect.close()
-
+    # get the list of all items in the database
+    items = database.get_items()
+    # format the list and return
     return format_items(items)
 
+"""
+Create a new item
+"""
 @app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...)):
-    logger.info(f"Receive item: name = {name}, category = {category}")
+def add_item(name: str = Form(...), category: str = Form(...), image: str = Form(...)):
 
-    # item = {"name": name, "category": category}
-    # items.append(item)
+    logger.info(f"Receive item: name = {name}, category = {category}, image = {image}")
 
-    # with open("items.json", "w") as f:
-    #     #print(json.dumps(items, indent=4))
-    #     json.dump({"items": items}, f)
+    # add a new item in the database
+    database.add_item(name, category, image)
 
-    # connect
-    db_connect = sqlite3.connect('../db/mercari.sqlite3')
-
-    # cursor
-    db_cursor = db_connect.cursor()
-
-    # create a table
-    # sql = 'CREATE TABLE items(id INTEGER PRIMARY KEY AUTOINCREMENT, name STRING, category STRING)'
-    
-    # insert new data
-    sql = 'INSERT INTO items(name, category) values (?, ?)'
-    data = [name, category]
-
-    # execute
-    db_cursor.execute(sql, data)
-
-    # commit
-    db_connect.commit()
-
-    # close the connection
-    db_connect.close()
-
+    # return message
     return {"message": f"item received: {name}"}
 
 @app.get("/search")
 async def search_items(keyword: str):
     logger.info(f"Receive search_keyword: keyword = {keyword}")
-
-    # connect
-    db_connect = sqlite3.connect('../db/mercari.sqlite3')
-
-    # cursor
-    db_cursor = db_connect.cursor()
-
-    # search item where the name contains the given keyword
-    sql = 'SELECT name, category FROM items WHERE name LIKE ?'
-    data = ('%' + keyword + '%',)
-
-    # execute
-    db_cursor.execute(sql, data)
-    items = db_cursor.fetchall()
-    # print(items)
-
-    # close the connection
-    db_connect.close()
+    
+    # get the list of items with name that contains the given keyword
+    items = database.search_items(keyword)
 
     return format_items(items)
 

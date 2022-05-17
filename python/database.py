@@ -1,0 +1,48 @@
+from contextlib import closing
+import sqlite3
+
+# file path of the database
+filename = '../db/mercari.sqlite3'
+
+"""
+Returns the list of all items in the database
+"""
+def get_items():
+    items = []
+
+    with closing(sqlite3.connect(filename)) as db_connect:
+        db_cursor = db_connect.cursor()
+        # insert new data
+        sql = 'SELECT name, category FROM items'
+        db_cursor.execute(sql)
+        items = db_cursor.fetchall()
+
+    return items
+
+"""
+Add a new item with the given name, category and image to the database
+"""
+def add_item(name, category, image):
+
+    with closing(sqlite3.connect(filename)) as db_connect:
+        db_cursor = db_connect.cursor()
+        sql = 'INSERT INTO items(name, category, image) values (?, ?, ?)'
+        data = [name, category, image]
+        db_cursor.execute(sql, data)
+        db_connect.commit()
+
+"""
+Search items with the given string keyword from the database.
+Returns the list of items where its name contains the keyword.
+"""
+def search_items(keyword):
+    items = []
+    
+    with closing(sqlite3.connect(filename)) as db_connect:
+        db_cursor = db_connect.cursor()
+        sql = 'SELECT name, category FROM items WHERE name LIKE ?'
+        data = ('%' + keyword + '%',)
+        db_cursor.execute(sql, data)
+        items = db_cursor.fetchall()
+
+    return items
