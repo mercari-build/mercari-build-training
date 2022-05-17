@@ -1,7 +1,7 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException
+from fastapi import FastAPI, Form, File, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 # import json
@@ -46,24 +46,26 @@ async def get_item_by_id(item_id):
 
 
 """
-Create a new item with the given name, cateogry, image
+Creates a new item with the given name, cateogry, image
+Accepts the arguments as File.
 """
 @app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...), image: str = Form(...)):
+def add_item(name: bytes = File(...), category: bytes = File(...), image: bytes = File(...)):
 
-    logger.info(f"Receive item: name = {name}, category = {category}, image = {image}")
-    
-    # remove the "@" in the beggining
-    image = image[1:]
+    # cast bytes to string
+    name = name.decode('utf-8')
+    category = category.decode('utf-8')
 
-    # hash the image filename and save the image with that name in "images" directory
-    filename_hash = save_and_hash_image(image)
+    logger.info(f"Receive item: name = {name}, category = {category}")
+
+    # save the bytes of the uploaded image file in "images" directory
+    filename_hash = save_image(image)
     logger.info(f"Created file: {filename_hash}")
 
     # add a new item in the database with the hashed filename
     database.add_item(name, category, filename_hash)
     
-    # return message
+    # # return message
     return {"message": f"item received: {name}"}
 
 @app.get("/search")
@@ -102,19 +104,16 @@ def format_items(items):
     return {"items": f"{items_format}"}
 
 """
-Reads the given image file and save as a new file with hashed filename in "items" directory
+Saves the given bytes of the image file as a new file in "items" directory
+Creates the hash from the given bytes and uses it as the filename
 """
-def save_and_hash_image(image_filename):
+def save_image(image_bytes):
 
-    # hash the filename with sha256, add .jpg
-    filename_hash = hashlib.sha256(image_filename.encode()).hexdigest() + '.jpg'
-
-    # read image file
-    with open(image_filename, 'rb') as fin:
-        bytes = fin.read()
+    # hash the bytes with sha256, and put '.jpg' in the end
+    filename_hash = hashlib.sha256(image_bytes).hexdigest() + '.jpg'
     
-    # write to a new file with hash filename in images/
+    # write the given bytes to a new file
     with open("images/" + filename_hash, "wb") as fout:
-        fout.write(bytes)
+        fout.write(image_bytes)
 
     return filename_hash
