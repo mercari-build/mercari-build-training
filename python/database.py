@@ -28,19 +28,16 @@ Search item with the given id
 Return the item if present, return None otherwise
 """
 def get_id_by_id(item_id):
-    item = None
+    item = []
 
     with closing(sqlite3.connect(filename)) as db_connect:
         db_cursor = db_connect.cursor()
         # insert new data
-        sql = 'SELECT name, category, image FROM items WHERE id LIKE ?'
-        data = (item_id)
+        sql = 'SELECT name, category, image FROM items WHERE id = ?'
+        data = (item_id,)
         db_cursor.execute(sql, data)
         item = db_cursor.fetchall()
-        print()
-        print("test")
-        print(item)
-        
+
     return item
 
 
@@ -48,10 +45,7 @@ def get_id_by_id(item_id):
 """
 Add a new item with the given name, category and image to the database
 """
-def add_item(name, category, image):
-
-    # hash the filename with sha256, add .jpg
-    image_hash = hashlib.sha256(image.encode()).hexdigest() + '.jpg'
+def add_item(name, category, image_hash):
 
     with closing(sqlite3.connect(filename)) as db_connect:
         db_cursor = db_connect.cursor()

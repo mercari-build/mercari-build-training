@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 # import json
 import database
+import hashlib
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -37,23 +38,26 @@ Gets item with the given item_id
 async def get_item_by_id(item_id):
 
     item = database.get_id_by_id(item_id)
-
-    if item == None:
+    if len(item) == 0:
         logger.debug(f"Item not found: {item_id}")
+        return f"Item not found: {item_id}"
     
     return format_items(item)
 
 
 """
-Create a new item
+Create a new item with the given name, cateogry, image
 """
 @app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...), image: str = Form(...)):
 
-    logger.info(f"Receive item: name = {name}, category = {category}, image = {image}")
+    # hash the filename with sha256, add .jpg
+    image_hash = hashlib.sha256(image.encode()).hexdigest() + '.jpg'
 
     # add a new item in the database
     database.add_item(name, category, image)
+
+    logger.info(f"Receive item: name = {name}, category = {category}, image = {image}")
 
     # return message
     return {"message": f"item received: {name}"}
@@ -92,3 +96,8 @@ def format_items(items):
         items_format.append(item_format)
 
     return {"items": f"{items_format}"}
+
+def save_hash_image(image_filename):
+    
+    # hash the filename with sha256, add .jpg
+    image_hash = hashlib.sha256(image_filename.encode()).hexdigest() + '.jpg'
