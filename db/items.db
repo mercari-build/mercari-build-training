@@ -1,0 +1,11 @@
+
+BEGIN TRANSACTION;
+
+CREATE TABLE items(
+  id integer,
+  name string,
+  category string,
+  image string
+);
+
+COMMIT; 
