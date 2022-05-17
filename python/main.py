@@ -5,8 +5,6 @@ from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 # import json
-import sqlite3
-import hashlib
 import database
 
 app = FastAPI()
@@ -49,7 +47,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: str = Form
 @app.get("/search")
 async def search_items(keyword: str):
     logger.info(f"Receive search_keyword: keyword = {keyword}")
-    
+
     # get the list of items with name that contains the given keyword
     items = database.search_items(keyword)
 
@@ -76,7 +74,7 @@ def format_items(items):
     # create a list to set each item in a format
     items_format = []
     for item in items:
-        item_format = {"name": item[0], "category": item[1]}
+        item_format = {"name": item[0], "category": item[1], "image": item[2]}
         items_format.append(item_format)
 
     return {"items": f"{items_format}"}

@@ -1,5 +1,6 @@
 from contextlib import closing
 import sqlite3
+import hashlib
 
 # file path of the database
 filename = '../db/mercari.sqlite3'
@@ -13,9 +14,12 @@ def get_items():
     with closing(sqlite3.connect(filename)) as db_connect:
         db_cursor = db_connect.cursor()
         # insert new data
-        sql = 'SELECT name, category FROM items'
+        sql = 'SELECT name, category, image FROM items'
         db_cursor.execute(sql)
         items = db_cursor.fetchall()
+        print()
+        print("test")
+        print(items)
 
     return items
 
@@ -24,10 +28,13 @@ Add a new item with the given name, category and image to the database
 """
 def add_item(name, category, image):
 
+    # hash the filename with sha256, add .jpg
+    image_hash = hashlib.sha256(image.encode()).hexdigest() + '.jpg'
+
     with closing(sqlite3.connect(filename)) as db_connect:
         db_cursor = db_connect.cursor()
         sql = 'INSERT INTO items(name, category, image) values (?, ?, ?)'
-        data = [name, category, image]
+        data = [name, category, image_hash]
         db_cursor.execute(sql, data)
         db_connect.commit()
 
@@ -37,7 +44,7 @@ Returns the list of items where its name contains the keyword.
 """
 def search_items(keyword):
     items = []
-    
+
     with closing(sqlite3.connect(filename)) as db_connect:
         db_cursor = db_connect.cursor()
         sql = 'SELECT name, category FROM items WHERE name LIKE ?'
