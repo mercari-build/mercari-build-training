@@ -1,0 +1,21 @@
+version: "3.9"
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: ./go/dockerfile
+    ports: 
+      - 9000:9000
+    volumes: 
+      - ./go:/go/src/go
+    environment:
+      GOPATH: /go
+      GO111MODULE: "on"
+  frontend:
+    build:
+      context: .
+      dockerfile: ./typescript/simple-mercari-web/dockerfile
+    ports: 
+      - 3000:3000
+    volumes: 
+      - ./typescript/simple-mercari-web:/app
