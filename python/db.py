@@ -118,6 +118,6 @@ def delete_item(item_id):
 # cursor.execute("""
 # INSERT INTO category (name)
 # VALUES (?)
-# """, ("fashion",))
+# """, ("modern",))
 # connection.commit()
 # connection.close()

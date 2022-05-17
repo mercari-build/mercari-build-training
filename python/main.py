@@ -51,6 +51,7 @@ async def read_items(keyword: str):
     for item in items:
         all_items["items"].append(
             {"id": item[0], "name": item[1], "category": item[2], "image": item[3]})
+    logger.info(f"{all_items}")
     return all_items
 
 
