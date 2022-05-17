@@ -6,6 +6,13 @@
 * [Gitを使ったバージョン管理](https://backlog.com/ja/git-tutorial/intro/01/)
 * [Udemy - Git & Github基礎講座](https://www.udemy.com/course/git-github-a/)
 
+## **mercari-build-training-2022** リポジトリをフォークする
+
+* [mercari-build-training-2022](https://github.com/mercari-build/mercari-build-training-2022)
+  をあなたのGithubにForkします。
+* Forkに成功すると `https://github.com/<your github id>/mercari-build-training-2022`
+  というようなリポジトリができます。
+
 ## Gitをインストールする
 1. Gitをご自身のPCにインストールしてください。以下のコマンドが動けばOKです。
    ```shell
@@ -20,14 +27,7 @@
    $ git config user.email
    <your-email-adress>
    ```
-
-## **mercari-build-training-2022** リポジトリをフォークする
-
-* [mercari-build-training-2022](https://github.com/mercari-build/mercari-build-training-2022)
-  をあなたのGithubにForkします。 (TODO: Update link)
-* Forkに成功すると `https://github.com/<your github id>/mercari-build-training-2022`
-  というようなリポジトリができます。
-
+   
 ## Gitの基本コマンドを使う
 
 1. `https://github.com/<your github id>/mercari-build-training-2022` を **clone**
