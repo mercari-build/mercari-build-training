@@ -17,9 +17,7 @@ def get_items():
         sql = 'SELECT name, category, image FROM items'
         db_cursor.execute(sql)
         items = db_cursor.fetchall()
-        print()
-        print("test")
-        print(items)
+        db_connect.commit()
 
     return items
 
@@ -37,6 +35,7 @@ def get_id_by_id(item_id):
         data = (item_id,)
         db_cursor.execute(sql, data)
         item = db_cursor.fetchall()
+        db_connect.commit()
 
     return item
 
@@ -67,5 +66,6 @@ def search_items(keyword):
         data = ('%' + keyword + '%',)
         db_cursor.execute(sql, data)
         items = db_cursor.fetchall()
+        db_connect.commit()
 
     return items

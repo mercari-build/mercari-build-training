@@ -51,14 +51,18 @@ Create a new item with the given name, cateogry, image
 @app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...), image: str = Form(...)):
 
-    # hash the filename with sha256, add .jpg
-    image_hash = hashlib.sha256(image.encode()).hexdigest() + '.jpg'
-
-    # add a new item in the database
-    database.add_item(name, category, image)
-
     logger.info(f"Receive item: name = {name}, category = {category}, image = {image}")
+    
+    # remove the "@" in the beggining
+    image = image[1:]
 
+    # hash the image filename and save the image with that name in "images" directory
+    filename_hash = save_and_hash_image(image)
+    logger.info(f"Created file: {filename_hash}")
+
+    # add a new item in the database with the hashed filename
+    database.add_item(name, category, filename_hash)
+    
     # return message
     return {"message": f"item received: {name}"}
 
@@ -97,7 +101,20 @@ def format_items(items):
 
     return {"items": f"{items_format}"}
 
-def save_hash_image(image_filename):
-    
+"""
+Reads the given image file and save as a new file with hashed filename in "items" directory
+"""
+def save_and_hash_image(image_filename):
+
     # hash the filename with sha256, add .jpg
-    image_hash = hashlib.sha256(image_filename.encode()).hexdigest() + '.jpg'
+    filename_hash = hashlib.sha256(image_filename.encode()).hexdigest() + '.jpg'
+
+    # read image file
+    with open(image_filename, 'rb') as fin:
+        bytes = fin.read()
+    
+    # write to a new file with hash filename in images/
+    with open("images/" + filename_hash, "wb") as fout:
+        fout.write(bytes)
+
+    return filename_hash
