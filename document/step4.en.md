@@ -85,7 +85,7 @@ Check that you can now see `build2022/app` in the list of images.
 * [Dockerfile reference](https://docs.docker.com/engine/reference/builder/)
 
 ## 5. Modity Dockerfile
-**Run the docker image you built in STEP4-3, and check if the following error shows up.**
+**Run the docker image you built in STEP4-4, and check if the following error shows up.**
 
 ```
 docker: Error response from daemon: OCI runtime create failed: container_linux.go:380: starting container process caused: exec: "python": executable file not found in $PATH: unknown.
