@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import db
 import hashlib
+from os.path import join, dirname, realpath
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -96,8 +97,10 @@ def hash_image(image):
     filename = ""
     filename = filename + image
     readable_hash = ""
+    # true path and replace replace(/C:\\fakepath\\/, '')
+    UPLOADS_PATH = join(dirname(realpath(__file__)), "image" + filename).replace("C:\\fakepath\\", "/")
     # filename = "images/test.jpg"
-    with open(filename, "rb") as f:
+    with open(UPLOADS_PATH, "rb") as f:
         bytes = f.read()
         readable_hash = readable_hash + hashlib.sha256(bytes).hexdigest()
         # print(readable_hash + ".jpg")
