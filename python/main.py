@@ -28,10 +28,10 @@ def root():
 
 @app.get("/items")
 async def read_items():
-    all_items = {"items": []}
     items = db.get_items()
+    all_items = []
     for item in items:
-        all_items["items"].append(
+        all_items.append(
             {"id": item[0], "name": item[1], "category": item[2], "image": item[3]})
     return all_items
 
