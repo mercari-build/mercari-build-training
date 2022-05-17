@@ -3,36 +3,80 @@
 }
 
 .Title {
-  background-color: #222427;
-  min-height: 8vh;
+  background-color: #7C884E;
+  min-height: 15vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: left;
+  justify-content: center;
   font-size: calc(10px + 1vmin);
   color: white;
+  font-size: 2rem;
 }
 
 .Listing {
   background-color: #222427;
-  min-height: 8vh;
+  min-height: 12vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: left;
+  justify-content: center;
   font-size: calc(10px + 1vmin);
   color: white;
 }
 
+.Listing input {
+  border-radius: 5px;
+  padding: 2px;
+}
+
+.Listing button {
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.Listing button:hover {
+  background-color: #7C884E;
+  color: white;
+}
+
+.Listing button:active {
+  transform: translateY(2px);
+}
+
+h1 {
+  font-size: 20px;
+  text-align: center;
+}
+
+.AllItems {
+  margin-top: 5rem;
+  background-color: white;
+  /* display: flex;
+  justify-content: space-evenly; */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-gap: 1rem;
+  padding: 1rem;
+  border-radius: 5px;
+  box-shadow: 0px 0px 5px #7C884E;
+}
+
 .ItemList {
-  background-color: #222427;
+  background-color: white;
   min-height: 8vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: left;
-  font-size: calc(10px + 1vmin);
-  color: white;
+  font-size: .8rem;
+  color: black;
+  line-height: 1.5;
+}
+
+.ItemImage {
+  border-radius: 10px;
+  border: 1px solid black;
 }
 
 .App-link {
