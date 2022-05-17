@@ -1,4 +1,4 @@
-from contextlib import closing
+from contextlib import closing, nullcontext
 import sqlite3
 import hashlib
 
@@ -22,6 +22,28 @@ def get_items():
         print(items)
 
     return items
+
+"""
+Search item with the given id
+Return the item if present, return None otherwise
+"""
+def get_id_by_id(item_id):
+    item = None
+
+    with closing(sqlite3.connect(filename)) as db_connect:
+        db_cursor = db_connect.cursor()
+        # insert new data
+        sql = 'SELECT name, category, image FROM items WHERE id LIKE ?'
+        data = (item_id)
+        db_cursor.execute(sql, data)
+        item = db_cursor.fetchall()
+        print()
+        print("test")
+        print(item)
+        
+    return item
+
+
 
 """
 Add a new item with the given name, category and image to the database

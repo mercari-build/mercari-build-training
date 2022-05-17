@@ -31,6 +31,20 @@ def root():
     return format_items(items)
 
 """
+Gets item with the given item_id
+"""
+@app.get("/items/{item_id}")
+async def get_item_by_id(item_id):
+
+    item = database.get_id_by_id(item_id)
+
+    if item == None:
+        logger.debug(f"Item not found: {item_id}")
+    
+    return format_items(item)
+
+
+"""
 Create a new item
 """
 @app.post("/items")
