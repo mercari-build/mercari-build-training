@@ -19,7 +19,7 @@ type Items struct {
 type TrashScanner struct{}
 
 func (TrashScanner) Scan(interface{}) error {
-    return nil
+	return nil
 }
 
 func GetItems(db *sql.DB) ([]Item, error) {
