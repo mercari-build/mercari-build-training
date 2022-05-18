@@ -7,8 +7,9 @@ import (
 )
 
 type Item struct {
-	Name     string `json:"name"`
-	Category string `json:"category"`
+	Name          string `json:"name"`
+	Category      string `json:"category"`
+	Imagefilename string `json:"image_filename"`
 }
 
 type Items struct {
@@ -39,19 +40,19 @@ func GetItems(db *sql.DB) ([]Item, error) {
 }
 
 func AddItem(item Item, db *sql.DB) error {
-	id, err :=  uuid.NewUUID()
+	id, err := uuid.NewUUID()
 	if err != nil {
 		return err
 	}
 	if db == nil {
 		return err
 	}
-	stmt, err := db.Prepare("INSERT INTO items (id, name, category) VALUES (?,?,?)")
+	stmt, err := db.Prepare("INSERT INTO items (id, name, category, image_filename) VALUES (?,?,?,?)")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(id, item.Name, item.Category)
+	_, err = stmt.Exec(id, item.Name, item.Category, item.Imagefilename)
 	if err != nil {
 		return err
 	}

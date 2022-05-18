@@ -1,11 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	"io"
 	"mercari-build-training-2022/app/model"
 	"net/http"
 	"os"
@@ -23,15 +26,6 @@ var db *sql.DB
 
 type Response struct {
 	Message string `json:"message"`
-}
-
-type Item struct {
-	Name     string `json:"name"`
-	Category string `json:"category"`
-}
-
-type Items struct {
-	Items []Item `json:"items"`
 }
 
 func root(c echo.Context) error {
@@ -79,14 +73,29 @@ func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
 	category := c.FormValue("category")
-	item := model.Item{name, category}
-	c.Logger().Infof("Receive item: %s %s", name, category)
-	// Add item to db
-	err := model.AddItem(item, db)
+	img, err := c.FormFile("image")
 	if err != nil {
 		handleError(c, err.Error())
 	}
-	message := fmt.Sprintf("item added: %s %s", name, category)
+	imageTitle := strings.Split(img.Filename, ".")[0]
+	image_filename := hex.EncodeToString(getSHA256Binary(imageTitle)) + "." + strings.Split(img.Filename, ".")[1]
+	item := model.Item{name, category, image_filename}
+	c.Logger().Infof("Receive item: %s %s %s", name, category, image_filename)
+
+	// Save a file
+	newFile, err := os.Create("images/" + image_filename)
+	imgFile, err := img.Open()
+	_, err = io.Copy(newFile, imgFile)
+	if err != nil {
+		handleError(c, err.Error())
+	}
+
+	// Add item to db
+	err = model.AddItem(item, db)
+	if err != nil {
+		handleError(c, err.Error())
+	}
+	message := fmt.Sprintf("item added: %s %s %s ", name, category, image_filename)
 	res := Response{Message: message}
 	return c.JSON(http.StatusOK, res)
 }
@@ -136,6 +145,11 @@ func getImg(c echo.Context) error {
 	return c.File(imgPath)
 }
 
+func getSHA256Binary(s string) []byte {
+	r := sha256.Sum256([]byte(s))
+	return r[:]
+}
+
 func main() {
 	err := DBConnection()
 	if err != nil {
@@ -165,7 +179,6 @@ func main() {
 	e.POST("/items", addItem)
 	e.GET("/search", searchItem)
 	e.GET("/image/:itemImg", getImg)
-
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
