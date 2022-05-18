@@ -2,6 +2,7 @@ import collections
 import os
 import logging
 import pathlib
+import shutil
 from fastapi import FastAPI, Form, HTTPException
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse
@@ -17,14 +18,15 @@ app = FastAPI()
 
 
 
-
 #----config----------------------------
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
 logger.level = logging.INFO
 images = pathlib.Path(__file__).parent.resolve() / "images"
+image = pathlib.Path(__file__).parent.resolve() / "image"
 origins = [ os.environ.get('FRONT_URL', 'http://localhost:3000') ]
+url = 'http://localhost:9000'
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -47,20 +49,13 @@ def db_toList(items):
     return objects_list 
 
 def image_toHash(image):
-    # path = "../image/" + str(image)
-    
-    # image = image.filename()
-    # print(image)
-    #file_location = f'image/{image}'
-    # os.path.splitext(image)
-    #print(file_location)
-    with open(image, 'rb') as f:
-        # f.seek(0)
-        sha256 = hashlib.sha256(f.read()).hexdigest()
-        f.close()
-        # print('SHA256ハッシュ値：\n {0}'.format(sha256))
-        return sha256
-    
+    image_name, image_fmt = map(str, image.split('.'))
+    image_hashname = hashlib.sha256(image_name.encode()).hexdigest()
+    return '.'.join([image_hashname, image_fmt])
+        
+def save_image(file_location, image_file):
+    with open(file_location, 'w+b') as f:
+        shutil.copyfileobj(image_file.file, f) 
 
 
 def add_sql(name,category, image_name):
@@ -95,12 +90,10 @@ def show_item():
 #   -d 'category=fashion' \
 #   -d 'image=images/default.jpg'
 @app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...), image: bytes = File(...)):
-    image_hashname = image_toHash(image) + ".jpg"
+def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
+    image_hashname = image_toHash(image.filename) 
     file_location = f"image/{image_hashname}"
-    with open(file_location, mode="wb") as f:
-        f.write(image)
-        f.close()
+    save_image(file_location,image)
     logger.info(f"Receive item: {name}")
     logger.info(f"Receive item: {category}")
     logger.info(f"Receive item: {image_hashname}") 
@@ -135,17 +128,25 @@ def show_detailById(item_id: int):
 
 
 
-@app.get("/image/{image_filename_hash}")
-async def get_image(image_filename_hash):
-
+@app.get("/image/{image_hashname}")
+async def get_image(image_hashname):
     # Create image path
-    image = images / image_filename_hash
-
-    if not image_filename_hash.endswith(".jpg"):
+    image_path =  image / image_hashname
+    logger.info(f"image::{image_path}")
+    
+    if not image_hashname.endswith(".jpg"):
         raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
+    
+    # conn = sqlite3.connect('../db/item.db')
+    # c = conn.cursor()
+    # logger.info(f"start searching image")
+    # found_image = c.execute("SELECT image from items WHERE image=?", (image_hashname,)).fetchone()
+    # conn.close()
+    # logger.info(f"found image: {found_image}")
 
-    if not image.exists():
-        logger.debug(f"Image not found: {image_filename_hash}")
-        image = images / "default.jpg"
-
-    return FileResponse(image)
+    if not image_hashname.exists():
+        logger.debug(f"Image not found: {image_hashname}")
+        image_path = images / "default.jpg"
+    
+        
+    return FileResponse(image_path)
