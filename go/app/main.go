@@ -61,12 +61,6 @@ func addItem(c echo.Context) error {
 		handleError(c, "Failed to read the file")
 	}
 
-
-	file, err := ioutil.ReadAll(fp)
-	if err != nil {
-		handleError(c, "Failed to read the file")
-	}
-
 	// Add item
 	var items Items
 	if len(file) != 0 {
@@ -78,7 +72,7 @@ func addItem(c echo.Context) error {
 	} else {
 		items.Items = [] Item{item}
 	}
-	output, err := json.MarshalIndent(&items, "", "\t")
+	output, err := json.Marshal(&items)
 	if err != nil {
 		handleError(c, "Failed to encode items to a JSON string")
 	}
@@ -91,6 +85,28 @@ func addItem(c echo.Context) error {
 	message := fmt.Sprintf("item received: %s %s", name, category)
 	res := Response{Message: message}
 	return c.JSON(http.StatusOK, res)
+}
+
+func showItems(c echo.Context) error {
+	// Read items.json
+	fp, err := os.OpenFile("items.json", os.O_RDWR|os.O_CREATE, 0664)
+	if err != nil {
+		handleError(c, "Failed to open items.json")
+	}
+	defer fp.Close()
+
+	file, err := ioutil.ReadAll(fp)
+	if err != nil {
+		handleError(c, "Failed to read the file")
+	}
+
+	var items Items
+	err = json.Unmarshal(file, &items)
+	if err != nil {
+		handleError(c, "Failed to encode items to a JSON string")
+	}
+	// Print item
+	return c.JSON(http.StatusOK, items)
 }
 
 func getImg(c echo.Context) error {
@@ -127,6 +143,7 @@ func main() {
 
 	// Routes
 	e.GET("/", root)
+	e.GET("/items", showItems)
 	e.POST("/items", addItem)
 	e.GET("/image/:imageFilename", getImg)
 
