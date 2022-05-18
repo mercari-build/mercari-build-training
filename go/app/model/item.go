@@ -24,7 +24,8 @@ func GetItems(db *sql.DB) ([]Item, error) {
 	for rows.Next() {
 		var item Item
 		var id uuid.UUID
-		err = rows.Scan(&id, &item.Name, &item.Category)
+		//scan データ追加
+		err = rows.Scan(&id, &item.Name, &item.Category, &item.Imagefilename)
 		if err != nil {
 			return nil, err
 		}
