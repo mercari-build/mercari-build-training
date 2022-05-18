@@ -49,11 +49,7 @@ def db_toList(items):
     objects_list = []
     for row in items:
         d = collections.OrderedDict()
-<<<<<<< HEAD
         #d['id'] = row[0]
-=======
-        d['id'] = row[0]
->>>>>>> dev
         d['name'] = row[1]
         d['category'] = row[2]
         d['image'] = row[3]
@@ -72,25 +68,17 @@ def image_toHash(image):
     with open(image, 'rb') as f:
         # f.seek(0)
         sha256 = hashlib.sha256(f.read()).hexdigest()
-<<<<<<< HEAD
         f.close()
-=======
->>>>>>> dev
         # print('SHA256ハッシュ値：\n {0}'.format(sha256))
         return sha256
     
 
-<<<<<<< HEAD
+
 def add_sql(name,category, image_name):
     conn = sqlite3.connect("../db/item.db", check_same_thread=False)
     c = conn.cursor()
     c.execute("INSERT INTO items(name,category,image) VALUES( ?, ?, ?);", (name,category,image_name))
-=======
-def add_sql(id,name,category, image_hashname):
-    conn = sqlite3.connect("../db/item.db", check_same_thread=False)
-    c = conn.cursor()
-    c.execute("INSERT INTO items(id,name,category,image) VALUES(?,?,?, ?);", (id,name,category,image_hashname))
->>>>>>> dev
+    # idはtable作成時に割り当て済み
     conn.commit()
     conn.close()
     
@@ -126,15 +114,8 @@ def add_item(name: str = Form(...), category: str = Form(...), image: bytes = Fi
         f.close()
     logger.info(f"Receive item: {name}")
     logger.info(f"Receive item: {category}")
-<<<<<<< HEAD
-    logger.info(f"Receive item: {image_name}") 
-    #id = random.randint(1,1000)
-    add_sql(name,category,image_name)
-=======
     logger.info(f"Receive item: {image_hashname}") 
-    id = random.randint(1,1000)
     add_sql(id,name,category,image_hashname)
->>>>>>> dev
     return {"message": f"item received: {name}"}
 
 
@@ -148,13 +129,11 @@ def search_item(keyword: str = None):
     conn.close()
     return {"items": content}
 
-<<<<<<< HEAD
+
 
 # curl -X GET 'http://127.0.0.1:9000/items/(id)'
-=======
 # {"items":[{"id":89,"name":"jacket","category":"fashion","image":"ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg"}]}
-# curl -X GET 'http://127.0.0.1:9000/items/1'
->>>>>>> dev
+
 @app.get("/items/", response_class=ORJSONResponse)
 def show_detailById(item_id: int):
     conn = sqlite3.connect('../db/item.db')
