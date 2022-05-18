@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"database/sql"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -13,8 +14,12 @@ import (
 )
 
 const (
-	ImgDir = "image"
+	ImgDir   = "image"
+	dbSchema = "../db/items.db"
+	dbSource = "../db/mercari.sqlite3"
 )
+
+var db *sql.DB
 
 type Response struct {
 	Message string `json:"message"`
@@ -40,6 +45,36 @@ func handleError(c echo.Context, error_message string) error {
 	return c.JSON(http.StatusBadRequest, res)
 }
 
+func DBConnection() error {
+	// open database
+	db_opened, err := sql.Open("sqlite3", dbSource)
+	if err != nil {
+		return err
+	}
+	db = db_opened
+
+	file, err := os.OpenFile(dbSchema, os.O_RDWR|os.O_CREATE, 0664)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	schema, err := os.ReadFile(dbSchema)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec(string(schema))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DBClose() {
+	db.Close()
+}
+
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
@@ -47,7 +82,7 @@ func addItem(c echo.Context) error {
 	item := model.Item{name, category}
 	c.Logger().Infof("Receive item: %s %s", name, category)
 	// Add item to db
-	err := model.AddItem(item)
+	err := model.AddItem(item, db)
 	if err != nil {
 		handleError(c, err.Error())
 	}
@@ -60,7 +95,7 @@ func showItems(c echo.Context) error {
 	var items model.Items
 	var err error
 	// Get a list of items
-	items.Items, err = model.GetItems()
+	items.Items, err = model.GetItems(db)
 	if err != nil {
 		handleError(c, err.Error())
 	}
@@ -74,7 +109,7 @@ func searchItem(c echo.Context) error {
 	name := c.QueryParam("keyword")
 	fmt.Println("name is : %s", name)
 	// Search items in items.db
-	items.Items, err = model.SearchItem(name)
+	items.Items, err = model.SearchItem(name, db)
 	if err != nil {
 		handleError(c, err.Error())
 	}
@@ -97,11 +132,11 @@ func getImg(c echo.Context) error {
 }
 
 func main() {
-	sqlDB, err := model.DBConnection()
+	err := DBConnection()
 	if err != nil {
 		fmt.Println("database error: ", err, "\n")
 	}
-	defer sqlDB.Close()
+	defer DBClose()
 	e := echo.New()
 
 	// Middleware
