@@ -16,16 +16,6 @@ import hashlib
 app = FastAPI()
 
 
-# @app.post("/files/")
-# async def create_file(file: bytes = File(...)):
-#     return {"file_size": len(file)}
-
-
-# @app.post("/uploadfile/")
-# async def create_upload_file(file: UploadFile):
-#     return {"filename": file.filename}
-
-
 
 
 #----config----------------------------
@@ -49,12 +39,11 @@ def db_toList(items):
     objects_list = []
     for row in items:
         d = collections.OrderedDict()
-        #d['id'] = row[0]
+        # d['id'] = row[0]
         d['name'] = row[1]
         d['category'] = row[2]
         d['image'] = row[3]
         objects_list.append(d)   
-    # return json.dumps(items)
     return objects_list 
 
 def image_toHash(image):
@@ -115,7 +104,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: bytes = Fi
     logger.info(f"Receive item: {name}")
     logger.info(f"Receive item: {category}")
     logger.info(f"Receive item: {image_hashname}") 
-    add_sql(id,name,category,image_hashname)
+    add_sql(name,category,image_hashname)
     return {"message": f"item received: {name}"}
 
 
@@ -132,13 +121,13 @@ def search_item(keyword: str = None):
 
 
 # curl -X GET 'http://127.0.0.1:9000/items/(id)'
-# {"items":[{"id":89,"name":"jacket","category":"fashion","image":"ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg"}]}
-
+# {"items":[{"id":1,"name":"jacket","category":"fashion","image":"ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg"}]}
 @app.get("/items/", response_class=ORJSONResponse)
 def show_detailById(item_id: int):
+    logger.info(f"Search item: {item_id}")
     conn = sqlite3.connect('../db/item.db')
     c = conn.cursor()
-    items = c.execute('SELECT * FROM items WHERE id = ? ;', (item_id)).fetchall()
+    items = c.execute("SELECT * from items WHERE id=(?)", (item_id,)).fetchone()
     content = db_toList(items)
     conn.close()
     return {"items": content}
