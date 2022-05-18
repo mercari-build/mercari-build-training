@@ -16,6 +16,12 @@ type Items struct {
 	Items []Item `json:"items"`
 }
 
+type TrashScanner struct{}
+
+func (TrashScanner) Scan(interface{}) error {
+    return nil
+}
+
 func GetItems(db *sql.DB) ([]Item, error) {
 	var err error
 	cmd := "SELECT * FROM items"
@@ -59,7 +65,7 @@ func AddItem(item Item, db *sql.DB) error {
 	return nil
 }
 
-func SearchItem(name string, db *sql.DB) ([]Item, error) {
+func SearchItemByName(name string, db *sql.DB) ([]Item, error) {
 	rows, err := db.Query("SELECT * FROM items WHERE name = $1", name)
 	defer rows.Close()
 	var item_list []Item
@@ -79,4 +85,13 @@ func SearchItem(name string, db *sql.DB) ([]Item, error) {
 		return nil, err
 	}
 	return item_list, nil
+}
+
+func SearchItemById(id uuid.UUID, db *sql.DB) (Item, error) {
+	item := Item{}
+	err := db.QueryRow("SELECT * FROM items WHERE id == $1", id).Scan(TrashScanner{}, &item.Name, &item.Category, &item.Imagefilename)
+	if err != nil {
+		return item, err
+	}
+	return item, err
 }

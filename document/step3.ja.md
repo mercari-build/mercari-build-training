@@ -197,6 +197,8 @@ $ curl -X GET 'http://127.0.0.1:9000/items/1'
 {"name": "jacket", "category": "fashion", "image_filename": "..."}
 ```
 
+- `Pathparameter`を使う
+
 ## 8. (Optional) カテゴリの情報を別のテーブルに移す
 
 データベースを以下のように構成しなおします。

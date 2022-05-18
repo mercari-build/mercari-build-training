@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	"github.com/google/uuid"
 	"io"
 	"mercari-build-training-2022/app/model"
 	"net/http"
@@ -110,24 +111,30 @@ func showItems(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, items)
 }
+func searchItemById(c echo.Context) error {
+	// Get Id from url
+	id, err := uuid.Parse(c.Param("itemId"))
 
-func searchItem(c echo.Context) error {
+	// Get the item that corresponds to itemId
+	item, err := model.SearchItemById(id, db)
+	if err != nil {
+		handleError(c, err.Error())
+	}
+	return c.JSON(http.StatusOK, item)
+}
+
+func searchItemByName(c echo.Context) error {
 	// Get a parameter
 	var items model.Items
 	var err error
 	name := c.QueryParam("keyword")
 	fmt.Println("name is : %s", name)
 	// Search items in items.db
-	items.Items, err = model.SearchItem(name, db)
+	items.Items, err = model.SearchItemByName(name, db)
 	if err != nil {
 		handleError(c, err.Error())
 	}
 	return c.JSON(http.StatusOK, items)
-}
-
-func getItem(c echo.Context) error {
-	// Get Id from url
-	id := 
 }
 
 func getImg(c echo.Context) error {
@@ -175,9 +182,9 @@ func main() {
 	// Routes
 	e.GET("/", root)
 	e.GET("/items", showItems)
-	e.GET("/items/:itemId", getItem)
+	e.GET("/items/:itemId", searchItemById)
 	e.POST("/items", addItem)
-	e.GET("/search", searchItem)
+	e.GET("/search", searchItemByName)
 	e.GET("/image/:itemImg", getImg)
 
 	// Start server
