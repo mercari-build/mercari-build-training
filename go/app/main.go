@@ -16,7 +16,8 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 
-	"mercari-build-training-2022/app/models"
+	"mercari-build-training-2022/app/models/db"
+	"mercari-build-training-2022/app/models/customErrors/itemsError"
 )
 
 const (
@@ -49,6 +50,7 @@ func root(c echo.Context) error {
 
 func getItems(c echo.Context) error {
 	var items Items
+	
 
 	// Init DB
 	db := db.DbConnection
@@ -56,7 +58,7 @@ func getItems(c echo.Context) error {
 	// Exec Query
 	rows, err := db.Query(`SELECT name, category, image FROM items`)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return itemsError.ErrGetItems.Wrap(err)
 	}
 	defer rows.Close()
 
@@ -210,6 +212,7 @@ func main() {
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.HTTPErrorHandler = itemsError.ErrorHandler
 	e.Logger.SetLevel(log.INFO)
 
 	front_url := os.Getenv("FRONT_URL")
