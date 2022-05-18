@@ -69,8 +69,7 @@ func getItems(c echo.Context) error {
 
 		// カーソルから値を取得
 		if err := rows.Scan(&name, &category, &image); err != nil {
-			c.Logger().Error("Read Item from DB Error: %s", err)
-			return c.JSON(http.StatusInternalServerError, err)
+			return itemsError.ErrGetItems.Wrap(err)
 		}
 
 		fmt.Printf("name: %d, category: %s, image: %s\n", name, category, image.String)
@@ -94,8 +93,7 @@ func findItem(c echo.Context) error {
 	c.Logger().Infof("SELECT name, category, image FROM items WHERE id = %s", itemId)
 	err := db.QueryRow("SELECT name, category, image FROM items WHERE id = $1", itemId).Scan(&name, &category, &image)
 	if err != nil {
-		c.Logger().Error("Couldn't find data from DB: %s", err)
-		return c.JSON(http.StatusInternalServerError, err)
+		return itemsError.ErrFindItem.Wrap(err)
 	}
 	item = Item{Name: name, Category: category, Image: image}
 
@@ -110,23 +108,20 @@ func addItem(c echo.Context) error {
 	item.Category = c.FormValue("category")
 	file, err := c.FormFile("image")
 	if err != nil {
-		c.Logger().Error("Read Image File Error: %s", err)
-		return c.JSON(http.StatusInternalServerError, err)
+		return itemsError.ErrPostItem.Wrap(err)
 	}
 
 	// Open Image File
 	imageFile, err := file.Open()
 	if err != nil {
-		c.Logger().Error("Open Image File Error: : %s", err)
-		return c.JSON(http.StatusInternalServerError, err)
+		return itemsError.ErrPostItem.Wrap(err)
 	}
 	defer imageFile.Close()
 
 	// Read Image Bytes
 	imageBytes, err := io.ReadAll(imageFile)
 	if err != nil {
-		c.Logger().Error("Open Image Bytes Error: : %s", err)
-		return c.JSON(http.StatusInternalServerError, err)
+		return itemsError.ErrPostItem.Wrap(err)
 	}
 
 	// Encode Image
@@ -141,11 +136,11 @@ func addItem(c echo.Context) error {
 	// Save Image to ./image
 	imgFile, err := os.Create(path.Join(ImgDir, item.Image))
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return itemsError.ErrPostItem.Wrap(err)
 	}
 	_, err = io.Copy(imgFile, bytes.NewReader(imageBytes))
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return itemsError.ErrPostItem.Wrap(err)
 	}
 
 	// Init DB
@@ -154,7 +149,7 @@ func addItem(c echo.Context) error {
 	// Exec Query
 	_, err = db.Exec(`INSERT INTO items (name, category, image) VALUES (?, ?, ?)`, item.Name, item.Category, item.Image)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return itemsError.ErrPostItem.Wrap(err)
 	}
 	
 	res := Response{Message: message}
