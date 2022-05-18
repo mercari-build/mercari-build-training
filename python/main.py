@@ -44,7 +44,7 @@ async def create_upload_file(file: UploadFile):
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
 logger.level = logging.INFO
-images = pathlib.Path(__file__).parent.resolve() / "image"
+images = pathlib.Path(__file__).parent.resolve() / "images"
 origins = [ os.environ.get('FRONT_URL', 'http://localhost:3000') ]
 app.add_middleware(
     CORSMiddleware,
@@ -120,6 +120,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: bytes = Fi
     add_sql(id,name,category,image_name)
     return {"message": f"item received: {name}"}
 
+
 # curl -X GET 'http://127.0.0.1:9000/search?keyword=jacket'
 @app.get("/search" , response_class=ORJSONResponse)
 def search_item(keyword: str = None):
@@ -142,12 +143,15 @@ def show_detailById(item_id: int):
     return {"items": content}
 
 
-@app.get("/image/{items_image}")
-async def get_image(items_image):
-    # Create image path
-    image = images / items_image
 
-    if not items_image.endswith(".jpg"):
+
+@app.get("/image/{image_filename}")
+async def get_image(image_filename):
+
+    # Create image path
+    image = images / image_filename
+
+    if not image_filename.endswith(".jpg"):
         raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
 
     if not image.exists():
