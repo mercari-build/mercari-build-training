@@ -116,6 +116,11 @@ func searchItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, items)
 }
 
+func getItem(c echo.Context) error {
+	// Get Id from url
+	id := 
+}
+
 func getImg(c echo.Context) error {
 	// Create image path
 	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
@@ -156,6 +161,7 @@ func main() {
 	// Routes
 	e.GET("/", root)
 	e.GET("/items", showItems)
+	e.GET("/items/:itemId", getItem)
 	e.POST("/items", addItem)
 	e.GET("/search", searchItem)
 	e.GET("/image/:itemImg", getImg)
