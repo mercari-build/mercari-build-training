@@ -8,15 +8,15 @@ function App() {
   const [reload, setReload] = useState(true);
   return (
     <div>
-      <header className='Title'>
+      <header className='Title header-part'>
         <p>
           <b>Simple Mercari</b>
         </p>
+        <div>
+          <Listing onListingCompleted={() => setReload(true)} />
+        </div>
       </header>
-      <div>
-        <Listing onListingCompleted={() => setReload(true)} />
-      </div>
-      <div>
+      <div >
         <ItemList reload={reload} onLoadCompleted={() => setReload(false)} />
       </div>
     </div>

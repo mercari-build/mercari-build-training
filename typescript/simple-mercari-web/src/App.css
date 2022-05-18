@@ -1,42 +1,133 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  --main-color: #222427;
+  --title-color: #51cbf9;
+  --font-color:#fff;
+  --border-color:#ccc;
+  --hover-color:#7FB5FF;
+  --box-color:#2d2d2d;
+}
+
+body {
+  background-color: var(--main-color);
+  padding: 2vh 3vw;
+  font-family: 'Karla', sans-serif;
+}
+
 .App {
   text-align: center;
 }
 
 .Title {
-  background-color: #222427;
+  background-color: var(--main-color);
   min-height: 8vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: left;
-  font-size: calc(10px + 1vmin);
-  color: white;
+  font-size: calc(10px + 4vmin);
+  color: var(--title-color);
 }
 
 .Listing {
-  background-color: #222427;
+  background-color: var(--main-color);
   min-height: 8vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: left;
-  font-size: calc(10px + 1vmin);
-  color: white;
+  font-size: calc(10px + 2vmin);
 }
 
 .ItemList {
-  background-color: #222427;
+
   min-height: 8vh;
+  border-radius: 5px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: left;
+  align-items:flex-start;
+  justify-content: space-between;
   font-size: calc(10px + 1vmin);
-  color: white;
+  color: var(--font-color);
+  object-fit: contain;
+  box-shadow: 0 4px 5px rgba(0,0,0,0.2);
 }
 
 .App-link {
-  color: #61dafb;
+  color:#51cbf9;
+}
+
+.header-part {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 20px;
+}
+
+.ListingForm {
+  margin: 20px 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items:flex-end;
+}
+
+.ListingForm  > * {
+  margin: 0 5px;
+  width: 10vw;
+  border-radius: 5px;
+}
+
+.ListingForm > input[type=text] {
+
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  padding: 10px;
+  border-radius: 5px;
+  color:var(--font-color) ;
+}
+
+
+.ListingForm input:focus {
+  outline-style: none;
+}
+
+
+.ListingForm  input[type=file] {
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  padding: 7px;
+  border-radius: 5px;
+  margin: 0 5px;
+}
+
+
+.ListingForm >  button {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid var(--title-color);
+  cursor: pointer;
+  background-color: transparent;
+  color: var(--title-color);
+  font-size: auto;
+  font-weight: bold;
+
+}
+
+
+.btn :hover {
+  background-color: var(--hover-color);
+  border: 1px sodid;
+}
+
+.item-list-grid {
+  margin: 15vh 10vw;
+  display: grid;
+  grid-template: auto auto/repeat(4,1fr);
+  grid-gap: 5vw;
+  margin-bottom: 30px;
+
+}
+
+.ItemList img {
+  width: 100%;
+  border-radius: 5px;
+}
+.ItemList p {
+  margin-top:10px
 }
 
 @keyframes App-logo-spin {

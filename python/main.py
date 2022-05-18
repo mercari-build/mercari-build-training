@@ -3,19 +3,20 @@ import logging
 import pathlib
 import sqlite3
 import hashlib
+import shutil
 
 from sqlite3 import Error
-from fastapi import FastAPI, Form, HTTPException
+from fastapi import FastAPI, Form, UploadFile, HTTPException
+from fastapi.params import File
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-
 
 DB_PATH = '../db/mercari.sqlite3'
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
 logger.level = logging.INFO
-images = pathlib.Path(__file__).parent.resolve() / "image"
+images = pathlib.Path(__file__).parent.resolve() / "images"
 origins = [os.environ.get('FRONT_URL', 'http://localhost:3000')]
 
 app.add_middleware(
@@ -35,7 +36,7 @@ c.execute("""CREATE TABLE IF NOT EXISTS items (
                 id INTEGER PRIMARY KEY,
                 name STRING,
                 category_id INTEGER,
-                image STRING,
+                image_filename STRING,
                 FOREIGN KEY(category_id) REFERENCES category(category_id)
           )""")
 
@@ -49,8 +50,8 @@ conn.close()
 
 
 # Hash the image
-def hash_image(string):
-    hashed_str = hashlib.sha256(string.replace('.jpg', '').encode('utf-8')).hexdigest() + '.jpg'
+def hash_image(filename):
+    hashed_str = hashlib.sha256(str(filename).replace('.jpg', '').encode('utf-8')).hexdigest() + '.jpg'
     return hashed_str
 
 
@@ -59,9 +60,10 @@ def get_specific_items(name=None, id=None):
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
-        sql = """SELECT items.name,
+        sql = """SELECT items.id,
+        items.name,
         category.name as category,
-        items.image 
+        items.image_filename
         FROM items INNER JOIN category
         ON items.category_id =category.category_id"""
         conn.row_factory = sqlite3.Row
@@ -83,6 +85,7 @@ def get_specific_items(name=None, id=None):
 
 
 # API PART
+
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
@@ -91,15 +94,24 @@ def root():
 @app.post("/items")
 async def add_one_item(name: str = Form(...),
                        category: str = Form(...),
-                       image: str = Form(...)):
+                       image_filename: UploadFile = File(...)):
+
+    #save the uploaded file
+    filename = image_filename.filename
+    hashed_filename = hash_image(filename)
+    save_path = images / hashed_filename
+
+    with open(save_path, 'wb') as buffer:
+        shutil.copyfileobj(image_filename.file, buffer)
+
     try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         c.execute("INSERT OR IGNORE INTO category (name) VALUES (?)", (category,))
-        c.execute("SELECT category_id FROM category WHERE name=?", (category,))
+        c.execute("SELECT category_id FROM category WHERE name=(?)", (category,))
         category_id = c.fetchone()[0]
-        c.execute("INSERT INTO items(name,category_id, image) VALUES (?,?,?)",
-                  (name, category_id, hash_image(image) if image else None))
+        c.execute("INSERT INTO items(name,category_id, image_filename) VALUES (?,?,?)",
+                  (name, category_id, hashed_filename))
         conn.commit()
         conn.close()
         logger.info('add successfully!')
@@ -107,7 +119,7 @@ async def add_one_item(name: str = Form(...),
         logger.error(e)
         return {'message': f'{e}'}
 
-    result = {"name": name, "category": category, "image": image}
+    result = {"name": name, "category": category, "image_filename": hashed_filename}
     logger.info(f"Receive item: {result}")
     return {"message": f"item received: {name}"}
 
@@ -118,9 +130,10 @@ async def get_all_items():
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         conn.row_factory = sqlite3.Row
-        sql = """SELECT items.name,
+        sql = """SELECT items.id,
+        items.name,
         category.name as category,
-        items.image 
+        items.image_filename
         FROM items INNER JOIN category
         ON items.category_id =category.category_id"""
         c.execute(sql)
@@ -158,4 +171,3 @@ async def get_image(image_filename):
         image = images / "default.jpg"
 
     return FileResponse(image)
-
