@@ -2,22 +2,23 @@
 
 
 ## 1. Build local environment
-Install Node >= 14.0.0 from below.
+Install Node v16 from below.
+(16.15.0 LTS is recommended as of May 2022)
 
 https://nodejs.org/en/
 
 If you would like to install multiple versions of Node, use [nvs](https://github.com/jasongin/nvs).
 
-Run `node -v` and confirm that `v14.0.0` or above is displayed.
+Run `node -v` and confirm that `v16.0.0` or above is displayed.
 
 Move to the following directory and install dependencies with the following command.
-```
+```shell
 cd typescript/simple-mercari-web
 npm ci
 ```
 
 After launching the web application with the following command, check your web app from your browser at [http://localhost:3000/](http://localhost:3000/).
-```
+```shell
 npm start
 ```
 
@@ -28,6 +29,7 @@ This simple web application allows you to do two things
   
 These functionalities are carved out as components called `src/components/Listing` and `src/components/ItemList`, and called from the main `App.tsx`.
 
+:pushpin: Sample code is in React but the knowledge of React is not necessary.
 
 ### (Optional) Task 1: Add a new item
 Use the listing form to add a new item. In this screen, you can input name, category and a image for a new item.
@@ -41,8 +43,8 @@ In this screen, item images are all rendered as Build@Mercari logo. Specify the 
 
 
 ### (Optional) Task 3. Change the styling with HTML and CSS
-These two components are styled by CSS. To see what types of changes can be made, try modifying `ItemList` component CSS. These are specifed in `App.css` and they are applied by `className` attribute (e.g. `<div>className='Listing'</div>`).
-```
+These two components are styled by CSS. To see what types of changes can be made, try modifying `ItemList` component CSS. These are specifed in `App.css` and they are applied by `className` attribute (e.g. `<div className='Listing'></div>`).
+```css
 .Listing {
   ...
 }
