@@ -160,6 +160,7 @@ func main() {
 	e.GET("/search", searchItem)
 	e.GET("/image/:itemImg", getImg)
 
+
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
 }
