@@ -40,28 +40,28 @@ export const ItemList: React.FC<Prop> = (props) => {
       })
   }
 
-  const fetchImage = (item: Item)=> {
-    // TODO: debug: item.image_filename が undefinedになる
-    fetch(server.concat('/image/'+item.image_filename),
-    {
-      method: 'GET',
-      mode: 'cors',
-      headers : {
-        'Content-Type': 'image/jpg',
-        'Accept': 'image/jpg	',
-      },
-    })
-      .then(response => response)
-      .then(data => {
-        return data.url
-      })
-      .catch(error => {
-        console.error('GET error:',error) 
-      })
+  // const fetchImage = (item: Item)=> {
+  //   // TODO: debug: item.image_filename が undefinedになる
+  //   fetch(server.concat('/image/'+item.image_filename),
+  //   {
+  //     method: 'GET',
+  //     mode: 'cors',
+  //     headers : {
+  //       'Content-Type': "",
+  //       'Accept': 'image/jpg',
+  //     },
+  //   })
+  //     .then(response => response)
+  //     .then(data => {
+  //       return data.url
+  //     })
+  //     .catch(error => {
+  //       console.error('GET error:',error) 
+  //     })
 
-      return server+'/image/'+item.image_filename
+  //     return server+'/image/'+ item.image_filename
     
-  }
+  // }
 
   useEffect(() => {
     if (reload) {
@@ -76,8 +76,8 @@ export const ItemList: React.FC<Prop> = (props) => {
           <div key={item.id} className='ItemList'>
             <div className='item'>
             {/* TODO: Task 1: Replace the placeholder image with the item image */}
-            {/* <img src={fetchImage(item)|| placeholderImage} /> */}
-            <img src={placeholderImage} />
+            <img src={server + "/image/" + item.image_filename || placeholderImage} />
+            {/* <img src={placeholderImage} /> */}
             <p>
               <span>Name: {item.name}</span>
               <br />
