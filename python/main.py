@@ -122,7 +122,7 @@ def search_item(keyword: str = None):
 
 # curl -X GET 'http://127.0.0.1:9000/items/(id)'
 # {"items":[{"id":1,"name":"jacket","category":"fashion","image":"ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg"}]}
-@app.get("/items/", response_class=ORJSONResponse)
+@app.get("/items/{item_id}", response_class=ORJSONResponse)
 def show_detailById(item_id: int):
     logger.info(f"Search item: {item_id}")
     conn = sqlite3.connect('../db/item.db')
