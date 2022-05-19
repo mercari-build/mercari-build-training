@@ -53,8 +53,8 @@ Accepts the arguments as File.
 def add_item(name: bytes = File(...), category: bytes = File(...), image: bytes = File(...)):
 
     # cast bytes to string
-    #name = name.decode('utf-8')
-    #category = category.decode('utf-8')
+    name = name.decode('utf-8')
+    category = category.decode('utf-8')
 
     logger.info(f"Receive item: name = {name}, category = {category}")
 
