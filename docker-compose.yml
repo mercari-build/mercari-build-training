@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  api:
+    build:
+      context: .
+      dockerfile: python/dockerfile
+    container_name: build2022_app
+    ports:
+      - "9000:9000"
+    volumes:
+      - "./python:/code"
+      - "./python/requirements.txt:/code/requirements.txt"
+  web:
+    build:
+      context: ./typescript/simple-mercari-web
+      dockerfile: dockerfile
+    container_name: build2022_web
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./typescript/simple-mercari-web:/code"
+      - "./typescript/simple-mercari-web/node_modules:/code/node_modules"
+    stdin_open: true
+    tty: true
+    environment:
+      - WEB_URL=http://localhost:3000
+      - API_URL=http://localhost:9000

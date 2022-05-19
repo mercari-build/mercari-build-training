@@ -51,7 +51,7 @@ export const Listing: React.FC<Prop> = (props) => {
       })
       .catch((error) => {
         console.error('POST error:', error);
-      })
+      });
   };
   return (
     <div className='Listing'>

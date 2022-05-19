@@ -32,6 +32,7 @@
 
 .Listing button {
   border-radius: 5px;
+  padding: 5px;
   cursor: pointer;
 }
 
@@ -44,6 +45,46 @@
   transform: translateY(2px);
 }
 
+.categories {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.categories ul {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+  display: flex;
+}
+
+ul li {
+  margin-left: 10px;
+  margin-right: 10px;
+  margin-bottom: 2rem;
+  text-decoration: none;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid #7C884E;
+  padding: .7rem;
+  border-radius: 5px;
+  transition: all .2s;
+}
+
+a:hover, a:focus {
+  background-color: #7C884E;
+  color: white;
+  cursor: pointer;
+}
+
 h1 {
   font-size: 20px;
   text-align: center;
@@ -52,14 +93,14 @@ h1 {
 .AllItems {
   margin-top: 5rem;
   background-color: white;
-  /* display: flex;
-  justify-content: space-evenly; */
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   grid-gap: 1rem;
   padding: 1rem;
-  border-radius: 5px;
-  box-shadow: 0px 0px 5px #7C884E;
+  align-items: center;
+  justify-items: center;
+  box-shadow: #7C884E 0px 0px 10px;
+  border-radius: 10px;
 }
 
 .ItemList {
@@ -75,9 +116,26 @@ h1 {
 }
 
 .ItemImage {
-  max-width: 10rem;
+  width: 10rem;
+  height: 10rem;
   border-radius: 10px;
   border: 1px solid black;
+  object-fit: cover;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+}
+
+.tag {
+  font-size: x-small;
+  background-color: lightgray;
+  color: white;
+  padding: .15rem;
+  border-radius: 5px;
+  margin-right: .5rem;
+  width: fit-content;
 }
 
 .App-link {

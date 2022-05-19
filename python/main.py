@@ -1,7 +1,7 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException
+from fastapi import FastAPI, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import db
@@ -10,8 +10,8 @@ from os.path import join, dirname, realpath
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
-logger.level = logging.DEBUG
-images = pathlib.Path(__file__).parent.resolve() / "image"
+logger.level = logging.INFO
+images = pathlib.Path(__file__).parent.resolve() / "images"
 origins = [os.environ.get('FRONT_URL', 'http://localhost:3000')]
 app.add_middleware(
     CORSMiddleware,
@@ -57,28 +57,21 @@ async def read_items(keyword: str):
 
 
 @app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...), image: str = Form(...)):
+def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = Form(...)):
     category_id = int(category)
-    image_hash = hash_image(image)
-    db.add_item(name, category_id, image_hash)
-    logger.info(f"Receive item: {name}, {category}")
-    return {"message": f"Item {name} added"}
+    image_hash = hash_image(image.file.read())
+    db.add_item(name, category, image_hash)
+    return {"id": image_hash, "name": name, "category": category_id, "image_filename": image_hash}
 
 
 @app.get("/image/{image_filename}")
 async def get_image(image_filename):
-    # Create image path
-    image = pathlib.Path(
-        __file__).parent.resolve() / "images" / image_filename
     if not image_filename.endswith(".jpg"):
-        raise HTTPException(
-            status_code=400, detail="Image path does not end with .jpg")
-
-    if not image.exists():
-        logger.debug(f"Image not found: {image}")
-        image = images / "default.jpg"
-
-    return FileResponse(image)
+        image_filename += ".jpg"
+    image_path = images / image_filename
+    if not image_path.exists():
+        raise HTTPException(status_code=404, detail="Image not found")
+    return FileResponse(image_path)
 
 
 @app.delete("/items/{item_id}")
@@ -90,18 +83,11 @@ def delete_item(item_id: int):
     logger.info(f"Delete item: {item_id}")
     return {"message": f"Item {item_id} deleted"}
 
-# hash image and save to /images
-
 
 def hash_image(image):
-    filename = ""
-    filename = filename + image
-    readable_hash = ""
-    UPLOADS_PATH = join(dirname(realpath(__file__)), "image" + filename).replace("C:\\fakepath\\", "/")
-    with open(UPLOADS_PATH, "rb") as f:
-        bytes = f.read()
-        readable_hash = readable_hash + hashlib.sha256(bytes).hexdigest()
-        # print(readable_hash + ".jpg")
-    with open("images/" + readable_hash + ".jpg", "wb") as f:
-        f.write(bytes)
-    return readable_hash
+    image_hash = hashlib.sha256(image).hexdigest()
+    image_filename = image_hash + ".jpg"
+    image_path = images / image_filename
+    with open(image_path, "wb") as f:
+        f.write(image)
+    return image_hash
