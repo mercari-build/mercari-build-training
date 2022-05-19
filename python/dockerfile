@@ -1,4 +1,30 @@
-FROM alpine
+#imageのrepoの名前
+# FROM alpine
+FROM python:3.8
 
-# STEP4-4では以下は変更しない
-CMD ["python", "-V"]
+RUN pip install --upgrade pip
+
+# docker build -f ./python/dockerfile -t build2022/app .
+# docker run build2022/app 
+# docker images
+# docker image rm build2022/app
+# docker image prune #noneの一括削除
+
+COPY ./db ./db
+
+RUN pip install -U setuptools pip
+RUN pip install Cython
+RUN pip install wheel
+
+WORKDIR /python
+
+COPY python/requirements.txt requirements.txt
+RUN pip install -r requirements.txt
+
+COPY python/images/ .
+COPY python/main.py .
+
+
+
+WORKDIR /python
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0","--port", "9000"]

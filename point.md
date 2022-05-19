@@ -101,6 +101,9 @@
 
 [stackoverflow](https://stackoverflow.com/questions/22071735/difference-between-json-and-sql#:~:text=JSON%20is%20the%20data%20format,store%20or%20retrieve%20the%20data.)
 
+### step3-4 DB
+[IDの生成](https://zenn.dev/j5ik2o/articles/a085ab3e3d0f197f6559)
+
 ###  step3-5 search
 
 URIでドメインの後、？の前に来るものがパスパラメータ、?の後に来るのがクエリパラメータ
@@ -126,3 +129,82 @@ sha256 hash
 
 - バイナリファイルの読み書き
 [Pythonでファイルの読み込み、書き込み](https://note.nkmk.me/python-file-io-open-with/)
+
+
+## Step4: Docker
+
+### Dockerとは
+    - コンテナ型仮想環境を作成、実行、管理するためのプラットフォーム
+    - Goで書かれている
+    - 素早く同じ仮想環境を再現できる
+
+- Dockerイメージ
+    Dockerコンテナを作成するための雛形となるものです。
+    Dockerイメージは、アプリケーション、ライブラリ、設定ファイルなどのアプリケーション実行に必要なもの一式をまとめたものになります。
+    出来上がったアプリケーションをDockerイメージとして保存して、別のサーバーに持っていくことで同じ環境（コンテナ）を別のサーバー上で再現することができます。
+
+- Dockerコンテナ
+    Dockerイメージを元に作成されるコンテナ型仮想環境のことをDockerコンテナ、または単にコンテナと呼びます。
+    イメージからコンテナを作成することで、何度でも簡単に同じコンテナ（仮想環境）を作成することができます。
+    コンテナを起動することで、予めイメージにセットアップしたアプリケーションの機能を提供することができます。
+
+- Docker Hub
+    Dockerイメージを保存するための機能などを提供しているサービスです。
+    ベンダーや他のユーザーが作ったイメージも公開されており、公開されているイメージをダウンロードすることで様々なコンテナを起動することができます。
+    また、Docker Hubの様にイメージを保管するための機能を持ったものをレジストリと呼びます。
+
+- Dockerデーモン
+    Dockerの常駐型プログラムで、Dockerコンテナの作成やDockerイメージの作成などDockerに対する操作はこのDockerデーモンが受け取り、実際の処理を行います。
+    Docker DesktopやDocker ToolboxといったソフトをインストールすることでDockerデーモンが起動します。
+    Dockerデーモンが起動していないとDockerに対する操作を受け取れないためエラーになります。
+    そのため、もし停止している場合には事前に起動しておく必要があります
+
+### Dockerのユースケース
+    - アプリ開発環境
+    - 検証環境、本番環境(Dockerの可搬性)
+    - Web ServerやDB Serverの構築
+    等
+
+### ホスト型仮想化とコンテナ型仮想化の違い
+- ホスト型仮想化
+    - アプリ実行の再現性:
+        マシンの環境の違いによりアプリケーションが動作しなくなることが発生する(時間がかかる)
+    - 分離レベル:
+        ハードウェアレベルで仮想化されているのでホストOSと仮想環境それぞれが影響を受けにくい
+
+- コンテナ型仮想化
+    - アプリ実行の再現性:
+        Dockerイメージからコンテナを起動する限り同様に動作
+    - 分離レベル:
+        分離レベルは低め　->セキュリティの懸念にする
+        Public Networkに繋がない等の脆弱性を意識した対策をする
+
+    
+# Docker Volumeとは?
+    Docker コンテナーにおいて生成され利用されるデータを、永続的に保持する目的で利用される仕組みです。 バインドマウント はホストマシン OS のディレクトリ構造に依存しますが、ボリュームは完全に Docker によって管理されます。
+[docker docs](https://matsuand.github.io/docs.docker.jp.onthefly/storage/volumes/)
+
+> docker はホスト上に存在しないイメージを使う際には、自動的に image をダウンロードしてくれます。しかしながら、image を予めダウンロードしておくこともできます。
+
+'''
+
+docker build https://github.com/manami-bunbun/mercari-build-training-2022#step4:build2022/app
+
+'''
+
+# Step4
+
+'''
+ docker build -f ./python/dockerfile -t build2022/app .
+ docker run build2022/app 
+
+ # docker imageの管理
+ docker images
+ docker image rm build2022/app
+ docker image prune #noneの一括削除
+'''
+
+
+さらに良いDockerfileを書くためには何が必要か
+各コマンドの順序はこれが最適？そうでないとしたらなぜ？
+sqliteのデータが格納されたファイルをDockerイメージ内に保存すべき？そうでないとしたらどうすべき？
