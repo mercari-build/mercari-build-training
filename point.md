@@ -203,3 +203,8 @@ docker build https://github.com/manami-bunbun/mercari-build-training-2022#step4:
  docker image rm build2022/app
  docker image prune #noneの一括削除
 '''
+
+
+さらに良いDockerfileを書くためには何が必要か
+各コマンドの順序はこれが最適？そうでないとしたらなぜ？
+sqliteのデータが格納されたファイルをDockerイメージ内に保存すべき？そうでないとしたらどうすべき？
