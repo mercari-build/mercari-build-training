@@ -1,3 +1,6 @@
+# docker build -t build2022/web .       
+# docker run -d -p 3000:3000 build2022/web:latest 
+
 FROM node:18-alpine
 
 WORKDIR /code

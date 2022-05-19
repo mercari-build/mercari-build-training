@@ -75,6 +75,7 @@ h1 {
 }
 
 .ItemImage {
+  max-width: 10rem;
   border-radius: 10px;
   border: 1px solid black;
 }
