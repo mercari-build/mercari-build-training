@@ -11,6 +11,5 @@ RUN pip3 install --no-cache-dir --upgrade -r /code/requirements.txt
 COPY python/main.py /code/main.py
 COPY python/db.py /code/db.py
 COPY python/images /code/images
-COPY python/image /code/image
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000", "--reload"]
