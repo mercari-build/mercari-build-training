@@ -14,7 +14,7 @@ The following icons indicate pointers for
 **:book: Reference**
 
 * そのセクションを理解するために参考になるUdemyやサイトのリンクです。課題内容がわからないときにはまずReferenceを確認しましょう。
-* Useful links for Udemy courses and external resources. First check those references if you're feeling stuck.
+* Useful links for Udemy courses and external resources. First check those references if you are feeling stuck.
 
 **:beginner: Point**
 

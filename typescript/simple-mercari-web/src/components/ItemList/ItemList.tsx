@@ -25,18 +25,19 @@ export const ItemList: React.FC<Prop> = (props) => {
   const { reload = true, onLoadCompleted } = props;
   const [items, setItems] = useState<Item[]>([]);
   const fetchItems = () => {
-    fetch(server.concat("/items"), {
-      method: "GET",
-      mode: "cors",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("GET success:", data);
-        setItems(data);
+    fetch(server.concat('/items'),
+      {
+        method: 'GET',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('GET success:', data);
+        setItems(data.items);
         onLoadCompleted && onLoadCompleted();
       })
       .catch((error) => {
