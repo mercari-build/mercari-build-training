@@ -204,6 +204,7 @@ docker build https://github.com/manami-bunbun/mercari-build-training-2022#step4:
  docker image prune #noneの一括削除
 '''
 
+
 # Step6
 
 '''
@@ -221,6 +222,13 @@ uvicorn main:app --reload --port 9000
 http://localhost:3000/ にアクセス
 
 [Dockerfile for node](https://docs.docker.com/language/nodejs/build-images/)
+
+
+さらに良いDockerfileを書くためには何が必要か
+各コマンドの順序はこれが最適？そうでないとしたらなぜ？
+sqliteのデータが格納されたファイルをDockerイメージ内に保存すべき？そうでないとしたらどうすべき？
+
+
 
 
 ## Docker Compose (docker.yml)
@@ -270,3 +278,5 @@ localhost:8080 に接続すると コンテナ：80 にフォワードする設�
 
 - depends_on（第三階層）
     コンテナの起動順の指定です。ここに記述したサービスの後に起動されるようになります。
+
+
