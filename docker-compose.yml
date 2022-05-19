@@ -1,0 +1,25 @@
+version: "3.9"
+services:
+  web:
+    # image: build2022/app
+    # Dockerfileのパスを指定
+    build: 
+      context: .
+      dockerfile: ./python/dockerfile
+    # コンテナ内で実行するコマンド
+    # command: "uvicorn main:app --reload --port 9000"
+    # コンテナ間の通信
+    ports:
+      - "9000:9000" # ホストマシンのポート番号:コンテナのポート番号
+  frontend:
+    # image: build2022/web
+    build: 
+      context: .
+      dockerfile: ./typescript/simple-mercari-web/dockerfile
+    # command: "npm start"
+    ports:
+      - "3000:3000"
+    # サービス間の依存関係
+    # コンテナの起動順。ここに記述したサービスの後に起動。
+    # depends_on:
+    #   - web
