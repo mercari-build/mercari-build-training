@@ -6,6 +6,13 @@ In this step, we will learn how to use Git and Github.
 * [Git basics](https://www.atlassian.com/git)
 * [GitHub Ultimate: Master Git and GitHub - Beginner to Expert](https://www.udemy.com/course/github-ultimate/)
 
+
+## Fork this **mercari-build-training-2022** repository
+
+* Fork [mercari-build-training-2022](https://github.com/mercari-build/mercari-build-training-2022) 
+* You will see be able to see `https://github.com/<your github id>/mercari-build-training-2022` if successful.
+
+
 ## Install Git
 1. Install git in your environment and run the following command.
    ```shell
@@ -20,11 +27,6 @@ In this step, we will learn how to use Git and Github.
    $ git config user.email
    <your-email-adress>
    ```
-
-## Fork this **mercari-build-training-2022** repository
-
-* Fork [mercari-build-training-2022](https://github.com/mercari-build/mercari-build-training-2022) (TODO: Update link)
-* You will see be able to see `https://github.com/<your github id>/mercari-build-training-2022` if successful.
 
 ## Use basic commands in Git
 
