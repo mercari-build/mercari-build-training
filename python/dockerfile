@@ -4,18 +4,26 @@ FROM python:3.8
 
 RUN pip install --upgrade pip
 
+# docker build -f ./python/dockerfile -t build2022/app .
+# docker run build2022/app 
+# docker images
+# docker image rm build2022/app
+# docker image prune #noneの一括削除
 
-WORKDIR /app
+COPY ./db ./db
 
 RUN pip install -U setuptools pip
 RUN pip install Cython
 RUN pip install wheel
 
-COPY requirements.txt requirements.txt
+WORKDIR /python
+
+COPY python/requirements.txt requirements.txt
 RUN pip install -r requirements.txt
-COPY . /db
-COPY . /python
-COPY . /image
+
+COPY python/images/ .
+COPY python/main.py .
+
 
 
 WORKDIR /python

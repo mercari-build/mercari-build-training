@@ -191,3 +191,20 @@ sha256 hash
 docker build https://github.com/manami-bunbun/mercari-build-training-2022#step4:build2022/app
 
 '''
+
+# Step4
+
+'''
+ docker build -f ./python/dockerfile -t build2022/app .
+ docker run build2022/app 
+
+ # docker imageの管理
+ docker images
+ docker image rm build2022/app
+ docker image prune #noneの一括削除
+'''
+
+
+さらに良いDockerfileを書くためには何が必要か
+各コマンドの順序はこれが最適？そうでないとしたらなぜ？
+sqliteのデータが格納されたファイルをDockerイメージ内に保存すべき？そうでないとしたらどうすべき？
