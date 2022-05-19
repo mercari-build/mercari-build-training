@@ -15,6 +15,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 
 	"mercari-build-training-2022/app/models/db"
 	"mercari-build-training-2022/app/models/customErrors/itemsError"
@@ -29,6 +31,33 @@ type Item struct {
 	Category string `json:"category"`
 	Image string `json:"image"`
 }
+
+// Validatorの定義
+type CustomValidator struct{}
+
+func (cv *CustomValidator) Validate(i interface{}) error {
+	if c, ok := i.(validation.Validatable); ok {
+		return c.Validate()
+	}
+	return nil
+}
+
+func (item Item) Validate() error {
+	return validation.ValidateStruct(&item,
+		validation.Field(
+			&item.Name,
+			validation.Required.Error("名前は必須入力です"),
+			validation.RuneLength(1, 20).Error("名前は 1～20 文字です"),
+			is.PrintableASCII.Error("名前はASCIIで入力して下さい"),
+		),
+		validation.Field(
+			&item.Category,
+			validation.Required.Error("カテゴリーは必須入力です"),
+			validation.RuneLength(1, 40).Error("カテゴリーは 1～20 文字です"),
+		),
+	)
+}
+
 
 type Items struct {
 	Items []Item `json:"items"`
@@ -108,6 +137,15 @@ func addItem(c echo.Context) error {
 	item.Category = c.FormValue("category")
 	file, err := c.FormFile("image")
 	if err != nil {
+		return itemsError.ErrPostItem.Wrap(err)
+	}
+
+	// Validate item fields
+	if err := c.Validate(item); err != nil {
+		errs := err.(validation.Errors)
+		for k, err := range errs {
+			c.Logger().Error(k + ": " + err.Error())
+		}
 		return itemsError.ErrPostItem.Wrap(err)
 	}
 
@@ -208,6 +246,7 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.HTTPErrorHandler = itemsError.ErrorHandler
+	e.Validator = &CustomValidator{}
 	e.Logger.SetLevel(log.INFO)
 
 	front_url := os.Getenv("FRONT_URL")
