@@ -1,4 +1,5 @@
-FROM alpine
+# FROM alpine
+FROM python:3
 
 # STEP4-4では以下は変更しない
 CMD ["python", "-V"]
