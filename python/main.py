@@ -26,6 +26,13 @@ Gets the list of all items
 """
 @app.get("/")
 def root():
+    return {"message": "Hello, world!"}
+
+"""
+Gets the list of all items
+"""
+@app.get("/items")
+def read_items():
     # get the list of all items in the database
     items = database.get_items()
     # format the list and return
@@ -38,11 +45,12 @@ Gets item with the given item_id
 async def get_item_by_id(item_id):
 
     item = database.get_id_by_id(item_id)
-    if len(item) == 0:
+    
+    if not item:
         logger.debug(f"Item not found: {item_id}")
         return f"Item not found: {item_id}"
     
-    return format_items(item)
+    return format_item(item)
 
 
 """
@@ -98,10 +106,18 @@ def format_items(items):
     # create a list to set each item in a format
     items_format = []
     for item in items:
-        item_format = {"name": item[0], "category": item[1], "image": item[2]}
+        item_format = format_item(item)
+        # item_format = {"name": item[0], "category": item[1], "image": item[2]}
         items_format.append(item_format)
+    # return items_format
+    # return {"items": f"{items_format}"}
+    return {"items": items_format}
 
-    return {"items": f"{items_format}"}
+"""
+Formats the given item
+"""
+def format_item(item):
+    return {"id": item[0], "name": item[1], "category": item[2], "image": item[3]}
 
 """
 Saves the given bytes of the image file as a new file in "items" directory

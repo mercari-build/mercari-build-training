@@ -14,7 +14,7 @@ def get_items():
     with closing(sqlite3.connect(filename)) as db_connect:
         db_cursor = db_connect.cursor()
         # insert new data
-        sql = 'SELECT name, category, image FROM items'
+        sql = 'SELECT * FROM items'
         db_cursor.execute(sql)
         items = db_cursor.fetchall()
         db_connect.commit()
@@ -31,10 +31,10 @@ def get_id_by_id(item_id):
     with closing(sqlite3.connect(filename)) as db_connect:
         db_cursor = db_connect.cursor()
         # insert new data
-        sql = 'SELECT name, category, image FROM items WHERE id = ?'
+        sql = 'SELECT * FROM items WHERE id = ?'
         data = (item_id,)
         db_cursor.execute(sql, data)
-        item = db_cursor.fetchall()
+        item = db_cursor.fetchone()
         db_connect.commit()
 
     return item
@@ -62,7 +62,7 @@ def search_items(keyword):
 
     with closing(sqlite3.connect(filename)) as db_connect:
         db_cursor = db_connect.cursor()
-        sql = 'SELECT name, category FROM items WHERE name LIKE ?'
+        sql = 'SELECT * FROM items WHERE name LIKE ?'
         data = ('%' + keyword + '%',)
         db_cursor.execute(sql, data)
         items = db_cursor.fetchall()
