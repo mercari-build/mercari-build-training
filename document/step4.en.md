@@ -7,7 +7,15 @@ In this step, we will learn how to use Docker.
 * [docker docs](https://docs.docker.com/get-started/overview/)
 * [Udemy - ゼロからはじめる Dockerによるアプリケーション実行環境構築](https://www.udemy.com/course/docker-k/)
 
-## 1. Run Docker commands
+## 1. Install Docker
+**Install docker of the latest version, and check if you can run `docker -v`.**
+
+**:book: Reference**
+
+* [Download and Install Docker](https://docs.docker.com/get-docker/)
+
+
+## 2. Run Docker commands
 **Make sure that you're in `mercari-build-training-2022/` directory, and run the following command.**
 
 ```shell
@@ -31,7 +39,7 @@ $ docker run -v $(pwd)/data/text_ja.png:/tmp/img.png wakanapo/tesseract-ocr tess
 
 * Make sure you understand [docker volume](https://docs.docker.com/storage/volumes/) 
 
-## 2. Get Docker Image
+## 3. Get Docker Image
 
 **Run the following command.**
 ```shell
@@ -64,7 +72,7 @@ Make sure you understand the following commands and when to use them.
 * pull
 
 
-## 3. Building a Docker Image
+## 4. Building a Docker Image
 **Build the docker file under the directory `python/` if you're using Python and `go/` if you're using Go.**
 
 * Set the name of the image to be `build2022/app` with `latest` tag.
@@ -76,8 +84,8 @@ Check that you can now see `build2022/app` in the list of images.
 
 * [Dockerfile reference](https://docs.docker.com/engine/reference/builder/)
 
-## 4. Modity Dockerfile
-**Run the docker image you built in STEP4-3, and check if the following error shows up.**
+## 5. Modity Dockerfile
+**Run the docker image you built in STEP4-4, and check if the following error shows up.**
 
 ```
 docker: Error response from daemon: OCI runtime create failed: container_linux.go:380: starting container process caused: exec: "python": executable file not found in $PATH: unknown.
@@ -96,9 +104,9 @@ Run the image with the modified `dockerfile`, check if the same message is displ
 * [docker docs - language guide (Python)](https://docs.docker.com/language/python/)
 * [docker docs - language guide (Go)](https://docs.docker.com/language/golang/)
 
-## 5. Run the listing API on Docker
+## 6. Run the listing API on Docker
 
-The environment within the docker image should be the same as STEP2-2 after STEP4-4.
+The environment within the docker image should be the same as STEP2-2 after STEP4-5.
 
 **Mofify `dockerfile` to copy necessary files and install dependencies such that you can run the listing API on docker**
 
