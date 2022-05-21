@@ -1,3 +1,7 @@
+body{
+  background-color: #222427;
+}
+
 .App {
   text-align: center;
 }
@@ -15,7 +19,7 @@
 
 .Listing {
   background-color: #222427;
-  min-height: 8vh;
+  min-height: 2vh;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -25,7 +29,7 @@
   padding: 4vh;
 }
 
-.Listing input{
+.Listing input[type="text"]{
   margin-right: 10px;
   padding: 10px;
   background-color: #303337;
@@ -62,7 +66,7 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: left;
-  font-size: calc(10px + 1vmin);
+  font-size: calc(6px + 1vmin);
   color: white;
   border-radius: 5px;
   border: #61dafb;
