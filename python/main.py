@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import sqlite3
 import hashlib
+from fastapi import UploadFile, File
+import shutil
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -21,106 +23,90 @@ app.add_middleware(
     allow_methods=["GET","POST","PUT","DELETE"],
     allow_headers=["*"],
 )
+api_url = os.environ.get('API_URL', 'http://localhost:9000')
 
-db_file = pathlib.Path(__file__).parent.resolve() / "db" / "items.db"
-sqlite3_file = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
+sqlite_path = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
 
-@app.on_event("startup")
-def start_app() -> None:
-    logger.info("Stating the app...")
-    if not os.path.exists(db_file):
-        raise FileNotFoundError
-    
-    if not os.path.exists(sqlite3_file):
-        sqlite3_file.touch()
+# def get_items_json():
+#     with open('items.json', mode='r', encoding='utf-8') as f:
+#         items_json = json.load(f)
+#     return items_json
 
-    conn = sqlite3.connect(sqlite3_file)
-    cur = conn.cursor()
+# def post_items_json(name, category) -> None:
+#     items_json = get_items_json()
+#     items_json["items"].append({"name":name, "category":category})
+#     with open('items.json', mode='w') as f:
+#         json.dump(items_json, f)
 
-    with open(db_file, 'r') as file:
-        schema = file.read()
+def get_hash_name(image):
+    image_name, image_exp = image.split('.')
+    image_hashed = hashlib.sha256(image_name.encode()).hexdigest()
+    return '.'.join([image_hashed, image_exp])
 
-    print(schema)
-
-    cur.executescript(f"""
-            {schema}
-        """)
-    conn.commit()
-    conn.close()
+def save_image(image_name, image) -> None:
+    with open(images / image_name, mode='w+b') as f:
+        shutil.copyfileobj(image, f)
 
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
 
 @app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...), image: str = Form(...)):
-    logger.info(f"Receive item: {name}, {category}")
+def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
+    logger.info(f"Receive item: {name}, {category}, {image.filename}")
 
-    image = image.split('/')[-1]
+    conn = sqlite3.connect(sqlite_path)
+    cursor = conn.cursor()
 
-    if not image.endswith('.jpg'):
-        raise HTTPException(
-            status_code=400, detail="Image is not in \".jpg\" format"
-        )
+    image_hashed = get_hash_name(image.filename)
 
-    hash_filename = hashlib.sha256(image.encode('utf-8')).hexdigest() + '.jpg'
-    print(hash_filename)
+    save_image(image_hashed, image.file)
 
-    conn = sqlite3.connect(sqlite3_file)
-    cur = conn.cursor()
+    cursor.execute('SELECT id FROM category WHERE name=(?)', (category, ))
+    id = cursor.fetchone()
 
-    cur.execute(f"INSERT OR IGNORE INTO category (name) VALUES ('{category}')")
-    cur.execute(f"SELECT id FROM category WHERE name='{category}'")
+    if not id:
+        cursor.execute("INSERT OR IGNORE INTO category(name) VALUES (?)", (category, ))
+    if id:
+        cursor.execute("INSERT OR IGNORE INTO category(id, name) VALUES (?, ?)", (id[0], category))
 
-    category_id = cur.fetchone()[0]
-    print(f'category_id: {category_id}')
+    conn.commit()
+    cursor.execute("SELECT id FROM category WHERE name=(?)", (category, ))
+    category_id = cursor.fetchone()
+    category_id = category_id[0]
 
-    cur.execute(f"INSERT INTO items (name, category_id, image) VALUES ('{name}', '{category_id}', '{hash_filename}')")
-
+    cursor.execute("INSERT INTO items(name, category_id, image_filename) VALUES(?, ?, ?)", (name, category_id, image_hashed))
     conn.commit()
     conn.close()
 
-    return {"name": name, "category": category}
+    return {"message": f"item received: {name}, {category}"}
 
 @app.get("/items")
 def get_items():
-    conn = sqlite3.connect(sqlite3_file)
-    cur = conn.cursor()
+    conn = sqlite3.connect(sqlite_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, category_id, image_filename FROM items")
+    items_json = cursor.fetchall()
+    items_get_data = {"items": []}
 
-    cur.execute("SELECT * FROM items")
+    for i in range(len(items_json)):
+        cursor.execute("SELECT name FROM category WHERE id=(?)", (items_json[i][1], ))
+        category = cursor.fetchone()[0]
+        items_get_data["items"].append({"name":items_json[i][0], "category":category, "image":os.path.join(api_url, 'images', items_json[i][2])})
 
-    data = cur.fetchall()
     conn.close()
-
-    return data
+    return items_get_data
 
 @app.get("/items/{item_id}")
-def get_by_item_id(item_id: int):
-    conn = sqlite3.connect(sqlite3_file)
-    cur = conn.cursor()
-
-    print(f"SELECT * FROM items WHERE id={item_id}")
-
-    cur.execute(f"SELECT name, category, image FROM items WHERE id={item_id}")
-
-    data = cur.fetchall()
+def get_item_id(item_id):
+    conn = sqlite3.connect(sqlite_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, category_id, image_filename FROM items WHERE id=(?)", (item_id))
+    data = cursor.fetchone()
+    cursor.execute("SELECT name FROM category WHERE id=(?)", (data[1], ))
+    category = cursor.fetchone()[0]
     conn.close()
-
-    return data
-
-@app.get("/search")
-def search_items(keyword: str):
-    conn = sqlite3.connect(sqlite3_file)
-    print(keyword)
-    print('here')
-    cur = conn.cursor()
-
-    cur.execute(f"SELECT * FROM items WHERE name='{keyword}' OR category='{keyword}'")
-
-    data = cur.fetchall()
-    conn.close()
-
-    return data
+    return {"name": data[0], "category": category, "image_filename": data[2]}
 
 @app.get("/image/{image_filename}")
 async def get_image(image_filename):
@@ -134,9 +120,7 @@ async def get_image(image_filename):
         logger.debug(f"Image not found: {image}")
         image = images / "default.jpg"
 
-    return FileResponse(image)
+    print(FileResponse(image))
 
-@app.on_event("shutdown")
-def close_app():
-    logger.info("Closing the app...")
+    return FileResponse(image)
 

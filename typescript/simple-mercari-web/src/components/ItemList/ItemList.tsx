@@ -9,6 +9,7 @@ interface Item {
 
 const server = process.env.API_URL || 'http://127.0.0.1:9000';
 const placeholderImage = process.env.PUBLIC_URL + '/logo192.png';
+console.log(placeholderImage)
 
 interface Prop {
   reload?: boolean;
@@ -30,7 +31,7 @@ export const ItemList: React.FC<Prop> = (props) => {
       })
       .then(response => response.json())
       .then(data => {
-        console.log('GET success:', data);
+        console.log('GET success', data);
         setItems(data.items);
         onLoadCompleted && onLoadCompleted();
       })
@@ -51,7 +52,7 @@ export const ItemList: React.FC<Prop> = (props) => {
         return (
           <div key={item.id} className='ItemList'>
             {/* TODO: Task 1: Replace the placeholder image with the item image */}
-            <img src={placeholderImage} />
+            <img src={item.image_filename || placeholderImage} />
             <p>
               <span>Name: {item.name}</span>
               <br />
