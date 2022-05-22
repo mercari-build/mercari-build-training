@@ -1,12 +1,12 @@
 FROM python:3.10.4-slim-buster
 
-COPY  ./db/mercari.sqlite3 ./db/mercari.sqlite3
+WORKDIR .
 
-WORKDIR /python
+COPY  /db /db
 
-COPY  python/requirements.txt python/requirements.txt
+COPY  python/requirements.txt   python/requirements.txt
 
-RUN pip install -r python/requirements.txt
+RUN pip install -r   python/requirements.txt
 
 COPY python/main.py  python/main.py
 

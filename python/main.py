@@ -105,21 +105,19 @@ async def add_one_item(name: str = Form(...),
     try:
         with open(save_path, 'wb') as buffer:
             shutil.copyfileobj(image_filename.file, buffer)
-    except Error as e:
-        logger.error(f'image saved failed, {e}')
-
-    try:
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
-        c.execute("INSERT OR IGNORE INTO category (name) VALUES (?)", (category.lower(),))
-        c.execute("SELECT category_id FROM category WHERE name=(?)", (category.lower(),))
+        c.execute("INSERT OR IGNORE INTO category (name) VALUES (?)", (category.capitalize(),))
+        c.execute("SELECT category_id FROM category WHERE name=(?)", (category.capitalize(),))
         category_id = c.fetchone()[0]
         c.execute("INSERT INTO items(name,category_id, image_filename) VALUES (?,?,?)",
                   (name, category_id, hashed_filename))
         conn.commit()
         conn.close()
         logger.info('add successfully!')
-    except Error as e:
+    except BufferError as e:
+        logger.error(f'image saved failed, {e}')
+    except sqlite3.DatabaseError as e:
         logger.error(e)
         return {'message': f'{e}'}
 
