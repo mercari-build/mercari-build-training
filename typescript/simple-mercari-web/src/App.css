@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500&display=swap');
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -12,7 +14,7 @@
 body {
   background-color: var(--main-color);
   padding: 2vh 3vw;
-  font-family: 'Karla', sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .App {
@@ -43,7 +45,6 @@ body {
   font-size: calc(10px + 1vmin);
   color: var(--font-color);
   object-fit: contain;
-  box-shadow: 0 4px 5px rgba(0,0,0,0.2);
 }
 
 .App-link {
@@ -98,6 +99,7 @@ body {
 .ListingForm >  button {
   padding: 10px;
   border-radius: 5px;
+  font-family: inherit;
   border: 1px solid var(--title-color);
   cursor: pointer;
   background-color: transparent;
@@ -108,9 +110,11 @@ body {
 }
 
 
-.btn :hover {
-  background-color: var(--hover-color);
+.btn:hover {
+  background-color: var(--title-color);
   border: 1px sodid;
+  font-weight: bold;
+  color:var(--font-color);
 }
 
 .item-list-grid {
@@ -122,13 +126,61 @@ body {
 
 }
 
+.ItemList {
+
+}
+
 .ItemList img {
   width: 100%;
   border-radius: 5px;
 }
-.ItemList p {
-  margin-top:10px
+
+.ItemList .item-image-cate {
+  position: relative;
+  display: flex;
+  -webkit-box-align: center;
+  align-items: center;
+  -webkit-box-pack: center;
+  justify-content: center;
+  width: 100%;
+  margin: 0px;
+  overflow: hidden;
+  background: var(--main-color);
 }
+
+.ItemList .item-category {
+  position: absolute;
+  bottom: 10px;
+  left: 0px;
+  display: inline-flex;
+  -webkit-box-align: end;
+  align-items: flex-end;
+  -webkit-box-pack: start;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 4px 16px 4px 8px;
+  font-size: 15px;
+  font-weight: bold;
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 0px 20px 20px 0px;
+}
+
+.ItemList .item-name {
+  display: -webkit-box;
+  height: calc(39.2px);
+  margin-top: 8px;
+  overflow:scroll;
+  color: var(--font-color);
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1.4em;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 
 @keyframes App-logo-spin {
   from {
