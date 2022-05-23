@@ -14,7 +14,7 @@ from fastapi.responses import ORJSONResponse
 import hashlib
 
 
-app = FastAPI()
+
 
 
 
@@ -132,6 +132,7 @@ def show_detailById(item_id: int):
 async def get_image(image_hashname):
     # Create image path
     image_path =  image / image_hashname
+    #..../mercari/mercari-build-training-2022/python/image/undefinedが返ってくる
     logger.info(f"image::{image_path}")
     
     if not image_hashname.endswith(".jpg"):
@@ -144,7 +145,7 @@ async def get_image(image_hashname):
     # conn.close()
     # logger.info(f"found image: {found_image}")
 
-    if not image_hashname.exists():
+    if not image_hashname:
         logger.debug(f"Image not found: {image_hashname}")
         image_path = images / "default.jpg"
     
