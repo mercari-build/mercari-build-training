@@ -2,7 +2,6 @@ import collections
 import os
 import logging
 import pathlib
-import shutil
 from fastapi import FastAPI, Form, HTTPException
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse
@@ -53,9 +52,10 @@ def image_toHash(image):
     image_hashname = hashlib.sha256(image_name.encode()).hexdigest()
     return '.'.join([image_hashname, image_fmt])
         
-def save_image(file_location, image_file):
+async def save_image(file_location, image_file):
     with open(file_location, 'w+b') as f:
-        shutil.copyfileobj(image_file.file, f) 
+        content = await image_file.read()
+        f.write(content)
 
 
 def add_sql(name,category, image_name):
@@ -138,12 +138,6 @@ async def get_image(image_hashname):
     if not image_hashname.endswith(".jpg"):
         raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
     
-    # conn = sqlite3.connect('../db/item.db')
-    # c = conn.cursor()
-    # logger.info(f"start searching image")
-    # found_image = c.execute("SELECT image from items WHERE image=?", (image_hashname,)).fetchone()
-    # conn.close()
-    # logger.info(f"found image: {found_image}")
 
     if not image_hashname:
         logger.debug(f"Image not found: {image_hashname}")
