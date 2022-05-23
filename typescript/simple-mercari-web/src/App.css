@@ -7,14 +7,15 @@
   min-height: 8vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: left;
   justify-content: left;
   font-size: calc(10px + 1vmin);
   color: white;
+  padding-left: 20px;
 }
 
 .Listing {
-  background-color: #222427;
+  background-color: rgb(182, 180, 180);
   min-height: 8vh;
   display: flex;
   flex-direction: column;
@@ -22,17 +23,20 @@
   justify-content: left;
   font-size: calc(10px + 1vmin);
   color: white;
+  padding: 10px;
 }
 
 .ItemList {
-  background-color: #222427;
   min-height: 8vh;
-  display: flex;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   flex-direction: column;
   align-items: center;
   justify-content: left;
   font-size: calc(10px + 1vmin);
   color: white;
+  padding: 10px;
 }
 
 .App-link {
@@ -46,4 +50,111 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* -------------------以下追記 */
+
+
+.grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  
+}
+
+.item {
+  background: #fff;
+  padding: 15px;
+  text-align: center;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+p {
+  text-align: left;
+}
+
+span{
+  color: black;
+}
+
+.group {
+  display:inline-block;
+  align-items: center;
+}
+
+input {
+	color: inherit;
+}
+
+.form {
+	display: flex;
+	justify-content: center;
+	flex-wrap: wrap;
+	width: 80%;
+}
+
+.form .form_input {
+	flex: 1 1 300px;
+	margin: 10px;
+	border: none;
+	padding: 15px;
+	border-radius: 7px;
+	background-color: #E6E6E6;
+	outline: 3px solid transparent;
+	transition: outline .2s, flex-basis .2s;
+  width: 300px;
+}
+.form .form_input:nth-child {
+	flex: 3 1 300px;
+}
+
+.form .form_input:hover,
+.form .form_input:focus {
+	outline: 0.3px solid #708DFD;
+}
+
+.form .form_file {
+	flex: 1 1 300px;
+	margin: 10px;
+	border: none;
+	padding: 10px;
+	border-radius: 7px;
+	background-color: #94aeda;
+	outline: 3px solid transparent;
+	transition: outline .2s, flex-basis .2s;
+}
+.form .form_filet:nth-child {
+	flex: 3 1 300px;
+}
+
+.form .form_file:hover,
+.form .form_file:focus {
+	outline: 0.3px solid #708DFD;
+}
+
+.form .form_submit {
+	flex: 1 1 100px;
+	margin: 7px;
+	cursor: pointer;
+	border: none;
+	padding: 20px;
+	border-radius: 30px;
+	background-color: #708DFD;
+	color: #FFFFFF;
+	box-shadow: 0 7px 7px -5px rgba(0,0,0,0.35);
+	transition: box-shadow .2s, top .2s, background-color .2s, flex-basis .2s;
+  width: 150px;
+}
+.form .form_submit:hover,
+.form .form_submit:focus {
+	box-shadow: 0 0 0 0 rgba(0,0,0,0.35);
+	top: 0;
+}
+.form .form_submit:focus {
+	background-color: #4A65CE;
+	outline: 0;
 }
