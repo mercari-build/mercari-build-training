@@ -47,20 +47,46 @@ The following icons indicate pointers for
   
 ## 注意⚠️
   
-	現在step5にあたる、POSTに対しての画像ファイル処理にエラーが発生しているため、ItemList.tsc内ではPlaceholderファイルを表示している
+- 現在step5にあたる、POSTに対しての画像ファイル処理にエラーが発生しているため、ItemList.tsc内ではPlaceholderファイルを表示している
   	
-	ブランチstep5はこのエラー解消用
+- ブランチstep5はこのエラー解消用
   
 ## ブランチ運用(とりあえず25日まで)
+
+
+	  main—------(念の為おいておく)
+				|- HackWeek (デモ用)
+					|- frontend(typescript用) :森本さん
+					|- Backend(Jupyternoteでopencv処理):大村さん
+					|- step5(step5の画像表示エラー解消用):中川
 	
-  main—------(念の為おいておく)
-			|- HackWeek (デモ用)
-				|- frontend(typescript用) :森本さん
-				|- Backend(Jupyternoteでopencv処理):大村さん
-				|- step5(step5の画像表示エラー解消用):中川
+	
 	
 ## アプリの動かし方
-
+	
+1. 一つ目のターミナルでサーバーでアプリを実行
+	
+	```
+	cd python
+	uvicorn main:app --reload --port 9000
+	```
+	
+2. 二つ目のターミナルでフロントエンドを動かす
+	
+	```
+	cd typescript/simple-mercari-web
+	```
+	
+	* ↓一回目だけ　参照([JA](document/step5.ja.md))
+	
+	```
+	npm ci 
+	```
+	
+	* 実行
+	```
+	npm start
+	```
 
 ## TODO
   - Frontend :
