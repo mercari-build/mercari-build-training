@@ -4,15 +4,22 @@
     とりあえず案１を実装
 
 ## 案１：
-    ### typescript/simple-webmercari/ src/components/Listing/Listing.tsxの部分(灰色部分)に「詳細」と「傷状態」
-        [] テキストで状態を入力する欄を作る
-        [] チェック印をlist the itemの前に設置して、そこにチェックが入っていれば、画像処理で状態を測る処理を実行する。
 
-    ### typescript/simple-webmercari/ src/components/ItemList/ItemList.tsx(表示部分)に「詳細」と「傷状態」
-        []すると画像の下のName, Categoryに加えて, Conditionが表示される　。
-    
-    ### それぞれのファイルの下の方のhtmlっぽいところで見た目を編集、「ミドルウェア」はその上のJSで各データをmain.pyに送る部分
-        []OpenCVによって傷検知を行って状態を割り当てた商品には「AI査定済み」のようなバッチをつける？？
+### Listing.tsx
+typescript/simple-webmercari/ src/components/Listing/Listing.tsxの部分(灰色部分)に「詳細」と「傷状態」
+
+- [ ] テキストで状態を入力する欄を作る
+- [ ] チェック印をlist the itemの前に設置して、そこにチェックが入っていれば、画像処理で状態を測る処理を実行する。
+
+### ItemList.tsx
+typescript/simple-webmercari/ src/components/ItemList/ItemList.tsx(表示部分)に「詳細」と「傷状態」
+
+- [ ] すると画像の下のName, Categoryに加えて, Conditionが表示される　。
+
+### その他部分 
+それぞれのファイルの下の方のhtmlっぽいところで見た目を編集、「ミドルウェア」はその上のJSで各データをmain.pyに送る部分
+
+- [ ] OpenCVによって傷検知を行って状態を割り当てた商品には「AI査定済み」のようなバッチをつける？？
 
 
 
