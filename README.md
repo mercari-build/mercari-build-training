@@ -26,14 +26,38 @@ The following icons indicate pointers for
 - [x] **STEP1** Git ([JA](document/step1.ja.md)/[EN](document/step1.en.md))
 - [x] **STEP2** Setup environment ([JA](document/step2.ja.md)
   /[EN](document/step2.en.md))
-- [ ] **STEP3** Develop API ([JA](document/step3.ja.md)
+- [x] **STEP3** Develop API ([JA](document/step3.ja.md)
   /[EN](document/step3.en.md))
 - [x] **STEP4** Docker ([JA](document/step4.ja.md)/[EN](document/step4.en.md))
 - [ ] **STEP5** (Stretch) Frontend ([JA](document/step5.ja.md)
   /[EN](document/step5.en.md))
-- [ ] **STEP6** (Stretch)  Run on docker-compose ([JA](document/step6.ja.md)
+- [x] **STEP6** (Stretch)  Run on docker-compose ([JA](document/step6.ja.md)
   /[EN](document/step6.en.md))
 
 ### Other documents
 
 - 効率的に開発できるようになるためのTips / Tips for efficient development ([JA](document/tips.ja.md)/[EN](document/tips.en.md))
+
+
+# Hackweek 5/23-5/31
+  
+- Kickoff meeting note [ドキュメント(閲覧制限あり)](https://docs.google.com/document/d/12-YTNs6I2TAsNm49sLjNW2BjZ1_bQp2jSE6_KqkZD_Y/edit?userstoinvite=tkat0@mercari.com#)
+  
+## 注意⚠️
+  現在step5にあたる、POSTに対しての画像ファイル処理にエラーが発生しているため、ItemList.tsc内ではPlaceholderファイルを表示している
+  ブランチstep5はこのエラー解消用
+  
+## ブランチ運用(とりあえず25日まで)
+  main—------(念の為おいておく)
+			|- HackWeek (デモ用)
+				|- frontend(typescript用) :森本さん
+				|- Backend(Jupyternoteでopencv処理):大村さん
+				|- step5(step5の画像表示エラー解消用):中川
+
+## TODO
+  - Frontend :
+  - Backend :
+  - Error :
+  
+
+  
