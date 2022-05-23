@@ -205,6 +205,78 @@ docker build https://github.com/manami-bunbun/mercari-build-training-2022#step4:
 '''
 
 
+# Step6
+
+'''
+docker build -f ./typescript/simple-mercari-web/dockerfile -t build2022/web .
+
+docker run -d -p 3000:3000 build2022/web:latest
+'''
+
+docker run時にアプリも起動
+
+'''
+uvicorn main:app --reload --port 9000
+'''
+
+http://localhost:3000/ にアクセス
+
+[Dockerfile for node](https://docs.docker.com/language/nodejs/build-images/)
+
+
 さらに良いDockerfileを書くためには何が必要か
 各コマンドの順序はこれが最適？そうでないとしたらなぜ？
 sqliteのデータが格納されたファイルをDockerイメージ内に保存すべき？そうでないとしたらどうすべき？
+
+
+
+
+## Docker Compose (docker.yml)
+
+DockerComposeとは、複数のコンテナを一度に作ったり、まとめて管理したりできるツールです
+
+
+
+[docker.ymlの書き方](https://zenn.dev/o2z/articles/zenn-20210615_docker-compose)
+
+https://blog.cloud-acct.com/posts/u-dockercompose-yml/
+
+
+### 第一階層
+- version（第一階層）
+    「docker-compose.yml」の記述方法はバージョン依存があるため、どのバージョンで記述したのかを宣言します。2021年6月11日時点の最新は 3.8 です。
+    ※ どの辺りが変わるのかというと公式の案内を見ないと解らないですが、バージョン2と3では違いが多いそうです。
+
+- services（第一階層）
+    ここからサービスを記述します。という宣言です。
+
+### 第2階層
+
+- db（第二階層）
+    サービス名称 サービス名「db」はユーザーが自由に付ける事ができます。ネットワークで接続する際の別名にも使われます。
+
+### 第3階層
+
+- image（第三階層）
+    [docker hub」のイメージを利用する場合にイメージ名を指定します。
+
+- restart（第三階層）
+    no ： コンテナを再起動しない(デフォルト）
+    always ： コンテナが停止すると常に再起動する。
+    ※ dockerは起動と停止を繰り返すので今回はalwaysを指定しています。
+
+- environment（第三階層）
+    コンテナに設定する環境変数です。docker hub のイメージによって設定できる環境変数が違うため docker hub のイメージに設定できる環境変数の説明があるので確認するのが良いと思います。
+    ※ それぞれに設定用の環境変数がある前提ですが、DBのユーザーとサービスのDB接続ユーザーをそれぞれ設定しておく。という使い方が便利と思います。
+
+- ports（第三階層）
+    外部とポートのフォワードで接続ができます。
+localhost:8080 に接続すると コンテナ：80 にフォワードする設定になります。
+
+- volumes（第三階層）
+    コンテナにマウントするディレクトリの指定です。コンテナを停止すると情報が失われるため永続化やファイル操作をしやすくするために利用する事ができます。
+
+- depends_on（第三階層）
+    コンテナの起動順の指定です。ここに記述したサービスの後に起動されるようになります。
+
+

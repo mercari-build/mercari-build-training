@@ -54,11 +54,11 @@ export const ItemList: React.FC<Prop> = (props) => {
         return (
           <div key={item.id} className='ItemList'>
             <div className='item'>
-            {/* <img src={server + "/image/" + item.image_filename|| placeholderImage}/> */}
-            <img src={placeholderImage} />
 
-            <img src={server + "/image/" + item.image_filename || placeholderImage} />
-            {/* <img src={placeholderImage} /> */}
+            <img src={placeholderImage} />
+            {/* TODO:↓ここでimage_filenameが取得できないエラーが発生しているので ↑placeholderImageを表示している(document,step5参照) */}
+            {/* 中川がブランチstep5でここの解消に取り組んでいる */}
+            {/* <img src={server + "/image/" + item.image_filename || placeholderImage} /> */}
 
             <p>
               <span>Name: {item.name}</span>
