@@ -89,6 +89,11 @@ The following icons indicate pointers for
 	```
 	
 	ブラウザからhttp://localhost:3000/にアクセス
+	
+
+	* 下が表示されたら成功(23日時点)
+	
+	<img width="1334" alt="Screen Shot 0004-05-23 at 17 00 44" src="https://user-images.githubusercontent.com/30760730/169860383-c2940bc9-a7b1-4fc2-8354-8ab2048249ba.png">
 
 	
 ## TODO
