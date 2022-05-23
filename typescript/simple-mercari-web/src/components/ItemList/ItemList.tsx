@@ -40,7 +40,7 @@ export const ItemList: React.FC<Prop> = (props) => {
       })
   }
 
-  
+
 
   useEffect(() => {
     if (reload) {
@@ -54,9 +54,12 @@ export const ItemList: React.FC<Prop> = (props) => {
         return (
           <div key={item.id} className='ItemList'>
             <div className='item'>
-            {/* TODO: Task 1: Replace the placeholder image with the item image */}
             {/* <img src={server + "/image/" + item.image_filename|| placeholderImage}/> */}
             <img src={placeholderImage} />
+
+            <img src={server + "/image/" + item.image_filename || placeholderImage} />
+            {/* <img src={placeholderImage} /> */}
+
             <p>
               <span>Name: {item.name}</span>
               <br />

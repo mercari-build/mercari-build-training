@@ -142,6 +142,7 @@ curl -X POST \
   -F 'name=jacket' \
   -F 'category=fashion' \
   -F 'image=@images/local_image.jpg'
+
 ```
 
 
