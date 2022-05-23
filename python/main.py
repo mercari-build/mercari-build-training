@@ -36,8 +36,15 @@ def add_item(name: str = Form(...), category: str = Form(...)):
     items_dict["items"].append({"name": name, "category": category})
     with open(filename, 'w') as file:
         json.dump(items_dict, file)
-    logger.info(f"Receive item: {name} of type {category}")
-    return {"message": f"item received: {name} of type {category}"}
+    logger.info(f"Receive item: {name}")
+    return {"message": f"item received: {name}"}
+
+
+@app.get("/items")
+def display_item():
+    with open(filename, 'r') as file:
+        items_dict = json.load(file)
+    return items_dict
 
 
 @app.get("/image/{image_filename}")
