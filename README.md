@@ -87,7 +87,10 @@ The following icons indicate pointers for
 	```
 	npm start
 	```
+	
+	ブラウザからhttp://localhost:3000/にアクセス
 
+	
 ## TODO
   - Frontend :
   - Backend :
