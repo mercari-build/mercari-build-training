@@ -99,7 +99,6 @@ func (h Handler)GetItems(c echo.Context) error {
 			return itemsError.ErrGetItems.Wrap(err)
 		}
 
-		fmt.Printf("name: %d, category: %s, image: %s\n", name, category, image.String)
 		items.Items = append(items.Items, Item{Name: name, Category: category, Image: image.String}) // image -> {"hoge", true}
 	}
 

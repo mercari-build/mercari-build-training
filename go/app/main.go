@@ -93,5 +93,5 @@ func main() {
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	// Start server
-	e.Logger.Fatal(e.Start(":9000"))
+	e.Logger.Fatal(e.Start(":9001"))
 }
