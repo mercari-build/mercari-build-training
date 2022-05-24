@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"path"
@@ -10,53 +9,62 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	"github.com/swaggo/echo-swagger"
+
+	_ "mercari-build-training-2022/app/docs"
+	"mercari-build-training-2022/app/handler"
+	"mercari-build-training-2022/app/models/db"
+	"mercari-build-training-2022/app/models/customErrors/itemsError"
 )
 
-const (
-	ImgDir = "image"
-)
-
-type Response struct {
-	Message string `json:"message"`
-}
-
+// Root.
+// @Summary root
+// @Description just root
+// @Produce  json
+// @Success 200 {array} main.Response
+// @Failure 500 {object} any
+// @Router /items [get]
 func root(c echo.Context) error {
-	res := Response{Message: "Hello, world!"}
+	res := handler.Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
 }
 
-func addItem(c echo.Context) error {
-	// Get form data
-	name := c.FormValue("name")
-	c.Logger().Infof("Receive item: %s", name)
-
-	message := fmt.Sprintf("item received: %s", name)
-	res := Response{Message: message}
-
-	return c.JSON(http.StatusOK, res)
-}
-
-func getImg(c echo.Context) error {
+// getImg is getting an image
+// @Summary get an image
+// @Description find an item by id
+// @Produce json
+// @Param id path string true "Item's image name"
+// @Success 200 {obejct} File
+// @Failure 500 {object} main.Response
+// @Router /image/:itemImg [get]
+func GetImg(c echo.Context) error {
 	// Create image path
-	imgPath := path.Join(ImgDir, c.Param("itemImg"))
+	imgPath := path.Join(handler.ImgDir, c.Param("itemImg"))
 
 	if !strings.HasSuffix(imgPath, ".jpg") {
-		res := Response{Message: "Image path does not end with .jpg"}
+		res := handler.Response{Message: "Image path does not end with .jpg"}
 		return c.JSON(http.StatusBadRequest, res)
 	}
 	if _, err := os.Stat(imgPath); err != nil {
 		c.Logger().Debugf("Image not found: %s", imgPath)
-		imgPath = path.Join(ImgDir, "default.jpg")
+		imgPath = path.Join(handler.ImgDir, "default.jpg")
 	}
 	return c.File(imgPath)
 }
 
+// @title Simple Mercari Items API
+// @version 1.0
+// @description This is a simple Mercari Items API.
+// @host localhost:1313
+// @BasePath /
 func main() {
 	e := echo.New()
 
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.HTTPErrorHandler = itemsError.ErrorHandler
+	e.Validator = &handler.CustomValidator{}
 	e.Logger.SetLevel(log.INFO)
 
 	front_url := os.Getenv("FRONT_URL")
@@ -68,10 +76,21 @@ func main() {
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 
+	// Initialize Handler
+	handler := handler.Handler{ DB : db.DbConnection }
+	defer handler.DB.Close()
+
 	// Routes
 	e.GET("/", root)
-	e.POST("/items", addItem)
-	e.GET("/image/:itemImg", getImg)
+	// Items routes
+	e.GET("/items", handler.GetItems)
+	e.GET("/items/:id", handler.FindItem)
+	e.POST("/items", handler.AddItem)
+	e.GET("/items/search", handler.SearchItems)
+	// Files routes
+	e.GET("/image/:itemImg", GetImg)
+	// swagger
+	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))

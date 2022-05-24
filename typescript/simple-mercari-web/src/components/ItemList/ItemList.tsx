@@ -32,17 +32,38 @@ export const ItemList: React.FC<{}> = () => {
       })
   }
 
+  const fetchImage = (image : string):string=> {
+
+    fetch(server.concat('/image/').concat(image),
+    {
+      method: 'GET',
+      mode: 'cors',
+      headers : {
+        'Content-Type': 'image/jpeg',
+        'Accept': 'image/jpeg	',
+      },
+    })
+    .then(response => response)
+    .then(data => {
+      return data.url
+    })
+    .catch(error => {
+      console.error('GET error:',error) 
+    })
+    return server.concat('/image/').concat(image)
+  }
+
   useEffect(() => {
     fetchItems();
   }, []);
   
   return (
     <div>
-      { items.map((item) => {
+      { items && items.map((item) => {
         return (
           <div key={item.id} className='ItemList'>
             {/* TODO: Task 1: Replace the placeholder image with the item image */}
-            <img src={placeholderImage}/>
+            <img src={fetchImage(item.image)}/>
             <p>
             <span>Name: {item.name}</span>
             <br/>

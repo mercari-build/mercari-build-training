@@ -1,0 +1,16 @@
+{
+ "items": [
+  {
+   "name": "jacket",
+   "category": "outer"
+  },
+  {
+   "name": "coat",
+   "category": "outer"
+  },
+  {
+   "name": "denim",
+   "category": "pants"
+  }
+ ]
+}
