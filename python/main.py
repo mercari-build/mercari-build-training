@@ -1,9 +1,9 @@
 import os
 import logging
 import pathlib
-import json
 import sqlite3
-from fastapi import FastAPI, Form, HTTPException
+import hashlib
+from fastapi import FastAPI, Form, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -25,17 +25,23 @@ def root():
     return {"message": "Hello, world!"}
 
 @app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...)):
-    logger.info(f"Receive item: {name}, category: {category}")
-    
+def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
+    logger.info(f"Receive item: {name}, category: {category}, image filename: {image.filename}")
+
     # connect to database
     conn = sqlite3.connect("../db/mercari.sqlite3")
     c = conn.cursor()
 
-    c.execute("INSERT INTO items(name,category) values (?, ?)", (name, category))
+    image_file_hash = hashlib.sha256(image.filename.replace('.jpg','').encode("utf-8")).hexdigest()
+    image_file_hash = image_file_hash + '.jpg'
+    
+    c.execute("INSERT INTO items (name, category, image) values (?, ?, ?)", 
+                (name, category, image_file_hash))
+
     conn.commit()
     conn.close()
 
+    # --- using json ---
     # items_list = {"items": []}
     # check if json file exists
     # if os.path.isfile("items.json"):
@@ -51,7 +57,7 @@ def add_item(name: str = Form(...), category: str = Form(...)):
     #     # write new data to json file
     #     json.dump(items_list, items_json_f)
 
-    return {"message": f"item received: {name}, category: {category}"}
+    return {"message": f"item received: {name}, category: {category}, image filename: {image_file_hash}"}
 
 @app.get("/items")
 def get_item():
@@ -61,12 +67,13 @@ def get_item():
 
     result = c.execute("SELECT * FROM items").fetchall()
     items_list = {
-        "items": [{"id": id, "name": name, "category": category} for (id, name, category) in result]
+        "items": [{"id": id, "name": name, "category": category, "image": image} for (id, name, category, image) in result]
     }
     
     conn.commit()
     conn.close()
 
+    # --- using json ---
     # items_list = {"items" : []}
     # if os.path.isfile("items.json"):
     #     with open("items.json", "r") as items_json_f:
@@ -81,7 +88,19 @@ def search_item(keyword: str):
             (f"%{keyword}%",),
     ).fetchall()
     items_list = {
-        "items": [{"id": id, "name": name, "category": category} for (id, name, category) in result]
+        "items": [{"id": id, "name": name, "category": category, "image": image} for (id, name, category, image) in result]
+    }
+    conn.commit()
+    conn.close()
+    return items_list
+
+@app.get("/items/{item_id}")
+def get_item(item_id: int):
+    conn = sqlite3.connect("../db/mercari.sqlite3")
+    c = conn.cursor()
+    result = c.execute(f"SELECT * FROM items WHERE id = {item_id}").fetchall()
+    items_list = {
+        "items":[{"id": id, "name": name, "category": category, "image": image} for (id, name, category, image) in result]
     }
     conn.commit()
     conn.close()
