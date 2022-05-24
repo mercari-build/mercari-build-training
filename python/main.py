@@ -129,6 +129,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: str = Form
 
 @app.get("/image/{items_image}")
 async def get_image(items_image):
+    # Create image path
     image = images / items_image
 
     if not items_image.endswith(".jpg"):
