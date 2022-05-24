@@ -22,21 +22,32 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    return {"message": "Hello, world!"}
+    return {"message": "Welcome to Mercari's Items Database Made by Momoe"}
 
 @app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
     logger.info(f"Receive item: {name}, category: {category}, image filename: {image.filename}")
 
+    if not image.filename.endswith(".jpg"):
+        raise HTTPException(
+            status_code=400, detail="Image is not in .jpg format")
+        
+    image_file_hash = hashlib.sha256(image.filename.split('.')[0].encode("utf-8")).hexdigest() + '.jpg'
+
     # connect to database
     conn = sqlite3.connect("../db/mercari.sqlite3")
     c = conn.cursor()
-
-    image_file_hash = hashlib.sha256(image.filename.replace('.jpg','').encode("utf-8")).hexdigest()
-    image_file_hash = image_file_hash + '.jpg'
     
-    c.execute("INSERT INTO items (name, category, image) values (?, ?, ?)", 
-                (name, category, image_file_hash))
+    # insert category name into category table or ignore if duplicate
+    c.execute("INSERT OR IGNORE INTO category(name) VALUES (?)", (category,))
+
+    # retrieve id from category table using category name
+    category_id = c.execute("SELECT id FROM category WHERE name = (?)", (category,)
+            ).fetchone()[0]
+
+    # insert into items table
+    c.execute("INSERT INTO items(name, category_id, image) VALUES (?, ?, ?)",
+                (name, category_id, image_file_hash))
 
     conn.commit()
     conn.close()
@@ -60,51 +71,94 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     return {"message": f"item received: {name}, category: {category}, image filename: {image_file_hash}"}
 
 @app.get("/items")
-def get_item():
+def get_items():
     # connect to database
     conn = sqlite3.connect("../db/mercari.sqlite3")
     c = conn.cursor()
 
-    result = c.execute("SELECT * FROM items").fetchall()
+    result = c.execute(
+        """
+            SELECT
+                items.id, items.name, category.name, items.image
+            FROM 
+                items
+                INNER JOIN category 
+                    ON items.category_id = category.id
+        """
+    ).fetchall()
+
+    conn.close()
+
     items_list = {
         "items": [{"id": id, "name": name, "category": category, "image": image} for (id, name, category, image) in result]
     }
-    
-    conn.commit()
-    conn.close()
 
     # --- using json ---
     # items_list = {"items" : []}
     # if os.path.isfile("items.json"):
     #     with open("items.json", "r") as items_json_f:
     #         items_list = json.load(items_json_f)
+
     return items_list
 
 @app.get("/search")
 def search_item(keyword: str):
     conn = sqlite3.connect("../db/mercari.sqlite3")
     c = conn.cursor()
-    result = c.execute("SELECT * FROM items WHERE name like (?)", 
-            (f"%{keyword}%",),
+
+    result = c.execute(
+        """
+            SELECT 
+                items.id, items.name, category.name, items.image
+            FROM 
+                items 
+                INNER JOIN category
+                    ON items.category_id = category.id
+            WHERE 
+                items.name LIKE (?)
+        """, 
+        (f"%{keyword}%",),
     ).fetchall()
-    items_list = {
-        "items": [{"id": id, "name": name, "category": category, "image": image} for (id, name, category, image) in result]
-    }
-    conn.commit()
+
     conn.close()
-    return items_list
+
+    if result == []:
+        message = {"message": "No matching item"}
+    else:
+        message = {
+            "items": [{"id": id, "name": name, "category": category, "image": image} for (id, name, category, image) in result]
+        }
+
+    return message
 
 @app.get("/items/{item_id}")
 def get_item(item_id: int):
     conn = sqlite3.connect("../db/mercari.sqlite3")
     c = conn.cursor()
-    result = c.execute(f"SELECT * FROM items WHERE id = {item_id}").fetchall()
-    items_list = {
-        "items":[{"id": id, "name": name, "category": category, "image": image} for (id, name, category, image) in result]
-    }
-    conn.commit()
+
+    result = c.execute(
+        f"""
+            SELECT 
+                items.id, items.name, category.name, items.image
+            FROM 
+                items 
+                INNER JOIN category
+                    ON items.category_id = category.id
+            WHERE 
+                items.id = {item_id}
+        """
+    ).fetchall()
+
     conn.close()
-    return items_list
+
+    if result is None:
+        message = {"message": "No matching item"}
+    else:
+        message = {
+            "items":[{"id": id, "name": name, "category": category, "image": image} for (id, name, category, image) in result]
+        }
+
+    return message
 
 @app.get("/image/{items_image}")
 async def get_image(items_image):
@@ -115,7 +169,7 @@ async def get_image(items_image):
         raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
 
     if not image.exists():
-        logger.debug(f"Image not found: {image}")
+        logger.info(f"Image not found: {image}")
         image = images / "default.jpg"
 
     return FileResponse(image)
