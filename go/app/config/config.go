@@ -9,6 +9,7 @@ import (
 
 type ConfigList struct {
     DbName        string
+    TestDbName    string
     SQLDriver     string
 }
 
@@ -23,6 +24,7 @@ func init() {
 
     Config = ConfigList{
         DbName:    cfg.Section("db").Key("name").String(),
+        TestDbName:    cfg.Section("db").Key("name_test").String(),
         SQLDriver: cfg.Section("db").Key("driver").String(),
     }
 }

@@ -1,0 +1,143 @@
+basePath: /
+definitions:
+  main.Item:
+    properties:
+      category:
+        type: string
+      image:
+        type: string
+      name:
+        type: string
+    type: object
+  main.Items:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/main.Item'
+        type: array
+    type: object
+  main.Response:
+    properties:
+      message:
+        type: string
+    type: object
+host: localhost:1313
+info:
+  contact: {}
+  description: This is a simple Mercari Items API.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Simple Mercari Items API
+  version: "1.0"
+paths:
+  /image/:itemImg:
+    get:
+      description: find an item by id
+      parameters:
+      - description: Item's image name
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: obejct
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.Response'
+      summary: get an image
+  /items:
+    get:
+      description: get all items
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Items'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      summary: get items
+    post:
+      description: post an item to its table.
+      parameters:
+      - description: Item's name
+        in: body
+        name: name
+        required: true
+        schema:
+          type: string
+      - description: Item's category
+        in: body
+        name: category
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      summary: post an item
+  /items/:id:
+    get:
+      description: find an item by id
+      parameters:
+      - description: Item's id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: obejct
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      summary: find an item
+  /items/search:
+    get:
+      description: search Items by name
+      parameters:
+      - description: Keyword to match Item's name
+        in: query
+        name: keyword
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.Items'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: object
+      summary: search Items by name
+swagger: "2.0"

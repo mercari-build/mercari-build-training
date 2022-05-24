@@ -1,6 +1,7 @@
 package db
 
 import (
+    "os"
     "database/sql"
     "fmt"
     "log"
@@ -14,8 +15,12 @@ var DbConnection *sql.DB
 
 func init() {
     var err error
-	log.Printf(config.Config.DbName)
-    DbConnection, err = sql.Open(config.Config.SQLDriver, config.Config.DbName)
+	log.Printf(os.Getenv("ENV"))
+    if env := os.Getenv("ENV"); env == "test" {
+        DbConnection, err = sql.Open(config.Config.SQLDriver, config.Config.TestDbName)
+    } else {
+        DbConnection, err = sql.Open(config.Config.SQLDriver, config.Config.DbName)
+    }
     if err != nil {
         log.Fatalln(err)
     }
