@@ -16,6 +16,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 
 	"mercari-build-training-2022/app/models/customErrors/itemsError"
+	"mercari-build-training-2022/app/models/customErrors/usersError"
 )
 
 // Consts
@@ -26,13 +27,13 @@ const (
 // Types
 
 type User struct {
-	Id int `json:id`
+	Id int `json:"id"`
 	Name string `json:"name"`
 	Password string `json:"password"`
 }
 
 type UserResponse struct {
-	Id int `json:id`
+	Id int `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -121,13 +122,14 @@ func (h Handler)AddUser(c echo.Context) error {
 		for k, err := range errs {
 			c.Logger().Error(k + ": " + err.Error())
 		}
-		return itemsError.ErrPostItem.Wrap(err)
+		return usersError.ErrPostUser.Wrap(err)
 	}
 
 	// Exec Query
 	_, err := h.DB.Exec(`INSERT INTO users (name, password) VALUES (?, ?)`, user.Name, user.Password)
 	if err != nil {
-		return itemsError.ErrPostItem.Wrap(err)
+		c.Logger().Error(err.Error())
+		return usersError.ErrPostUser.Wrap(err)
 	}
 	
 	message := fmt.Sprintf("Hello, %s !!", user.Name)
@@ -152,8 +154,8 @@ func (h Handler)FindUser(c echo.Context) error {
 	userId := c.Param("id")
 	err := h.DB.QueryRow("SELECT id, name FROM users WHERE id = $1", userId).Scan(&id, &name)
 	if err != nil {
-		c.Logger().Infof(err.Error())
-		return err
+		c.Logger().Error(err.Error())
+		return usersError.ErrFindUser.Wrap(err)
 	}
 	response := UserResponse{Id: id, Name: name}
 
