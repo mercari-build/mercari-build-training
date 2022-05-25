@@ -82,6 +82,8 @@ func main() {
 
 	// Routes
 	e.GET("/", root)
+	// Users routes
+	e.POST("/users", handler.AddUser)
 	// Items routes
 	e.GET("/items", handler.GetItems)
 	e.GET("/items/:id", handler.FindItem)
@@ -93,5 +95,5 @@ func main() {
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	// Start server
-	e.Logger.Fatal(e.Start(":9001"))
+	e.Logger.Fatal(e.Start(":9000"))
 }

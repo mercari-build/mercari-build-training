@@ -13,6 +13,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 
 	"mercari-build-training-2022/app/models/customErrors/itemsError"
 )
@@ -23,6 +24,13 @@ const (
 )
 
 // Types
+
+type User struct {
+	Id int `json:id`
+	Name string `json:"name"`
+	Password string `json:"password"`
+}
+
 type Item struct {
 	Name string `json:"name"`
 	Category string `json:"category"`
@@ -57,6 +65,22 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 	return nil
 }
 
+func (user User) Validate() error {
+	return validation.ValidateStruct(&user,
+		validation.Field(
+			&user.Name,
+			validation.Required.Error("名前は必須入力です(Name is required)"),
+			validation.RuneLength(1, 20).Error("名前は 1～20 文字です"),
+		),
+		validation.Field(
+			&user.Password,
+			validation.Required.Error("パスワードは必須入力です(Email is required)"),
+			validation.RuneLength(4, 20).Error("パスワードは4～20 文字です"),
+			is.Alphanumeric,
+		),
+	)
+}
+
 func (item Item) Validate() error {
 	return validation.ValidateStruct(&item,
 		validation.Field(
@@ -70,6 +94,41 @@ func (item Item) Validate() error {
 			validation.RuneLength(1, 40).Error("カテゴリーは 1～20 文字です"),
 		),
 	)
+}
+
+// AddUser is adding a user by BasicAuth.
+// @Summary add a user
+// @Description adding a user by BasicAuth.
+// @Produce json
+// @Success 200 {objext} any
+// @Failure 500 {object} any
+// @Router /users [post]
+func (h Handler)AddUser(c echo.Context) error {
+	// Inintialize Item
+	var user User
+	// Get form data
+	user.Name = c.FormValue("name")
+	user.Password = c.FormValue("password")
+
+	// Validate item fields
+	if err := c.Validate(user); err != nil {
+		errs := err.(validation.Errors)
+		for k, err := range errs {
+			c.Logger().Error(k + ": " + err.Error())
+		}
+		return itemsError.ErrPostItem.Wrap(err)
+	}
+
+	// Exec Query
+	_, err := h.DB.Exec(`INSERT INTO users (name, password) VALUES (?, ?)`, user.Name, user.Password)
+	if err != nil {
+		return itemsError.ErrPostItem.Wrap(err)
+	}
+	
+	message := fmt.Sprintf("Hello, %s !!", user.Name)
+	res := Response{Message: message}
+
+	return c.JSON(http.StatusOK, res)
 }
 
 // getItems is getting items list.

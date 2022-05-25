@@ -34,7 +34,8 @@ func init() {
         );
         CREATE TABLE IF NOT EXISTS [users] (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
-            name STRING
+            name STRING UNIQUE NOT NULL,
+            password STRING
         )
         `)
     _, err = DbConnection.Exec(cmd)
