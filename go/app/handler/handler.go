@@ -31,6 +31,11 @@ type User struct {
 	Password string `json:"password"`
 }
 
+type UserResponse struct {
+	Id int `json:id`
+	Name string `json:"name"`
+}
+
 type Item struct {
 	Name string `json:"name"`
 	Category string `json:"category"`
@@ -129,6 +134,30 @@ func (h Handler)AddUser(c echo.Context) error {
 	res := Response{Message: message}
 
 	return c.JSON(http.StatusOK, res)
+}
+
+// findUser is finding a user by id.
+// @Summary find a user
+// @Description find a user by id
+// @Produce json
+// @Param id path int true "User's id"
+// @Success 200 {obejct} main.UserResponse
+// @Failure 500 {object} any
+// @Router /items/:id [get]
+func (h Handler)FindUser(c echo.Context) error {
+	var name string
+	var id int
+
+	// Exec Query
+	userId := c.Param("id")
+	err := h.DB.QueryRow("SELECT id, name FROM users WHERE id = $1", userId).Scan(&id, &name)
+	if err != nil {
+		c.Logger().Infof(err.Error())
+		return err
+	}
+	response := UserResponse{Id: id, Name: name}
+
+	return c.JSON(http.StatusOK, response)
 }
 
 // getItems is getting items list.

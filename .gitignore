@@ -1,1 +1,2 @@
 ./go/app/items.json
+./db/*.sqlite3
