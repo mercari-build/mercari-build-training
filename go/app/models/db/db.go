@@ -26,16 +26,20 @@ func init() {
     log.Printf(os.Getenv("Exec db cmd"))
     // CREATE DB TABLE
     cmd := fmt.Sprintf(`
-		CREATE TABLE IF NOT EXISTS [items] (
-			id INTEGER PRIMARY KEY NOT NULL,
-			name STRING,
-			category STRING,
-			image STRING
-        );
         CREATE TABLE IF NOT EXISTS [users] (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
             name STRING UNIQUE NOT NULL,
             password STRING
+        );
+		CREATE TABLE IF NOT EXISTS [items] (
+			id INTEGER PRIMARY KEY NOT NULL,
+			name STRING,
+			category STRING,
+			image STRING,
+            price INTEGER,
+            price_lower_limit INTEGER, 
+            user_id INTEGER,
+            foreign key (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
         `)
     _, err = DbConnection.Exec(cmd)

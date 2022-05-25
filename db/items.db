@@ -2,5 +2,9 @@ CREATE TABLE [items] (
         id INTEGER PRIMARY KEY NOT NULL,
         name STRING,
         category STRING, 
-        image STRING
+        image STRING,
+        price INTEGER,
+        price_lower_limit INTEGER, 
+        user_id INTEGER,
+        foreign key (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
