@@ -2,47 +2,58 @@
   text-align: center;
 }
 
-.Title {
-  background-color: #7C884E;
-  min-height: 15vh;
+.navbar {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 1vmin);
-  color: white;
-  font-size: 2rem;
+  background-color: #fff;
+  border-radius: 0;
+  margin-bottom: 20px;
+  padding: 1rem;
+  color: #03045e;
+  background-color: white;
+  min-height: 5rem;
+  border-bottom: #e5e7eb solid 1px;
+  box-shadow: #e5e7eb 0px 0px 7px 0px inset;
 }
 
-.Listing {
-  background-color: #222427;
-  min-height: 12vh;
+.label {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 1vmin);
-  color: white;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #03045e;
 }
 
-.Listing input {
-  border-radius: 5px;
-  padding: 2px;
+.Listing input[type=text] {
+  padding: 0.5rem;
+  border: #e5e7eb solid 1px;
+  border-radius: 10px;
+  margin: .2rem;
+  font-size: 1rem;
+  color: #03045e;
+  background-color: white;
 }
 
 .Listing button {
-  border-radius: 5px;
-  padding: 5px;
+  padding: 0.5rem;
+  border: #e5e7eb solid 1px;
+  border-radius: 10px;
+  margin: .2rem;
+  font-size: 1rem;
+  color: #03045e;
+  background-color: white;
   cursor: pointer;
 }
 
 .Listing button:hover {
-  background-color: #7C884E;
-  color: white;
+  background-color: #e5e7eb;
 }
 
 .Listing button:active {
-  transform: translateY(2px);
+  background-color: #e5e7eb;
+  translate: translateY(1px);
 }
 
 .categories {
@@ -73,15 +84,15 @@ ul li {
 a {
   text-decoration: none;
   color: inherit;
-  border: 1px solid #7C884E;
+  border: 1px solid #e5e7eb;
   padding: .7rem;
   border-radius: 5px;
   transition: all .2s;
 }
 
 a:hover, a:focus {
-  background-color: #7C884E;
-  color: white;
+  background-color: #e5e7eb;
+  color: #03045e;
   cursor: pointer;
 }
 
@@ -99,7 +110,6 @@ h1 {
   padding: 1rem;
   align-items: center;
   justify-items: center;
-  box-shadow: #7C884E 0px 0px 10px;
   border-radius: 10px;
 }
 

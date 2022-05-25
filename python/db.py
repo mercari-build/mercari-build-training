@@ -1,3 +1,4 @@
+from multiprocessing import connection
 import sqlite3
 
 
@@ -66,3 +67,20 @@ def delete_item(item_id):
     """, (item_id,))
     connection.commit()
     connection.close()
+
+#create items table
+
+# connection = sqlite3.connect("../db/mercari.sqlite3")
+# cursor = connection.cursor()
+# cursor.execute("""
+# CREATE TABLE IF NOT EXISTS items (
+#     id INTEGER PRIMARY KEY AUTOINCREMENT,
+#     name TEXT,
+#     category INTEGER,
+#     image_filename TEXT
+# )
+# """)
+# connection.commit()
+# connection.close()
+
+

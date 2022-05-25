@@ -63,6 +63,7 @@ export const Listing: React.FC<Prop> = (props) => {
             id="name"
             placeholder="name"
             onChange={onValueChange}
+            autoComplete="off"
             required
           />
           <input
@@ -71,6 +72,8 @@ export const Listing: React.FC<Prop> = (props) => {
             id="category"
             placeholder="category"
             onChange={onValueChange}
+            autoComplete="off"
+            required
           />
           <input
             type="file"

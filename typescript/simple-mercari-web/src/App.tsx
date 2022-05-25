@@ -2,18 +2,20 @@ import { useState } from 'react';
 import './App.css';
 import { ItemList } from './components/ItemList';
 import { Listing } from './components/Listing';
+import {RiRainbowFill} from 'react-icons/ri'
 
 function App() {
   // reload ItemList after Listing complete
   const [reload, setReload] = useState(true);
   return (
     <div>
+      <div className='navbar'>
       <header className='Title'>
-        <p>
+        <p className='label'>
+          <RiRainbowFill className='icon' />
           <b>Simple Mercari</b>
         </p>
       </header>
-      <div>
         <Listing onListingCompleted={() => setReload(true)} />
       </div>
       <div>
