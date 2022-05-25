@@ -82,6 +82,9 @@ func main() {
 
 	// Routes
 	e.GET("/", root)
+	// Users routes
+	e.POST("/users", handler.AddUser)
+	e.GET("/users/:id", handler.FindUser)
 	// Items routes
 	e.GET("/items", handler.GetItems)
 	e.GET("/items/:id", handler.FindItem)
