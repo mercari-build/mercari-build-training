@@ -6,6 +6,7 @@ import (
 	"io"
 	"bytes"
 	"path"
+	"strconv"
 	"net/http"
 	"database/sql"
 	"crypto/sha256"
@@ -38,9 +39,14 @@ type UserResponse struct {
 }
 
 type Item struct {
+	Id int `json:"id"`
 	Name string `json:"name"`
 	Category string `json:"category"`
 	Image string `json:"image"`
+	Price int `json:"price"`
+	PriceLowerLimit int `json:"price_lowe_limit"`
+	UserId int `json:"user_id"`
+
 }
 
 type Items struct {
@@ -173,23 +179,27 @@ func (h Handler)GetItems(c echo.Context) error {
 	var items Items
 
 	// Exec Query
-	rows, err := h.DB.Query(`SELECT name, category, image FROM items`)
+	rows, err := h.DB.Query(`SELECT id, name, category, image, price, price_lower_limit, user_id FROM items`)
 	if err != nil {
 		return itemsError.ErrGetItems.Wrap(err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
+		var id int
 		var name string
 		var category string
+		var price int
+		var priceLowerLimit int
+		var userId int
 		var image sql.NullString //NULLを許容する
 
 		// カーソルから値を取得
-		if err := rows.Scan(&name, &category, &image); err != nil {
+		if err := rows.Scan(&id, &name, &category, &image, &price, &priceLowerLimit, &userId); err != nil {
 			return itemsError.ErrGetItems.Wrap(err)
 		}
 
-		items.Items = append(items.Items, Item{Name: name, Category: category, Image: image.String}) // image -> {"hoge", true}
+		items.Items = append(items.Items, Item{Name: name, Category: category, Image: image.String, Price: price, PriceLowerLimit: priceLowerLimit, UserId: userId}) // image -> {"hoge", true}
 	}
 
 	return c.JSON(http.StatusOK, items)
@@ -205,18 +215,22 @@ func (h Handler)GetItems(c echo.Context) error {
 // @Router /items/:id [get]
 func (h Handler)FindItem(c echo.Context) error {
 	var item Item
+	var id int
 	var name string
 	var category string
 	var image string
+	var price int
+	var priceLowerLimit int
+	var userId int
 
 	// Exec Query
 	itemId := c.Param("id")
-	c.Logger().Infof("SELECT name, category, image FROM items WHERE id = %s", itemId)
-	err := h.DB.QueryRow("SELECT name, category, image FROM items WHERE id = $1", itemId).Scan(&name, &category, &image)
+	c.Logger().Infof("SELECT id, name, category, image, price, price_lower_limit, user_id FROM items WHERE id = %s", itemId)
+	err := h.DB.QueryRow("SELECT id, name, category, image, price, price_lower_limit, user_id FROM items WHERE id = $1", itemId).Scan(&id, &name, &category, &image, &price, &priceLowerLimit, &userId)
 	if err != nil {
 		return itemsError.ErrFindItem.Wrap(err)
 	}
-	item = Item{Name: name, Category: category, Image: image}
+	item = Item{ Name: name, Category: category, Image: image, Price: price, PriceLowerLimit: priceLowerLimit, UserId: userId }
 
 	return c.JSON(http.StatusOK, item)
 }
@@ -235,23 +249,27 @@ func (h Handler)SearchItems(c echo.Context) error {
 	keyWord := c.QueryParam("keyword")
 
 	// Exec Query
-	rows, err := h.DB.Query(`SELECT name, category FROM items WHERE name LIKE ?`, keyWord + "%")
+	rows, err := h.DB.Query(`SELECT id, name, category, image, price, price_lower_limit, user_id FROM items WHERE name LIKE ?`, keyWord + "%")
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
+		var id int
 		var name string
 		var category string
 		var image string
+		var price int
+		var priceLowerLimit int
+		var userId int
 
 		// カーソルから値を取得
-		if err := rows.Scan(&name, &category, &image); err != nil {
+		if err := rows.Scan(&id, &name, &category, &image, &price, &priceLowerLimit, &userId); err != nil {
 			return c.JSON(http.StatusInternalServerError, err)
 		}
 
-		items.Items = append(items.Items, Item{Name: name, Category: category, Image: image})
+		items.Items = append(items.Items, Item{Name: name, Category: category, Image: image, Price: price, PriceLowerLimit: priceLowerLimit, UserId: userId})
 	}
 
 	return c.JSON(http.StatusOK, items)
@@ -273,6 +291,9 @@ func (h Handler)AddItem(c echo.Context) error {
 	// Get form data
 	item.Name = c.FormValue("name")
 	item.Category = c.FormValue("category")
+	item.Price, _ = strconv.Atoi(c.FormValue("price"))
+	item.PriceLowerLimit, _ = strconv.Atoi(c.FormValue("price_lower_limit"))
+	item.UserId, _ = strconv.Atoi(c.FormValue("user_id"))
 	file, err := c.FormFile("image")
 	if err != nil {
 		return itemsError.ErrPostItem.Wrap(err)
@@ -320,7 +341,9 @@ func (h Handler)AddItem(c echo.Context) error {
 	}
 
 	// Exec Query
-	_, err = h.DB.Exec(`INSERT INTO items (name, category, image) VALUES (?, ?, ?)`, item.Name, item.Category, item.Image)
+	_, err = h.DB.Exec(
+		`INSERT INTO items (name, category, image, price, price_lower_limit, user_id) VALUES (?, ?, ?, ?, ?, ?)`, 
+		item.Name, item.Category, item.Image, item.Price, item.PriceLowerLimit, item.UserId )
 	if err != nil {
 		return itemsError.ErrPostItem.Wrap(err)
 	}
