@@ -78,6 +78,7 @@ def add_item(name: str = Form(...), category: str = Form(...)):
     conn.close()
 
     logger.info(f"Receive item: name= {name}, category= {category}")
+
     return {"message": f"item received: {name}"}
 
 
@@ -97,6 +98,7 @@ def display_item():
 
     # return formatted list of items from db
     return format_items(item_list)
+
 
 
 @app.get("/image/{image_filename}")
