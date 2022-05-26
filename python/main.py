@@ -7,7 +7,6 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 import sqlite3
-import json
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -23,17 +22,40 @@ app.add_middleware(
 )
 
 
-# filename = "items.json"
-DatabaseName = "../db/mercari.sqlite3"
+DatabaseName = "../db/items.db"
+SQLiteName = "../db/mercari.sqlite3"
 
 
-# def format_items(items):
-#     items_format = []
-#     for item in items:
-#         item_format = {"name": item[0], "category": item[1]}
-#         items_format.append(item_format)
+def format_items(items):
+    items_format = []
+    for item in items:
+        item_format = {"name": item[1], "category": item[2]}
+        items_format.append(item_format)
 
-#     return {"items": f"{items_format}"}
+    return {"items": f"{items_format}"}
+
+
+@app.on_event("startup")
+def initialize():
+    if not os.path.exists(DatabaseName):
+        open(DatabaseName, 'w').close()
+
+    if not os.path.exists(SQLiteName):
+        open(SQLiteName, 'w').close()
+
+    logger.info("Launching the app...")
+
+    con = sqlite3.connect(SQLiteName)
+    cur = con.cursor()
+
+    # update schema
+    with open(DatabaseName, encoding='utf-8') as file:
+        schema = file.read()
+    cur.execute(f"""{schema}""")
+    con.commit()
+    con.close()
+
+    return None
 
 
 @app.get("/")
@@ -45,29 +67,24 @@ def root():
 def add_item(name: str = Form(...), category: str = Form(...)):
 
     # connect
-    conn = sqlite3.connect(DatabaseName)
+    conn = sqlite3.connect(SQLiteName)
     # cursor
     cur = conn.cursor()
 
-    cur.execute("INSERT INTO items VALUES (?,?)",
+    cur.execute("INSERT INTO items(name,category) VALUES (?,?)",
                 (name, category))
 
     conn. commit()
     conn.close()
 
-    # with open(filename, 'r') as file:
-    #     items_dict = json.load(file)
-    # items_dict["items"].append({"name": name, "category": category})
-    # with open(filename, 'w') as file:
-    #     json.dump(items_dict, file)
-    logger.info(f"Receive item: {name}")
+    logger.info(f"Receive item: name= {name}, category= {category}")
     return {"message": f"item received: {name}"}
 
 
 @app.get("/items")
 def display_item():
     # connect
-    conn = sqlite3.connect(DatabaseName)
+    conn = sqlite3.connect(SQLiteName)
     # cursor
     cur = conn.cursor()
 
@@ -79,12 +96,7 @@ def display_item():
     conn.close()
 
     # return formatted list of items from db
-    # return format_items(item_list)
-
-    return item_list
-    # with open(filename, 'r') as file:
-    #     items_dict = json.load(file)
-    # return items_dict
+    return format_items(item_list)
 
 
 @app.get("/image/{image_filename}")
