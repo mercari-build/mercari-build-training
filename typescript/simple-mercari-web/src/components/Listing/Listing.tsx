@@ -10,6 +10,8 @@ type formDataType = {
   name: string,
   category: string,
   image: string | File,
+  condition: string,
+  damage_analysis: string,
 }
 
 export const Listing: React.FC<Prop> = (props) => {
@@ -18,6 +20,8 @@ export const Listing: React.FC<Prop> = (props) => {
     name: "",
     category: "",
     image: "",
+    condition: "",
+    damage_analysis: "",
   };
   const [values, setValues] = useState<formDataType>(initialState);
 
@@ -37,6 +41,12 @@ export const Listing: React.FC<Prop> = (props) => {
     data.append('name', values.name)
     data.append('category', values.category)
     data.append('image', values.image)
+    data.append('condition', values.condition)
+    data.append('damage_analysis', values.damage_analysis)
+
+    // To test what values are sent over
+    // console.log(values.condition)
+    // console.log(values.damage_analysis)
 
     fetch(server.concat('/items'), {
       method: 'POST',
@@ -59,7 +69,9 @@ export const Listing: React.FC<Prop> = (props) => {
             <input className="form_input" type='text' name='name' id='name' placeholder='Name' onChange={onValueChange} required />
             <input className="form_input" type='text' name='category' id='category' placeholder='Category' onChange={onValueChange} />
             <input className="form_file" type='file' name='image' id='image' onChange={onFileChange} required />
-            <input type="text" id="name" name="name" required></input>
+            <br />
+            <input className="form_input" type="text" name="condition" id='condition' placeholder='Describe the item condition' onChange={onValueChange} required />
+            <label><input type="checkbox"  name="damage_analysis" id="damage_analysis" onChange={onValueChange}/>Analyse the condition</label>
             <button className="form_submit" type='submit'>List this item</button>
           </div>
       </form>

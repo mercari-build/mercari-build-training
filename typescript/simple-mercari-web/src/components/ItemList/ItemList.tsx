@@ -63,6 +63,17 @@ export const ItemList: React.FC<Prop> = (props) => {
               <span>Name: {item.name}</span>
               <br />
               <span>Category: {item.category}</span>
+
+              <br />
+              <span>Condition: Brand New</span>
+              <br />
+              <span>Damage analysis: 0 % </span>
+
+              {/* to be replaced once the backend is completed */}
+              {/* <span>Condition: {item.condition}</span> */}
+              {/* <br /> */}
+              {/* <span>Damage analysis: {item.damage_analysis}</span> */}
+
             </p>
             </div>
           </div>
