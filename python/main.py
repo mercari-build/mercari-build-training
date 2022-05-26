@@ -1,10 +1,12 @@
 import os
 import logging
 import pathlib
+import sqlite3
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+import sqlite3
 import json
 
 app = FastAPI()
@@ -21,30 +23,68 @@ app.add_middleware(
 )
 
 
+# filename = "items.json"
+DatabaseName = "../db/mercari.sqlite3"
+
+
+# def format_items(items):
+#     items_format = []
+#     for item in items:
+#         item_format = {"name": item[0], "category": item[1]}
+#         items_format.append(item_format)
+
+#     return {"items": f"{items_format}"}
+
+
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
 
 
-filename = "items.json"
-
-
 @app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...)):
-    with open(filename, 'r') as file:
-        items_dict = json.load(file)
-    items_dict["items"].append({"name": name, "category": category})
-    with open(filename, 'w') as file:
-        json.dump(items_dict, file)
+
+    # connect
+    conn = sqlite3.connect(DatabaseName)
+    # cursor
+    cur = conn.cursor()
+
+    cur.execute("INSERT INTO items VALUES (?,?)",
+                (name, category))
+
+    conn. commit()
+    conn.close()
+
+    # with open(filename, 'r') as file:
+    #     items_dict = json.load(file)
+    # items_dict["items"].append({"name": name, "category": category})
+    # with open(filename, 'w') as file:
+    #     json.dump(items_dict, file)
     logger.info(f"Receive item: {name}")
     return {"message": f"item received: {name}"}
 
 
 @app.get("/items")
 def display_item():
-    with open(filename, 'r') as file:
-        items_dict = json.load(file)
-    return items_dict
+    # connect
+    conn = sqlite3.connect(DatabaseName)
+    # cursor
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM items")
+
+    item_list = cur.fetchall()
+
+    # close connection
+    conn.close()
+
+    # return formatted list of items from db
+    # return format_items(item_list)
+
+    return item_list
+    # with open(filename, 'r') as file:
+    #     items_dict = json.load(file)
+    # return items_dict
 
 
 @app.get("/image/{image_filename}")
