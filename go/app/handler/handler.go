@@ -382,6 +382,17 @@ func (h Handler)AddItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+// addItem is adding a transaction.
+// @Summary post a Transaction
+// @Description post a transaction to its table.
+// @Produce  json
+// @Param determined_price body int true "Transaction's determined_price"
+// @Param item_id body int true "Item's id"
+// @Param buyer_id body int false "Buyer's id"
+// @Param transaction_status_id body int "Transation's status id"
+// @Success 200 {object} main.Response
+// @Failure 500 {object} any
+// @Router /items [post]
 func (h Handler)AddTransaction(c echo.Context) error {
 	// Inintialize Transaction
 	var transaction Transaction
@@ -412,4 +423,33 @@ func (h Handler)AddTransaction(c echo.Context) error {
 	res := Response{Message: message}
 
 	return c.JSON(http.StatusOK, res)
+}
+
+// findTransaction is finding a transaction by item_id and buyer_id.
+// @Summary find an transaction
+// @Description find a transaction by item_id and buyer_id
+// @Produce json
+// @Param item_id path int true "Item's id"
+// @Param buyer_id path int true "Buyer's id"
+// @Success 200 {obejct} main.Transaction
+// @Failure 500 {object} any
+// @Router /transactions/:item_id/:buyer_id [get]
+func (h Handler)FindTransaction(c echo.Context) error {
+	var id int
+	var determinedPrice int
+	var itemId int
+	var buyerId int
+	var transactionStatusId int
+
+	// Exec Query
+	itemId, _ = strconv.Atoi(c.Param("item_id"))
+	buyerId, _ = strconv.Atoi(c.Param("buyer_id"))
+	c.Logger().Infof("SELECT id, name, category, image, price, price_lower_limit, user_id FROM items WHERE id = %s", itemId)
+	err := h.DB.QueryRow("SELECT id, determined_price, item_id, buyer_id, transaction_status_id FROM transactions WHERE item_id = $1 AND buyer_id = $2", itemId, buyerId).Scan(&id, &determinedPrice, &itemId, &buyerId, &transactionStatusId)
+	if err != nil {
+		return itemsError.ErrFindItem.Wrap(err)
+	}
+	transaction := Transaction{ Id: id, DeterminedPrice: determinedPrice, ItemId: itemId, BuyerId: buyerId, TransactionStatusId: transactionStatusId}
+
+	return c.JSON(http.StatusOK, transaction)
 }
