@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS transactions(
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
     item_id INTEGER NOT NULL,
+    determined_price INTEGER,
     buyer_id INTNEGER NOT NULL,
     transaction_status_id INTEGER NOT NULL,
     foreign key (item_id) REFERENCES items(id) ON DELETE CASCADE,
