@@ -15,8 +15,6 @@ import hashlib
 
 
 
-
-
 #----config----------------------------
 
 app = FastAPI()
@@ -128,19 +126,23 @@ def show_detailById(item_id: int):
 
 
 
-@app.get("/image/{image_hashname}")
-async def get_image(image_hashname):
+@app.get("/image/{image_filename}")
+async def get_image(image_filename):
     # Create image path
-    image_path =  image / image_hashname
-    #..../mercari/mercari-build-training-2022/python/image/undefinedが返ってくる
-    logger.info(f"image::{image_path}")
     
-    if not image_hashname.endswith(".jpg"):
+    #image_file:undefined
+    logger.info(f"image_file:{image_filename}")
+    
+    image_path =  image / image_filename
+    #..../mercari/mercari-build-training-2022/python/image/undefinedが返ってくる
+    logger.info(f"image_location::{image_path}")
+    
+    if not image_filename.endswith(".jpg"):
         raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
     
 
-    if not image_hashname:
-        logger.debug(f"Image not found: {image_hashname}")
+    if not image_path:
+        logger.debug(f"Image not found: {image_filename}")
         image_path = images / "default.jpg"
     
         
