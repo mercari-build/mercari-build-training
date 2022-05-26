@@ -53,7 +53,8 @@ func init() {
             transaction_status_id INTEGER NOT NULL,
             foreign key (item_id) REFERENCES items(id) ON DELETE CASCADE,
             foreign key (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
-            foreign key (transaction_status_id) REFERENCES transaction_statuses(id) ON DELETE CASCADE
+            foreign key (transaction_status_id) REFERENCES transaction_statuses(id) ON DELETE CASCADE,
+            UNIQUE (item_id, buyer_id)
         )
         `)
     _, err = DbConnection.Exec(cmd)

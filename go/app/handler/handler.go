@@ -53,6 +53,14 @@ type Items struct {
 	Items []Item `json:"items"`
 }
 
+type Transaction struct {
+	Id int `json:"id`
+	DeterminedPrice int `json:"determined_price"`
+	ItemId int `json:"item_id"`
+	BuyerId int `json:"buyer_id"`
+	TransactionStatusId int `json:"transaction_status_id"`
+}
+
 type Response struct {
 	Message string `json:"message"`
 }
@@ -104,6 +112,27 @@ func (item Item) Validate() error {
 			&item.Category,
 			validation.Required.Error("カテゴリーは必須入力です"),
 			validation.RuneLength(1, 40).Error("カテゴリーは 1～20 文字です"),
+		),
+	)
+}
+
+func (transaction Transaction) Validate() error {
+	return validation.ValidateStruct(&transaction,
+		validation.Field(
+			&transaction.ItemId,
+			validation.Required.Error("決定した値段は必須です"),
+		),
+		validation.Field(
+			&transaction.ItemId,
+			validation.Required.Error("商品IDは必須です"),
+		),
+		validation.Field(
+			&transaction.BuyerId,
+			validation.Required.Error("買い手IDは必須です"),
+		),
+		validation.Field(
+			&transaction.TransactionStatusId,
+			validation.Required.Error("取引状態IDは必須です"),
 		),
 	)
 }
@@ -348,6 +377,38 @@ func (h Handler)AddItem(c echo.Context) error {
 		return itemsError.ErrPostItem.Wrap(err)
 	}
 	
+	res := Response{Message: message}
+
+	return c.JSON(http.StatusOK, res)
+}
+
+func (h Handler)AddTransaction(c echo.Context) error {
+	// Inintialize Transaction
+	var transaction Transaction
+
+	// Get form data
+	transaction.DeterminedPrice, _ = strconv.Atoi(c.FormValue("determined_price"))
+	transaction.ItemId, _ = strconv.Atoi(c.FormValue("item_id"))
+	transaction.BuyerId, _ = strconv.Atoi(c.FormValue("buyer_id"))
+	transaction.TransactionStatusId, _ = strconv.Atoi(c.FormValue("transaction_status_id"))
+
+	// Validate item fields
+	if err := c.Validate(transaction); err != nil {
+		errs := err.(validation.Errors)
+		for k, err := range errs {
+			c.Logger().Error(k + ": " + err.Error())
+		}
+		return usersError.ErrPostUser.Wrap(err)
+	}
+
+	// Exec Query
+	_, err := h.DB.Exec(`INSERT INTO transactions (determined_price, item_id, buyer_id, transaction_status_id) VALUES (?, ?, ?, ?)`, transaction.DeterminedPrice, transaction.ItemId, transaction.BuyerId, transaction.TransactionStatusId)
+	if err != nil {
+		c.Logger().Error(err.Error())
+		return usersError.ErrPostUser.Wrap(err)
+	}
+	
+	message := fmt.Sprintf("Transaction created: %v", transaction)
 	res := Response{Message: message}
 
 	return c.JSON(http.StatusOK, res)

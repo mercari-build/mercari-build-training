@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS transactions(
     transaction_status_id INTEGER NOT NULL,
     foreign key (item_id) REFERENCES items(id) ON DELETE CASCADE,
     foreign key (buyer_id) REFERENCES users(id) ON DELETE CASCADE,
-    foreign key (transaction_status_id) REFERENCES transaction_statuses(id) ON DELETE CASCADE
+    foreign key (transaction_status_id) REFERENCES transaction_statuses(id) ON DELETE CASCADE,
+    unique (item_id, buyer_id)
 );
 CREATE TABLE IF NOT EXISTS transaction_statuses(
     id INTEGER PRIMARY KEY AUTOINCREMENT, 
