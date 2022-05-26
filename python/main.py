@@ -55,11 +55,6 @@ def add_item(name: str = Form(...), category: str = Form(...)):
     conn. commit()
     conn.close()
 
-    # with open(filename, 'r') as file:
-    #     items_dict = json.load(file)
-    # items_dict["items"].append({"name": name, "category": category})
-    # with open(filename, 'w') as file:
-    #     json.dump(items_dict, file)
     logger.info(f"Receive item: {name}")
     return {"message": f"item received: {name}"}
 
@@ -82,9 +77,6 @@ def display_item():
     # return format_items(item_list)
 
     return item_list
-    # with open(filename, 'r') as file:
-    #     items_dict = json.load(file)
-    # return items_dict
 
 
 @app.get("/image/{image_filename}")
