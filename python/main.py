@@ -33,7 +33,7 @@ async def read_items():
     all_items = []
     for item in items:
         all_items.append(
-            {"id": item[0], "name": item[1], "category": item[2], "image": item[3]})
+            {"id": item[0], "en_name": item[1], "ja_name": item[2], "category": item[3], "image": item[5]})
     return all_items
 
 
@@ -42,7 +42,7 @@ async def read_item(item_id: int):
     item = db.get_item(item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    return {"id": item[0], "name": item[1], "category": item[2], "image": item[3]}
+    return {"id": item[0], "name": item[1], "category": item[2], "image": item[5]}
 
 
 @app.get("/search")

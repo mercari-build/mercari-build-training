@@ -1,15 +1,26 @@
 from multiprocessing import connection
 import sqlite3
+import googletrans
+from googletrans import Translator
+translator = Translator()
 
-
+# translate and add english name and japanese name to the item
 def add_item(name, category_id, image_hash):
+    image = image_hash + ".jpg"
+    en_name = ""
+    ja_name = ""
+    if translator.detect(name).lang == "ja":
+        en_name = en_name + translator.translate(name, dest="en").text
+        ja_name = ja_name + name
+    else:
+        ja_name = ja_name + translator.translate(name, dest="ja").text
+        en_name = en_name + name
     connection = sqlite3.connect("../db/mercari.sqlite3")
     cursor = connection.cursor()
-    image = image_hash + ".jpg"
     cursor.execute("""
-    INSERT INTO items (name, category, image_filename)
-    VALUES (?, ?, ?)
-    """, (name, category_id, image))
+        INSERT INTO items (en_name, ja_name, category_id, image_filename)
+        VALUES (?, ?, ?, ?)
+    """, (en_name, ja_name, category_id, image))
     connection.commit()
     connection.close()
 
@@ -18,10 +29,10 @@ def get_items():
     connection = sqlite3.connect("../db/mercari.sqlite3")
     cursor = connection.cursor()
     cursor.execute("""
-    SELECT items.id, items.name, category.name AS category_name, items.image_filename
+    SELECT items.id, items.en_name, items.ja_name, category.en_name AS category_en_name, category.ja_name AS category_ja_name, items.image_filename
     FROM items
     LEFT JOIN category
-    ON items.category = category.id
+    ON items.category_id = category.id
     """)
     items = cursor.fetchall()
     connection.close()
@@ -32,7 +43,7 @@ def get_item(item_id):
     connection = sqlite3.connect("../db/mercari.sqlite3")
     cursor = connection.cursor()
     cursor.execute("""
-    SELECT items.id, items.name, category.name AS category_name, items.image_filename
+    SELECT items.id, items.en_name, items.ja_name, category.en_name AS category_en_name, category.ja_name AS category_ja_name, items.image_filename
     FROM items
     LEFT JOIN category
     ON items.category = category.id
@@ -43,19 +54,19 @@ def get_item(item_id):
     return item
 
 
-def search_items(keyword):
-    connection = sqlite3.connect("../db/mercari.sqlite3")
-    cursor = connection.cursor()
-    cursor.execute("""
-    SELECT items.id, items.name, items.category, category.name AS category_name, items.image_filename
-    FROM items
-    LEFT JOIN category
-    ON items.category = category.id
-    WHERE items.name LIKE ?
-    """, ("%" + keyword + "%",))
-    items = cursor.fetchall()
-    connection.close()
-    return items
+# def search_items(keyword):
+#     connection = sqlite3.connect("../db/mercari.sqlite3")
+#     cursor = connection.cursor()
+#     cursor.execute("""
+#     SELECT items.id, items.name, items.category, category.name AS category_name, items.image_filename
+#     FROM items
+#     LEFT JOIN category
+#     ON items.category = category.id
+#     WHERE items.name LIKE ?
+#     """, ("%" + keyword + "%",))
+#     items = cursor.fetchall()
+#     connection.close()
+#     return items
 
 
 def delete_item(item_id):
@@ -68,6 +79,7 @@ def delete_item(item_id):
     connection.commit()
     connection.close()
 
+
 #create items table
 
 # connection = sqlite3.connect("../db/mercari.sqlite3")
@@ -75,11 +87,55 @@ def delete_item(item_id):
 # cursor.execute("""
 # CREATE TABLE IF NOT EXISTS items (
 #     id INTEGER PRIMARY KEY AUTOINCREMENT,
-#     name TEXT,
-#     category INTEGER,
+#     en_name TEXT,
+#     ja_name TEXT,
+#     category_id INTEGER,
 #     image_filename TEXT
 # )
 # """)
+# connection.commit()
+# connection.close()
+
+#create category table
+
+# connection = sqlite3.connect("../db/mercari.sqlite3")
+# cursor = connection.cursor()
+# cursor.execute("""
+# CREATE TABLE IF NOT EXISTS category (
+#     id INTEGER PRIMARY KEY,
+#     en_name TEXT,
+#     ja_name TEXT
+# )
+# """)
+# connection.commit()
+# connection.close()
+
+#drop table
+# connection = sqlite3.connect("../db/mercari.sqlite3")
+# cursor = connection.cursor()
+# cursor.execute("""
+# DROP TABLE IF EXISTS items
+# """)
+# connection.commit()
+# connection.close()
+
+# add category to the category table
+# connection = sqlite3.connect("../db/mercari.sqlite3")
+# cursor = connection.cursor()
+# cursor.execute("""
+# INSERT INTO category (en_name, ja_name)
+# VALUES (?, ?)
+# """, ("post-modern", "ポストモダン"))
+# connection.commit()
+# connection.close()
+
+#delete category from the category table
+# connection = sqlite3.connect("../db/mercari.sqlite3")
+# cursor = connection.cursor()
+# cursor.execute("""
+# DELETE FROM categories
+# WHERE id = ?
+# """, (4,))
 # connection.commit()
 # connection.close()
 

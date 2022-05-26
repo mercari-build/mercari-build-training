@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { StringLiteral } from "typescript";
+import { AiOutlineSearch } from "react-icons/ai";
 
 interface Item {
   id: number;
-  name: string;
+  en_name: string;
+  ja_name: string;
   category: string;
   image: string;
 }
 
 interface Category {
   id: number;
-  name: string;
+  en_name: string;
+  ja_name: string;
 }
 
 const server = process.env.API_URL || "http://127.0.0.1:9000";
@@ -60,49 +63,143 @@ export const ItemList: React.FC<Prop> = (props) => {
   }
 
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("en");
+  const [searchText, setSearchText] = useState<string>("");
+
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedCategory(e.target.value);
+  };
+
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedLanguage(e.target.value);
+  };
+
+  const handleSearchTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchText(e.target.value);
+  };
+
+  const filteredItems = items
+    .filter((item) => {
+      if (selectedCategory === "all") {
+        return true;
+      } else {
+        return item.category === selectedCategory;
+      }
+    })
+    .filter((item) => {
+      if (searchText === "") {
+        return true;
+      } else {
+        return (
+          item.en_name.includes(searchText) || item.ja_name.includes(searchText)
+        );
+      }
+    });
 
   return (
-    <>
-      <div className="categories">
-        <h1>Categories</h1>
-        <ul>
-          <li onClick={() => setSelectedCategory("all")}>
-            <a>All</a>
-          </li>
-          {categories.map((category: any) => {
-            return (
-              <li key={category} onClick={() => setSelectedCategory(category)}>
-                <a>{category}</a>
-              </li>
-            );
-          })}
-        </ul>
+    <div className="item-list">
+      <div className="item-list-header">
+        <div className="item-list-search">
+          <input
+            className="searchbar-input"
+            type="text"
+            placeholder="Search"
+            value={searchText}
+            onChange={handleSearchTextChange}
+          />
+          <AiOutlineSearch className="searchbar-button" />
+        </div>
+        <div className="item-list-header-left">
+          <select
+            className="item-list-header-select"
+            value={selectedCategory}
+            onChange={handleCategoryChange}
+          >
+            <option value="all">All</option>
+            {categories.map((category: any) => {
+              return (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              );
+            })}
+          </select>
+        </div>
+        <div className="item-list-header-right">
+          <select
+            className="item-list-header-select"
+            value={selectedLanguage}
+            onChange={handleLanguageChange}
+          >
+            <option value="en">English</option>
+            <option value="ja">Japanese</option>
+          </select>
+        </div>
       </div>
       <div className="AllItems">
-        {items
-          .filter((item: any) => {
-            if (selectedCategory === "all") {
-              return true;
-            } else {
-              return item.category === selectedCategory;
-            }
-          })
-          .map((item: any) => {
-            return (
-              <div className="item">
+        {filteredItems.map((item) => {
+          return (
+            <div className="item-list-item" key={item.id}>
+              <div className="item-list-item-image">
                 <img
                   className="ItemImage"
                   src={server + `/image/${item.image}` || placeholderImage}
-                  alt={item.name}
+                  alt={item.en_name}
                 />
-                <div className="item-info">
-                  <h2>{item.name}</h2>
-                  <p className="tag">{item.category}</p>
-                </div>
               </div>
-            );
-          })}
+              <div className="item-list-item-name">
+                {selectedLanguage === "en" ? item.en_name : item.ja_name}
+              </div>
+            </div>
+          );
+        })}
       </div>
-    </>
+    </div>
   );
 };
+
+//   return (
+//     <>
+//       <div className="categories">
+//         <h1>Categories</h1>
+//         <ul>
+//           <li onClick={() => setSelectedCategory("all")}>
+//             <a>All</a>
+//           </li>
+//           {categories.map((category: any) => {
+//             return (
+//               <li key={category} onClick={() => setSelectedCategory(category)}>
+//                 <a>{category}</a>
+//               </li>
+//             );
+//           })}
+//         </ul>
+//       </div>
+//       <div className="AllItems">
+//         {items
+//           .filter((item: any) => {
+//             if (selectedCategory === "all") {
+//               return true;
+//             } else {
+//               return item.category === selectedCategory;
+//             }
+//           })
+//           .map((item: any) => {
+//             return (
+//               <div className="item">
+//                 <img
+//                   className="ItemImage"
+//                   src={server + `/image/${item.image}` || placeholderImage}
+//                   alt={item.name}
+//                 />
+//                 <div className="item-info">
+//                   <h2>{item.en_name}</h2>
+//                   <p className="tag">{item.category}</p>
+//                 </div>
+//               </div>
+//             );
+//           })}
+//       </div>
+//     </>
+//   );
+// };
