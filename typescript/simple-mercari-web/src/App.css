@@ -58,6 +58,7 @@
 
 .item-list-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
 }
@@ -92,7 +93,7 @@
   background-color: #e5e7eb;
 }
 
-.item-list-header-select {
+.select {
   padding: 0.5rem;
   border: #e5e7eb solid 1px;
   border-radius: 10px;
@@ -101,6 +102,7 @@
   color: #03045e;
   background-color: white;
   position: relative;
+  cursor: pointer;
 }
 
 h1 {

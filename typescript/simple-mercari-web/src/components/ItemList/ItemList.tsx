@@ -111,7 +111,7 @@ export const ItemList: React.FC<Prop> = (props) => {
         </div>
         <div className="item-list-header-left">
           <select
-            className="item-list-header-select"
+            className="select"
             value={selectedCategory}
             onChange={handleCategoryChange}
           >
@@ -127,7 +127,7 @@ export const ItemList: React.FC<Prop> = (props) => {
         </div>
         <div className="item-list-header-right">
           <select
-            className="item-list-header-select"
+            className="select"
             value={selectedLanguage}
             onChange={handleLanguageChange}
           >

@@ -27,6 +27,14 @@ export const Listing: React.FC<Prop> = (props) => {
       [event.target.name]: event.target.value,
     });
   };
+
+  const onSelectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setValues({
+      ...values,
+      [event.target.name]: event.target.value,
+    });
+  };
+
   const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setValues({
       ...values,
@@ -66,7 +74,20 @@ export const Listing: React.FC<Prop> = (props) => {
             autoComplete="off"
             required
           />
-          <input
+          <select 
+            className="select"
+            name="category"
+            id="category"
+            onChange={onSelectChange}
+            required
+          >
+            <option value="">category</option>
+            <option value="1">fashion</option>
+            <option value="2">modern</option>
+            <option value="3">post-modern</option>
+          
+          </select>
+          {/* <input
             type="text"
             name="category"
             id="category"
@@ -74,7 +95,7 @@ export const Listing: React.FC<Prop> = (props) => {
             onChange={onValueChange}
             autoComplete="off"
             required
-          />
+          /> */}
           <input
             type="file"
             name="image"
