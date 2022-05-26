@@ -77,11 +77,7 @@ def add_item(name: str = Form(...), category: str = Form(...)):
     conn. commit()
     conn.close()
 
-<<<<<<< HEAD
     logger.info(f"Receive item: name= {name}, category= {category}")
-=======
-    logger.info(f"Receive item: {name}")
->>>>>>> 0b12fd09eda6a339785199e2458a883c2b66703d
     return {"message": f"item received: {name}"}
 
 
@@ -100,13 +96,7 @@ def display_item():
     conn.close()
 
     # return formatted list of items from db
-<<<<<<< HEAD
     return format_items(item_list)
-=======
-    # return format_items(item_list)
-
-    return item_list
->>>>>>> 0b12fd09eda6a339785199e2458a883c2b66703d
 
 
 @app.get("/image/{image_filename}")
