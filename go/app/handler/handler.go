@@ -486,7 +486,17 @@ func (h Handler) FindTransaction(c echo.Context) error {
 	return c.JSON(http.StatusOK, transaction)
 }
 
-// AddQas is adding qas.
+// AddQa is adding a qa.
+// @Summary add a qa
+// @Description add a qa data
+// @Produce json
+// @Param item_id body int true "Item's id"
+// @Param question body string true "Question text"
+// @Param answer body string true "Answer text"
+// @Param qa_type_id body int true "Item's id"
+// @Success 200 {obejct} main.Response
+// @Failure 500 {object} any
+// @Router /qas [post]
 func (h Handler) AddQa(c echo.Context) error {
 	// Inintialize Qa
 	var qa Qa
@@ -521,6 +531,14 @@ func (h Handler) AddQa(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+// GetQas is getting qas by item_id.
+// @Summary getting qas by item_id
+// @Description GetQas is getting qas by item_id.
+// @Produce json
+// @Param item_id path int true "Item's id"
+// @Success 200 {obejct} main.Qas
+// @Failure 500 {object} any
+// @Router /qas/:item_id [get]
 func (h Handler) GetQas(c echo.Context) error {
 
 	var qas Qas
