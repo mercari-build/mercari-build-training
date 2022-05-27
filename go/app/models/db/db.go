@@ -67,8 +67,7 @@ func init() {
             answer STRING,
             qa_type_id INTEGER NOT NULL,
             foreign key (item_id) REFERENCES items(id) ON DELETE CASCADE,
-            foreign key (qa_type_id) REFERENCES qa_types(id) ON DELETE CASCADE,
-            UNIQUE (item_id)
+            foreign key (qa_type_id) REFERENCES qa_types(id) ON DELETE CASCADE
         )
         `)
 	_, err = DbConnection.Exec(cmd)

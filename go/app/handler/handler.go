@@ -68,6 +68,10 @@ type Qa struct {
 	QaTypeId int    `json:"qa_type_id"`
 }
 
+type Qas struct {
+	Qas []Qa `json:"qas"`
+}
+
 type Response struct {
 	Message string `json:"message"`
 }
@@ -517,21 +521,33 @@ func (h Handler) AddQa(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
-func (h Handler) FindQa(c echo.Context) error {
-	var id int
-	var itemId int
-	var question string
-	var answer string
-	var qaTypeId int
+func (h Handler) GetQas(c echo.Context) error {
+
+	var qas Qas
 
 	// Exec Query
-	itemId, _ = strconv.Atoi(c.Param("item_id"))
+	itemId, _ := strconv.Atoi(c.Param("item_id"))
 	c.Logger().Infof("SELECT id, item_id, question, answer, qa_type_id FROM items WHERE id = %s", itemId)
-	err := h.DB.QueryRow("SELECT id, item_id, question, answer, qa_type_id FROM qas WHERE item_id = $1", itemId).Scan(&id, &itemId, &question, &answer, &qaTypeId)
+	rows, err := h.DB.Query("SELECT id, item_id, question, answer, qa_type_id FROM qas WHERE item_id = $1", itemId)
 	if err != nil {
 		return itemsError.ErrFindItem.Wrap(err)
 	}
-	qa := Qa{Id: id, ItemId: itemId, Question: question, Answer: answer, QaTypeId: qaTypeId}
+	defer rows.Close()
 
-	return c.JSON(http.StatusOK, qa)
+	for rows.Next() {
+		var id int
+		var itemId int
+		var question string
+		var answer string
+		var qaTypeId int
+
+		// カーソルから値を取得
+		if err := rows.Scan(&id, &itemId, &question, &answer, &qaTypeId); err != nil {
+			return itemsError.ErrGetItems.Wrap(err)
+		}
+
+		qas.Qas = append(qas.Qas, Qa{Id: id, ItemId: itemId, Question: question, Answer: answer, QaTypeId: qaTypeId})
+	}
+
+	return c.JSON(http.StatusOK, qas)
 }

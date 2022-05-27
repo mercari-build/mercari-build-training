@@ -95,7 +95,7 @@ func main() {
 	e.GET("/transactions/:item_id/:buyer_id", handler.FindTransaction)
 	// Qas routes
 	e.POST("/qas", handler.AddQa)
-	e.GET("/qas/:item_id", handler.FindQa)
+	e.GET("/qas/:item_id", handler.GetQas)
 	// Files routes
 	e.GET("/image/:itemImg", GetImg)
 	// swagger
