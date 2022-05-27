@@ -99,6 +99,24 @@ def display_item():
     return format_items(item_list)
 
 
+@app.get("/search")
+def search_item(keyword: str):  # query parameter
+    # connect
+    conn = sqlite3.connect(SQLiteName)
+    #     # cursor
+    cur = conn.cursor()
+    conn.row_factory = sqlite3.Row
+    # select item matching keyword
+    cur.execute("SELECT * from items WHERE name LIKE (?)", (f"%{keyword}%", ))
+    item_list = cur.fetchall()
+    conn.close()
+    if item_list == []:
+        message = {"message": "No matching item"}
+    else:
+        message = format_items(item_list)
+    return message
+
+
 @app.get("/image/{image_filename}")
 async def get_image(image_filename):
     # Create image path
