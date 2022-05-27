@@ -1,4 +1,14 @@
-FROM alpine
+FROM python:3.9
+
+COPY ./requirements.txt .
+
+RUN pip3 install --no-cache-dir --upgrade -r requirements.txt
+
+COPY . .
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000"]
 
 # STEP4-4では以下は変更しない
-CMD ["python", "-V"]
+# CMD ["python", "-V"]
+
+
