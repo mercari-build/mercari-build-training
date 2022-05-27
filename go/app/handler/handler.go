@@ -516,3 +516,22 @@ func (h Handler) AddQa(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, res)
 }
+
+func (h Handler) FindQa(c echo.Context) error {
+	var id int
+	var itemId int
+	var question string
+	var answer string
+	var qaTypeId int
+
+	// Exec Query
+	itemId, _ = strconv.Atoi(c.Param("item_id"))
+	c.Logger().Infof("SELECT id, item_id, question, answer, qa_type_id FROM items WHERE id = %s", itemId)
+	err := h.DB.QueryRow("SELECT id, item_id, question, answer, qa_type_id FROM qas WHERE item_id = $1", itemId).Scan(&id, &itemId, &question, &answer, &qaTypeId)
+	if err != nil {
+		return itemsError.ErrFindItem.Wrap(err)
+	}
+	qa := Qa{Id: id, ItemId: itemId, Question: question, Answer: answer, QaTypeId: qaTypeId}
+
+	return c.JSON(http.StatusOK, qa)
+}
