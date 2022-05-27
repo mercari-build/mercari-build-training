@@ -2,6 +2,7 @@ import collections
 import os
 import logging
 import pathlib
+import shutil
 from fastapi import FastAPI, Form, HTTPException
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse
@@ -11,9 +12,6 @@ import sqlite3
 import json
 from fastapi.responses import ORJSONResponse
 import hashlib
-
-
-
 
 
 
@@ -43,25 +41,23 @@ def db_toList(items):
         # d['id'] = row[0]
         d['name'] = row[1]
         d['category'] = row[2]
-        d['image'] = row[3]
+        d['image_filename'] = row[3]
         objects_list.append(d)   
     return objects_list 
 
-def image_toHash(image):
-    image_name, image_fmt = map(str, image.split('.'))
+def image_toHash(image_filename):
+    image_name, image_fmt = map(str, image_filename.split('.'))
     image_hashname = hashlib.sha256(image_name.encode()).hexdigest()
     return '.'.join([image_hashname, image_fmt])
-        
-async def save_image(file_location, image_file):
+
+def save_image(file_location, image_file):
     with open(file_location, 'w+b') as f:
-        content = await image_file.read()
-        f.write(content)
-
-
+        shutil.copyfileobj(image_file.file, f) 
+        
 def add_sql(name,category, image_name):
     conn = sqlite3.connect("../db/item.db", check_same_thread=False)
     c = conn.cursor()
-    c.execute("INSERT INTO items(name,category,image) VALUES( ?, ?, ?);", (name,category,image_name))
+    c.execute("INSERT INTO items(name,category,image_filename) VALUES( ?, ?, ?);", (name,category,image_name))
     # idはtable作成時に割り当て済み
     conn.commit()
     conn.close()
@@ -128,19 +124,21 @@ def show_detailById(item_id: int):
 
 
 
-@app.get("/image/{image_hashname}")
-async def get_image(image_hashname):
+@app.get("/image/{image_filename}")
+def get_image(image_filename):
     # Create image path
-    image_path =  image / image_hashname
+    logger.info(f"image_file:{image_filename}")
+
+    image_path =  image / image_filename
     #..../mercari/mercari-build-training-2022/python/image/undefinedが返ってくる
-    logger.info(f"image::{image_path}")
+    logger.info(f"image_location::{image_path}")
     
-    if not image_hashname.endswith(".jpg"):
+    if not image_filename.endswith(".jpg"):
         raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
     
 
-    if not image_hashname:
-        logger.debug(f"Image not found: {image_hashname}")
+    if not image_path:
+        logger.debug(f"Image not found: {image_filename}")
         image_path = images / "default.jpg"
     
         
