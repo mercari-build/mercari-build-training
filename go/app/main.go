@@ -90,6 +90,9 @@ func main() {
 	e.GET("/items/:id", handler.FindItem)
 	e.POST("/items", handler.AddItem)
 	e.GET("/items/search", handler.SearchItems)
+	// Transactions routes
+	e.POST("/transactions", handler.AddTransaction)
+	e.GET("/transactions/:item_id/:buyer_id", handler.FindTransaction)
 	// Files routes
 	e.GET("/image/:itemImg", GetImg)
 	// swagger
