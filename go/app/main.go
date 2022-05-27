@@ -9,12 +9,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
-	"github.com/swaggo/echo-swagger"
+	echoSwagger "github.com/swaggo/echo-swagger"
 
 	_ "mercari-build-training-2022/app/docs"
 	"mercari-build-training-2022/app/handler"
-	"mercari-build-training-2022/app/models/db"
 	"mercari-build-training-2022/app/models/customErrors/itemsError"
+	"mercari-build-training-2022/app/models/db"
 )
 
 // Root.
@@ -77,7 +77,7 @@ func main() {
 	}))
 
 	// Initialize Handler
-	handler := handler.Handler{ DB : db.DbConnection }
+	handler := handler.Handler{DB: db.DbConnection}
 	defer handler.DB.Close()
 
 	// Routes
@@ -93,6 +93,8 @@ func main() {
 	// Transactions routes
 	e.POST("/transactions", handler.AddTransaction)
 	e.GET("/transactions/:item_id/:buyer_id", handler.FindTransaction)
+	// Qas routes
+	e.POST("/qas", handler.AddQa)
 	// Files routes
 	e.GET("/image/:itemImg", GetImg)
 	// swagger

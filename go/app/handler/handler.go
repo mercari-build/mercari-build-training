@@ -1,20 +1,20 @@
 package handler
 
 import (
-	"fmt"
-	"os"
-	"io"
 	"bytes"
+	"crypto/sha256"
+	"database/sql"
+	"encoding/hex"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
 	"path"
 	"strconv"
-	"net/http"
-	"database/sql"
-	"crypto/sha256"
-	"encoding/hex"
 
-	"github.com/labstack/echo/v4"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/labstack/echo/v4"
 
 	"mercari-build-training-2022/app/models/customErrors/itemsError"
 	"mercari-build-training-2022/app/models/customErrors/usersError"
@@ -28,25 +28,24 @@ const (
 // Types
 
 type User struct {
-	Id int `json:"id"`
-	Name string `json:"name"`
+	Id       int    `json:"id"`
+	Name     string `json:"name"`
 	Password string `json:"password"`
 }
 
 type UserResponse struct {
-	Id int `json:"id"`
+	Id   int    `json:"id"`
 	Name string `json:"name"`
 }
 
 type Item struct {
-	Id int `json:"id"`
-	Name string `json:"name"`
-	Category string `json:"category"`
-	Image string `json:"image"`
-	Price int `json:"price"`
-	PriceLowerLimit int `json:"price_lowe_limit"`
-	UserId int `json:"user_id"`
-
+	Id              int    `json:"id"`
+	Name            string `json:"name"`
+	Category        string `json:"category"`
+	Image           string `json:"image"`
+	Price           int    `json:"price"`
+	PriceLowerLimit int    `json:"price_lowe_limit"`
+	UserId          int    `json:"user_id"`
 }
 
 type Items struct {
@@ -54,11 +53,19 @@ type Items struct {
 }
 
 type Transaction struct {
-	Id int `json:"id`
-	DeterminedPrice int `json:"determined_price"`
-	ItemId int `json:"item_id"`
-	BuyerId int `json:"buyer_id"`
+	Id                  int `json:"id`
+	DeterminedPrice     int `json:"determined_price"`
+	ItemId              int `json:"item_id"`
+	BuyerId             int `json:"buyer_id"`
 	TransactionStatusId int `json:"transaction_status_id"`
+}
+
+type Qa struct {
+	Id       int    `json:"id`
+	ItemId   int    `json:"item_id"`
+	Question string `json:"question"`
+	Answer   string `json:"answer"`
+	QaTypeId int    `json:"qa_type_id"`
 }
 
 type Response struct {
@@ -70,7 +77,7 @@ type Handler struct {
 }
 
 // Funcs
-func getSHA256Binary(bytes[]byte) []byte {
+func getSHA256Binary(bytes []byte) []byte {
 	r := sha256.Sum256(bytes)
 	return r[:]
 }
@@ -137,6 +144,27 @@ func (transaction Transaction) Validate() error {
 	)
 }
 
+func (qa Qa) Validate() error {
+	return validation.ValidateStruct(&qa,
+		validation.Field(
+			&qa.ItemId,
+			validation.Required.Error("商品IDは必須です"),
+		),
+		validation.Field(
+			&qa.Question,
+			validation.Required.Error("質問内容は必須です"),
+		),
+		validation.Field(
+			&qa.Answer,
+			validation.Required.Error("解答内容は必須です"),
+		),
+		validation.Field(
+			&qa.QaTypeId,
+			validation.Required.Error("質問種別IDは必須です"),
+		),
+	)
+}
+
 // AddUser is adding a user by BasicAuth.
 // @Summary add a user
 // @Description adding a user by BasicAuth.
@@ -144,7 +172,7 @@ func (transaction Transaction) Validate() error {
 // @Success 200 {objext} any
 // @Failure 500 {object} any
 // @Router /users [post]
-func (h Handler)AddUser(c echo.Context) error {
+func (h Handler) AddUser(c echo.Context) error {
 	// Inintialize Item
 	var user User
 	// Get form data
@@ -166,7 +194,7 @@ func (h Handler)AddUser(c echo.Context) error {
 		c.Logger().Error(err.Error())
 		return usersError.ErrPostUser.Wrap(err)
 	}
-	
+
 	message := fmt.Sprintf("Hello, %s !!", user.Name)
 	res := Response{Message: message}
 
@@ -181,7 +209,7 @@ func (h Handler)AddUser(c echo.Context) error {
 // @Success 200 {obejct} main.UserResponse
 // @Failure 500 {object} any
 // @Router /items/:id [get]
-func (h Handler)FindUser(c echo.Context) error {
+func (h Handler) FindUser(c echo.Context) error {
 	var name string
 	var id int
 
@@ -204,7 +232,7 @@ func (h Handler)FindUser(c echo.Context) error {
 // @Success 200 {array} main.Items
 // @Failure 500 {object} any
 // @Router /items [get]
-func (h Handler)GetItems(c echo.Context) error {
+func (h Handler) GetItems(c echo.Context) error {
 	var items Items
 
 	// Exec Query
@@ -242,7 +270,7 @@ func (h Handler)GetItems(c echo.Context) error {
 // @Success 200 {obejct} main.Item
 // @Failure 500 {object} any
 // @Router /items/:id [get]
-func (h Handler)FindItem(c echo.Context) error {
+func (h Handler) FindItem(c echo.Context) error {
 	var item Item
 	var id int
 	var name string
@@ -259,7 +287,7 @@ func (h Handler)FindItem(c echo.Context) error {
 	if err != nil {
 		return itemsError.ErrFindItem.Wrap(err)
 	}
-	item = Item{ Name: name, Category: category, Image: image, Price: price, PriceLowerLimit: priceLowerLimit, UserId: userId }
+	item = Item{Name: name, Category: category, Image: image, Price: price, PriceLowerLimit: priceLowerLimit, UserId: userId}
 
 	return c.JSON(http.StatusOK, item)
 }
@@ -272,13 +300,13 @@ func (h Handler)FindItem(c echo.Context) error {
 // @Success 200 {array} main.Items
 // @Failure 500 {object} any
 // @Router /items/search [get]
-func (h Handler)SearchItems(c echo.Context) error {
+func (h Handler) SearchItems(c echo.Context) error {
 	var items Items
 
 	keyWord := c.QueryParam("keyword")
 
 	// Exec Query
-	rows, err := h.DB.Query(`SELECT id, name, category, image, price, price_lower_limit, user_id FROM items WHERE name LIKE ?`, keyWord + "%")
+	rows, err := h.DB.Query(`SELECT id, name, category, image, price, price_lower_limit, user_id FROM items WHERE name LIKE ?`, keyWord+"%")
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -314,7 +342,7 @@ func (h Handler)SearchItems(c echo.Context) error {
 // @Success 200 {object} main.Response
 // @Failure 500 {object} any
 // @Router /items [post]
-func (h Handler)AddItem(c echo.Context) error {
+func (h Handler) AddItem(c echo.Context) error {
 	// Inintialize Item
 	var item Item
 	// Get form data
@@ -371,12 +399,12 @@ func (h Handler)AddItem(c echo.Context) error {
 
 	// Exec Query
 	_, err = h.DB.Exec(
-		`INSERT INTO items (name, category, image, price, price_lower_limit, user_id) VALUES (?, ?, ?, ?, ?, ?)`, 
-		item.Name, item.Category, item.Image, item.Price, item.PriceLowerLimit, item.UserId )
+		`INSERT INTO items (name, category, image, price, price_lower_limit, user_id) VALUES (?, ?, ?, ?, ?, ?)`,
+		item.Name, item.Category, item.Image, item.Price, item.PriceLowerLimit, item.UserId)
 	if err != nil {
 		return itemsError.ErrPostItem.Wrap(err)
 	}
-	
+
 	res := Response{Message: message}
 
 	return c.JSON(http.StatusOK, res)
@@ -393,7 +421,7 @@ func (h Handler)AddItem(c echo.Context) error {
 // @Success 200 {object} main.Response
 // @Failure 500 {object} any
 // @Router /items [post]
-func (h Handler)AddTransaction(c echo.Context) error {
+func (h Handler) AddTransaction(c echo.Context) error {
 	// Inintialize Transaction
 	var transaction Transaction
 
@@ -418,7 +446,7 @@ func (h Handler)AddTransaction(c echo.Context) error {
 		c.Logger().Error(err.Error())
 		return usersError.ErrPostUser.Wrap(err)
 	}
-	
+
 	message := fmt.Sprintf("Transaction created: %v", transaction)
 	res := Response{Message: message}
 
@@ -434,7 +462,7 @@ func (h Handler)AddTransaction(c echo.Context) error {
 // @Success 200 {obejct} main.Transaction
 // @Failure 500 {object} any
 // @Router /transactions/:item_id/:buyer_id [get]
-func (h Handler)FindTransaction(c echo.Context) error {
+func (h Handler) FindTransaction(c echo.Context) error {
 	var id int
 	var determinedPrice int
 	var itemId int
@@ -449,7 +477,42 @@ func (h Handler)FindTransaction(c echo.Context) error {
 	if err != nil {
 		return itemsError.ErrFindItem.Wrap(err)
 	}
-	transaction := Transaction{ Id: id, DeterminedPrice: determinedPrice, ItemId: itemId, BuyerId: buyerId, TransactionStatusId: transactionStatusId}
+	transaction := Transaction{Id: id, DeterminedPrice: determinedPrice, ItemId: itemId, BuyerId: buyerId, TransactionStatusId: transactionStatusId}
 
 	return c.JSON(http.StatusOK, transaction)
+}
+
+// AddQas is adding qas.
+func (h Handler) AddQa(c echo.Context) error {
+	// Inintialize Qa
+	var qa Qa
+	// Get form data
+	qa.ItemId, _ = strconv.Atoi(c.FormValue("item_id"))
+	qa.Question = c.FormValue("question")
+	qa.Answer = c.FormValue("answer")
+	qa.QaTypeId, _ = strconv.Atoi(c.FormValue("qa_type_id"))
+
+	// Validate qa fields
+	if err := c.Validate(qa); err != nil {
+		errs := err.(validation.Errors)
+		for k, err := range errs {
+			c.Logger().Error(k + ": " + err.Error())
+		}
+		return usersError.ErrPostUser.Wrap(err)
+	}
+
+	// Exec Query
+	_, err := h.DB.Exec(`INSERT INTO qas (item_id, question, answer, qa_type_id) VALUES (?, ?, ?, ?)`, qa.ItemId, qa.Question, qa.Answer, qa.QaTypeId)
+	if err != nil {
+		c.Logger().Error(err.Error())
+		return usersError.ErrPostUser.Wrap(err)
+	}
+
+	c.Logger().Infof("Receive qas")
+
+	message := fmt.Sprintf("qas received")
+
+	res := Response{Message: message}
+
+	return c.JSON(http.StatusOK, res)
 }
