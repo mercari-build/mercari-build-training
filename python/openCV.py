@@ -1,3 +1,4 @@
+
 import cv2
 #import random
 import numpy as np
@@ -72,3 +73,4 @@ def condition(img):
     scr_score = sum(sizes)/white_area
 
     return scr_score
+

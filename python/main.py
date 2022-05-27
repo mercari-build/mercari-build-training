@@ -12,8 +12,7 @@ import sqlite3
 import json
 from fastapi.responses import ORJSONResponse
 import hashlib
-
-
+from .openCV import condition 
 
 #----config----------------------------
 
@@ -60,9 +59,16 @@ def add_sql(name,category, image_name):
     c.execute("INSERT INTO items(name,category,image_filename) VALUES( ?, ?, ?);", (name,category,image_name))
     # idはtable作成時に割り当て済み
     conn.commit()
+    id = c.execute('SELECT id FROM items WHERE image_filename = ? ;', (image_name,)).fetchone()
     conn.close()
-    
-
+    return id
+ 
+def add_checkDB(id, score, checked_image_name):
+    conn = sqlite3.connect("../db/check.db", check_same_thread=False)
+    c = conn.cursor()
+    c.execute("INSERT INTO items(name,category,image_filename) VALUES( ?, ?, ?);", (id, score, checked_image_name))
+    conn.commit()
+    conn.close()
     
 # ----endpoints--------------------------
 
@@ -87,13 +93,19 @@ def show_item():
 #   -d 'image=images/default.jpg'
 @app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
+    #OpenCV.py
+    score, checked_image = condition(image)
+    save_image(f"checked_image/{checked_image.filename}", checked_image)
+    
+    #imageNameハッシュ化
     image_hashname = image_toHash(image.filename) 
     file_location = f"image/{image_hashname}"
     save_image(file_location,image)
-    logger.info(f"Receive item: {name}")
-    logger.info(f"Receive item: {category}")
     logger.info(f"Receive item: {image_hashname}") 
-    add_sql(name,category,image_hashname)
+    
+    #DB
+    id = add_sql(name,category,image_hashname)
+    add_checkDB(id, score, checked_image)
     return {"message": f"item received: {name}"}
 
 
@@ -123,7 +135,6 @@ def show_detailById(item_id: int):
 
 
 
-
 @app.get("/image/{image_filename}")
 def get_image(image_filename):
     # Create image path
@@ -143,3 +154,12 @@ def get_image(image_filename):
     
         
     return FileResponse(image_path)
+
+
+@app.get("/check/{id}")
+def get_checked(id):
+    conn = sqlite3.connect('../db/check.db')
+    c = conn.cursor()
+    score = c.execute('SELECT score FROM score WHERE id =  ? ;', (id),).fetchone() 
+    conn.close()
+    return score
