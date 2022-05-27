@@ -32,11 +32,11 @@ export const ItemList: React.FC<{}> = () => {
             })
             .catch(error => {
                 console.error('GET error:', error)
-            })
+            }
+        )
     }
 
     const fetchImage = (image: string): string => {
-
         fetch(server.concat('/image/').concat(image),
             {
                 method: 'GET',
@@ -66,7 +66,7 @@ export const ItemList: React.FC<{}> = () => {
             {items && items.map((item, index) => {
                 return (
                     <div key={index} className='ItemList'>
-                        <Link to={"/item/" + index}>
+                        <Link to={"/item/" + item.id}>
                         {/* TODO: Task 1: Replace the placeholder image with the item image */}
                             <img src={fetchImage(item.image)}/>
                         <p>
