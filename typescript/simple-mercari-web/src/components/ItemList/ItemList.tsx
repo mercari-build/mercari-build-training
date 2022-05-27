@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { StringLiteral } from "typescript";
 import { AiOutlineSearch } from "react-icons/ai";
+import {useSearchParams} from "react-router-dom";
+
 
 interface Item {
   id: number;
@@ -8,12 +10,6 @@ interface Item {
   ja_name: string;
   category: string;
   image: string;
-}
-
-interface Category {
-  id: number;
-  en_name: string;
-  ja_name: string;
 }
 
 const server = process.env.API_URL || "http://127.0.0.1:9000";
@@ -46,6 +42,27 @@ export const ItemList: React.FC<Prop> = (props) => {
         console.error("GET error:", error);
       });
   };
+  // const [search, setSearch] = useState("");
+  // const [searchItems, setSearchItems] = useState<Item[]>([]);
+  // const fetchSearchItems = () => {
+  //   fetch(server.concat("/items?search=").concat(search), {
+  //     method: "GET",
+  //     mode: "cors",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       Accept: "application/json",
+  //     },
+  //   })
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       console.log("GET success:", data);
+  //       setSearchItems(data);
+  //       onLoadCompleted && onLoadCompleted();
+  //     })
+  //     .catch((error) => {
+  //       console.error("GET error:", error);
+  //     });
+  // };
 
   useEffect(() => {
     if (reload) {
@@ -157,49 +174,3 @@ export const ItemList: React.FC<Prop> = (props) => {
     </div>
   );
 };
-
-//   return (
-//     <>
-//       <div className="categories">
-//         <h1>Categories</h1>
-//         <ul>
-//           <li onClick={() => setSelectedCategory("all")}>
-//             <a>All</a>
-//           </li>
-//           {categories.map((category: any) => {
-//             return (
-//               <li key={category} onClick={() => setSelectedCategory(category)}>
-//                 <a>{category}</a>
-//               </li>
-//             );
-//           })}
-//         </ul>
-//       </div>
-//       <div className="AllItems">
-//         {items
-//           .filter((item: any) => {
-//             if (selectedCategory === "all") {
-//               return true;
-//             } else {
-//               return item.category === selectedCategory;
-//             }
-//           })
-//           .map((item: any) => {
-//             return (
-//               <div className="item">
-//                 <img
-//                   className="ItemImage"
-//                   src={server + `/image/${item.image}` || placeholderImage}
-//                   alt={item.name}
-//                 />
-//                 <div className="item-info">
-//                   <h2>{item.en_name}</h2>
-//                   <p className="tag">{item.category}</p>
-//                 </div>
-//               </div>
-//             );
-//           })}
-//       </div>
-//     </>
-//   );
-// };
