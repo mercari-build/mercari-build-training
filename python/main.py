@@ -2,11 +2,11 @@ import os
 import logging
 import pathlib
 import sqlite3
+import hashlib
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-import sqlite3
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -64,15 +64,21 @@ def root():
 
 
 @app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...)):
+def add_item(name: str = Form(...), category: str = Form(...), image: str = Form(...)):
+
+    if not image.endswith(".jpg"):
+        raise HTTPException(
+            status_code=400, detail="Image is not of .jpg format")
+    hashed_img = hashlib.sha256(
+        image[:-4].encode('utf-8')).hexdigest() + '.jpg'
 
     # connect
     conn = sqlite3.connect(SQLiteName)
     # cursor
     cur = conn.cursor()
 
-    cur.execute("INSERT INTO items(name,category) VALUES (?,?)",
-                (name, category))
+    cur.execute("INSERT INTO items(name,category,image) VALUES (?,?,?)",
+                (name, category, hashed_img))
 
     conn. commit()
     conn.close()
