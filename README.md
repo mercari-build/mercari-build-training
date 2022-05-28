@@ -51,14 +51,15 @@ The following icons indicate pointers for
   	
 - ブランチstep5はこのエラー解消用
   
-## ブランチ運用(とりあえず25日まで)
+## ブランチ運用
 
 
 	  main—------(念の為おいておく)
 				|- HackWeek (デモ用)
 					|- frontend(typescript用) :森本さん
 					|- Backend(Jupyternoteでopencv処理):大村さん
-					|- step5(step5の画像表示エラー解消用):中川
+					|- newDB (最新)
+					|- checker (以前のDB)
 	
 	
 	
