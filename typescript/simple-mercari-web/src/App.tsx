@@ -13,7 +13,7 @@ function App() {
     <div>
       <header className='Title'>
         <p>
-          <b>Simple Mercari</b>
+          <b>AI Checker</b>
         </p>
       </header>
       <div>

@@ -73,6 +73,7 @@ def condition(img_path):
     scr_score = sum(sizes)/white_area
 
     #結果画像
-    checked_image = 'cellphone_recog_result.jpg'
-    
+    checked_image = str('cellphone_recog_result.jpg')
     return scr_score, checked_image
+
+

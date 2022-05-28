@@ -3,19 +3,19 @@
 }
 
 .Title {
-  background-color: #222427;
+  background-color: white;
   min-height: 8vh;
   display: flex;
   flex-direction: column;
   align-items: left;
   justify-content: left;
-  font-size: calc(10px + 1vmin);
-  color: white;
+  font-size: calc(18px + 1vmin);
+  color: #708DFD;
   padding-left: 20px;
 }
 
 .Listing {
-  background-color: rgb(182, 180, 180);
+  background-color: rgb(203, 201, 201);
   min-height: 8vh;
   display: flex;
   flex-direction: column;
@@ -24,6 +24,7 @@
   font-size: calc(10px + 1vmin);
   color: white;
   padding: 10px;
+  max-height:fit-content;
 }
 
 .ItemList {
@@ -84,6 +85,7 @@ span{
 .group {
   display:inline-block;
   align-items: center;
+  width: auto;
 }
 
 input {
@@ -94,14 +96,15 @@ input {
 	display: flex;
 	justify-content: center;
 	flex-wrap: wrap;
-	width: 80%;
+	width: 100%;
 }
 
 .form .form_input {
-	flex: 1 1 300px;
+	flex: 1 1 100px;
 	margin: 10px;
 	border: none;
 	padding: 15px;
+  color: #222427;
 	border-radius: 7px;
 	background-color: #E6E6E6;
 	outline: 3px solid transparent;
@@ -114,7 +117,7 @@ input {
 
 .form .form_input:hover,
 .form .form_input:focus {
-	outline: 0.3px solid #708DFD;
+	outline: 0.3px solid #708DFD; 
 }
 
 .form .form_file {
