@@ -10,8 +10,8 @@ type formDataType = {
   name: string,
   category: string,
   image: string | File,
-  condition: string,
-  damage_analysis: string,
+  details: string,
+  damage_analysis: boolean,
 }
 
 export const Listing: React.FC<Prop> = (props) => {
@@ -20,8 +20,8 @@ export const Listing: React.FC<Prop> = (props) => {
     name: "",
     category: "",
     image: "",
-    condition: "",
-    damage_analysis: "",
+    details: "",
+    damage_analysis: false,
   };
   const [values, setValues] = useState<formDataType>(initialState);
 
@@ -35,14 +35,20 @@ export const Listing: React.FC<Prop> = (props) => {
       ...values, [event.target.name]: event.target.files![0],
     })
   };
+  const setChecked = (event: React.ChangeEvent<HTMLInputElement>) =>{
+    setValues({
+      ...values, [event.target.name]: !event.target.value,
+    })
+  };
+  
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const data = new FormData()
     data.append('name', values.name)
     data.append('category', values.category)
     data.append('image', values.image)
-    data.append('condition', values.condition)
-    data.append('damage_analysis', values.damage_analysis)
+    data.append('details', values.details)
+    data.append('damage_analysis', JSON.stringify(values.damage_analysis))
 
     // To test what values are sent over
     // console.log(values.condition)
@@ -70,8 +76,8 @@ export const Listing: React.FC<Prop> = (props) => {
             <input className="form_input" type='text' name='category' id='category' placeholder='Category' onChange={onValueChange} />
             <input className="form_file" type='file' name='image' id='image' onChange={onFileChange} required />
             <br />
-            <input className="form_input" type="text" name="condition" id='condition' placeholder='Describe the item condition' onChange={onValueChange} required />
-            <label><input type="checkbox"  name="damage_analysis" id="damage_analysis" onChange={onValueChange}/>Analyse the condition</label>
+            <input className="form_input" type="text" name="details" id='details' placeholder='Describe the item condition' onChange={onValueChange} required />
+            <label><input type="checkbox"  name="damage_analysis" id="damage_analysis" onChange={setChecked}/>Analyse the condition</label>
             <button className="form_submit" type='submit'>List this item</button>
           </div>
       </form>
