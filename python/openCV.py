@@ -4,16 +4,16 @@ import cv2
 import numpy as np
 
 # 画像を読み込む
-#　画像読み込みの方法がわかったらこの行は削除する
-img = cv2.imread('../image/cellphone_orig.jpg', 0)
+# #　画像読み込みの方法がわかったらこの行は削除する
+# img = cv2.imread('../image/cellphone_orig.jpg', 0)
 
-def condition(img):
-
+def condition(img_path):
+    img_origin = cv2.imread(img_path,0)
     # 元画像を読み込み、コントラストを調整する
-    img = cv2.medianBlur(img,5)
+    img = cv2.medianBlur(img_origin,5)
     img_adpth = cv2.adaptiveThreshold(img,255,cv2.ADAPTIVE_THRESH_MEAN_C,\
                 cv2.THRESH_BINARY,31,5)
-    cv2.imwrite('../image/cellphone_adpth2.jpg', img_adpth)
+    cv2.imwrite('checked_image/cellphone_adpth2.jpg', img_adpth)
 
 
     # スマートフォンの外部を真っ黒にするフィルターを作る
@@ -25,23 +25,23 @@ def condition(img):
     img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_OPEN, kernel, iterations=3)
     # 収縮
     img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_CLOSE, kernel, iterations=20)
-    cv2.imwrite('../image/cellphone_mask.jpg', img_bin)
-    img_obj = cv2.imread('../image/cellphone_adpth2.jpg', 0)
+    cv2.imwrite('checked_image/cellphone_mask.jpg', img_bin)
+    img_obj = cv2.imread('checked_image/cellphone_adpth2.jpg', 0)
 
 
     # コントラスを調整した元画像に、スマートフォンの外部と内部を区別するフィルターをかける
     # これを"前処理画像"とする
-    img_mask = cv2.imread('../image/cellphone_mask.jpg', 0)
+    img_mask = cv2.imread('checked_image/cellphone_mask.jpg', 0)
     img_mask_inv = cv2.bitwise_not(img_mask)
     img_obj = cv2.bitwise_or(img_obj, img_mask_inv)
     img_obj = cv2.bitwise_not(img_obj)
-    cv2.imwrite('../image/cellphone_obj.jpg', img_obj)
+    cv2.imwrite('checked_image/cellphone_obj.jpg', img_obj)
 
     # 前処理画像から赤枠を作成し、元画像に重ねる
     # 元画像をグレースケールで読み込み
-    img_orig = cv2.imread('../image/cellphone_orig.jpg', 0)
+    img_orig = cv2.imread(img_path, 0)
     # 前処理画像をグレースケールで読み込み
-    img_gray = cv2.imread('../image/cellphone_obj.jpg', 0)
+    img_gray = cv2.imread('checked_image/cellphone_obj.jpg', 0)
     # ラベリング処理
     n, label, data, center = cv2.connectedComponentsWithStats(img_gray)
     sizes = data[1:, -1]
@@ -61,7 +61,7 @@ def condition(img):
             y1 = y0 + data[i][3] +4
             cv2.rectangle(img_result, (x0, y0), (x1, y1), color=(0, 0, 255), thickness=3)
     # 結果画像を書き出し
-    cv2.imwrite('../image/cellphone_recog_result.jpg', img_result)
+    cv2.imwrite('checked_image/cellphone_recog_result.jpg', img_result)
 
 
 
@@ -72,5 +72,7 @@ def condition(img):
     #傷のスコア（スマートフォンの面積に対する、赤枠の総面積の割合, 0〜1）
     scr_score = sum(sizes)/white_area
 
-    return scr_score
-
+    #結果画像
+    checked_image = 'cellphone_recog_result.jpg'
+    
+    return scr_score, checked_image

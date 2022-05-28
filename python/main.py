@@ -12,7 +12,7 @@ import sqlite3
 import json
 from fastapi.responses import ORJSONResponse
 import hashlib
-from .openCV import condition 
+from openCV import condition 
 
 #----config----------------------------
 
@@ -66,7 +66,7 @@ def add_sql(name,category, image_name):
 def add_checkDB(id, score, checked_image_name):
     conn = sqlite3.connect("../db/check.db", check_same_thread=False)
     c = conn.cursor()
-    c.execute("INSERT INTO items(name,category,image_filename) VALUES( ?, ?, ?);", (id, score, checked_image_name))
+    c.execute('INSERT INTO score (id,score, image_filename) VALUES( ?, ?, ?);', (id, score, str(checked_image_name)))
     conn.commit()
     conn.close()
     
@@ -93,9 +93,6 @@ def show_item():
 #   -d 'image=images/default.jpg'
 @app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
-    #OpenCV.py
-    score, checked_image = condition(image)
-    save_image(f"checked_image/{checked_image.filename}", checked_image)
     
     #imageNameハッシュ化
     image_hashname = image_toHash(image.filename) 
@@ -103,8 +100,13 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     save_image(file_location,image)
     logger.info(f"Receive item: {image_hashname}") 
     
+    #OpenCV.py
+    score, checked_image = condition(file_location)
+    # save_image(f"checked_image/{checked_image.filename}", checked_image)
+    
     #DB
-    id = add_sql(name,category,image_hashname)
+    # id = add_sql(name,category,image_hashname)
+    id = 20
     add_checkDB(id, score, checked_image)
     return {"message": f"item received: {name}"}
 
