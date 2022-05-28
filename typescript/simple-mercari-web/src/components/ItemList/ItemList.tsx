@@ -63,9 +63,9 @@ export const ItemList: React.FC<{}> = () => {
     return (
         <div>
             <Listing/>
-            {items && items.map((item, index) => {
+            {items && items.map((item) => {
                 return (
-                    <div key={index} className='ItemList'>
+                    <div key={item.id} className='ItemList'>
                         <Link to={"/item/" + item.id}>
                         {/* TODO: Task 1: Replace the placeholder image with the item image */}
                             <img src={fetchImage(item.image)}/>
