@@ -14,6 +14,8 @@ from fastapi.responses import ORJSONResponse
 import hashlib
 from openCV import condition 
 
+
+
 #----config----------------------------
 
 app = FastAPI()
@@ -37,10 +39,12 @@ def db_toList(items):
     objects_list = []
     for row in items:
         d = collections.OrderedDict()
-        # d['id'] = row[0]
+        d['id'] = row[0]
         d['name'] = row[1]
         d['category'] = row[2]
         d['image_filename'] = row[3]
+        d['score'] = row[4]
+        # d['checked_imagename'] = row[5]
         objects_list.append(d)   
     return objects_list 
 
@@ -53,22 +57,14 @@ def save_image(file_location, image_file):
     with open(file_location, 'w+b') as f:
         shutil.copyfileobj(image_file.file, f) 
         
-def add_sql(name,category, image_name):
+def add_sql(name,category, image_name, score, checked_imagename):
     conn = sqlite3.connect("../db/item.db", check_same_thread=False)
     c = conn.cursor()
-    c.execute("INSERT INTO items(name,category,image_filename) VALUES( ?, ?, ?);", (name,category,image_name))
+    c.execute("INSERT INTO items(name,category,image_filename, score, checked_imagename) VALUES( ?, ?, ?, ?, ?);", (name,category,image_name , score, checked_imagename))
     # idはtable作成時に割り当て済み
     conn.commit()
-    id = c.execute('SELECT id FROM items WHERE image_filename = ? ;', (image_name,)).fetchone()
     conn.close()
-    return id
  
-def add_checkDB(id, score, checked_image_name):
-    conn = sqlite3.connect("../db/check.db", check_same_thread=False)
-    c = conn.cursor()
-    c.execute('INSERT INTO score (id,score, image_filename) VALUES( ?, ?, ?);', (id, score, str(checked_image_name)))
-    conn.commit()
-    conn.close()
     
 # ----endpoints--------------------------
 
@@ -81,7 +77,7 @@ def root():
 def show_item():
     conn = sqlite3.connect("../db/item.db", check_same_thread=False)
     c = conn.cursor()
-    items = c.execute('SELECT * FROM items;').fetchall()
+    items = c.execute('SELECT id, name,category,image_filename, score FROM items;').fetchall()
     content = db_toList(items)
     conn.close()
     return {"items": content}
@@ -90,7 +86,8 @@ def show_item():
 #   --url 'http://localhost:9000/items' \
 #   -d 'name=jacket' \
 #   -d 'category=fashion' \
-#   -d 'image=images/default.jpg'
+#   -d 'image=images/default.jpg' \
+#   -d ''
 @app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
     
@@ -101,13 +98,12 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     logger.info(f"Receive item: {image_hashname}") 
     
     #OpenCV.py
-    score, checked_image = condition(file_location)
-    # save_image(f"checked_image/{checked_image.filename}", checked_image)
+    score, checked_imagename = condition(file_location)
+    logger.info(f"score: {score}")
     
     #DB
-    # id = add_sql(name,category,image_hashname)
-    id = 20
-    add_checkDB(id, score, checked_image)
+    add_sql(name,category,image_hashname, score, checked_imagename)
+
     return {"message": f"item received: {name}"}
 
 
@@ -116,7 +112,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
 def search_item(keyword: str = None):
     conn = sqlite3.connect('../db/item.db')
     c = conn.cursor()
-    items = c.execute('SELECT * FROM items WHERE name LIKE  ? ;', (f"%{keyword}%",)).fetchall()
+    items = c.execute('SELECT name,category,image_filename FROM items WHERE name LIKE  ? ;', (f"%{keyword}%",)).fetchall()
     content = db_toList(items)
     conn.close()
     return {"items": content}
@@ -160,8 +156,8 @@ def get_image(image_filename):
 
 @app.get("/check/{id}")
 def get_checked(id):
-    conn = sqlite3.connect('../db/check.db')
+    conn = sqlite3.connect('../db/item.db')
     c = conn.cursor()
-    score = c.execute('SELECT score FROM score WHERE id =  ? ;', (id),).fetchone() 
+    score = c.execute('SELECT score FROM items WHERE id =  ? ;', (id),).fetchone() 
     conn.close()
     return score
