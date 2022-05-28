@@ -1,77 +1,52 @@
-import React, { useEffect, useState } from "react";
-import { StringLiteral } from "typescript";
-import { AiOutlineSearch } from "react-icons/ai";
-import {useSearchParams} from "react-router-dom";
+import React from 'react';
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { AiOutlineSearch } from 'react-icons/ai';
 
 
-interface Item {
-  id: number;
-  en_name: string;
-  ja_name: string;
-  category: string;
-  image: string;
-}
-
-const server = process.env.API_URL || "http://127.0.0.1:9000";
+const server = process.env.API_URL || "http://127.0.0.1:9000/search";
 const placeholderImage = process.env.PUBLIC_URL + "/logo192.png";
 
-interface Prop {
-  reload?: boolean;
-  onLoadCompleted?: () => void;
-}
+export default function Search() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchKeyword = searchParams.get("keyword");
+  
+    const [items, setItems] = useState([]);
+    const fetchItems = async () => {
+        const response = await fetch(`${server}?keyword=${searchKeyword}`);
+        const json = await response.json();
+        setItems(json.items);
+        console.log(json);
+    };
+    useEffect(() => {
+        fetchItems();
+    }, [searchKeyword]);
 
-export const ItemList: React.FC<Prop> = (props) => {
-  const { reload = true, onLoadCompleted } = props;
-  const [items, setItems] = useState<Item[]>([]);
-  const fetchItems = () => {
-    fetch(server.concat("/items"), {
-      method: "GET",
-      mode: "cors",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("GET success:", data);
-        setItems(data);
-        onLoadCompleted && onLoadCompleted();
-      })
-      .catch((error) => {
-        console.error("GET error:", error);
+
+
+    const categories = [];
+    if (items.length > 0) {
+      items.forEach((item) => {
+        if (!categories.includes(item.category)) {
+          categories.push(item.category);
+        }
       });
-  };
-
-
-  useEffect(() => {
-    if (reload) {
-      fetchItems();
     }
-  }, [reload]);
 
-  const categories: any = [];
-  if (items.length > 0) {
-    items.forEach((item) => {
-      if (!categories.includes(item.category)) {
-        categories.push(item.category);
-      }
-    });
-  }
+  
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedLanguage, setSelectedLanguage] = useState("en");
+  const [searchText, setSearchText] = useState("");
 
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("en");
-  const [searchText, setSearchText] = useState<string>("");
-
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleCategoryChange = (e) => {
     setSelectedCategory(e.target.value);
   };
 
-  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleLanguageChange = (e) => {
     setSelectedLanguage(e.target.value);
   };
 
-  const handleSearchTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchTextChange = (e) => {
     setSearchText(e.target.value);
   };
 
@@ -113,7 +88,7 @@ export const ItemList: React.FC<Prop> = (props) => {
             onChange={handleCategoryChange}
           >
             <option value="all">All</option>
-            {categories.map((category: any) => {
+            {categories.map((category) => {
               return (
                 <option key={category} value={category}>
                   {category}
@@ -140,7 +115,7 @@ export const ItemList: React.FC<Prop> = (props) => {
               <div className="item-list-item-image">
                 <img
                   className="ItemImage"
-                  src={server + `/image/${item.image}` || placeholderImage}
+                  src={process.env.API_URL || "http://127.0.0.1:9000" + `/image/${item.image}` || placeholderImage}
                   alt={item.en_name}
                 />
               </div>
@@ -154,3 +129,4 @@ export const ItemList: React.FC<Prop> = (props) => {
     </div>
   );
 };
+

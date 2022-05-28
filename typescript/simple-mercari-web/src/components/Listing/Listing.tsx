@@ -87,15 +87,6 @@ export const Listing: React.FC<Prop> = (props) => {
             <option value="3">post-modern</option>
           
           </select>
-          {/* <input
-            type="text"
-            name="category"
-            id="category"
-            placeholder="category"
-            onChange={onValueChange}
-            autoComplete="off"
-            required
-          /> */}
           <input
             type="file"
             name="image"
