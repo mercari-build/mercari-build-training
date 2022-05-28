@@ -150,7 +150,7 @@ input {
 	color: #FFFFFF;
 	box-shadow: 0 7px 7px -5px rgba(0,0,0,0.35);
 	transition: box-shadow .2s, top .2s, background-color .2s, flex-basis .2s;
-  width: 150px;
+  width: auto;
 }
 .form .form_submit:hover,
 .form .form_submit:focus {
@@ -160,4 +160,12 @@ input {
 .form .form_submit:focus {
 	background-color: #4A65CE;
 	outline: 0;
+}
+.Phone-img {
+  height: 320px;
+  width: auto;
+}
+.item-score {
+  color: red;
+  font: bold, 25px Arial;
 }

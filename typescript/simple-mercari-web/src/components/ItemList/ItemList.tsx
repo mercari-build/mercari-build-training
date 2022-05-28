@@ -55,22 +55,12 @@ export const ItemList: React.FC<Prop> = (props) => {
 
             {/* <img src={placeholderImage} /> */}
             {/* TODO:↓ここでimage_filenameが取得できないエラーが発生している */}
-            <img src={`${server}/image/${item.image_filename}`} alt="item-image" />
+            <img src={`${server}/image/${item.image_filename}`} alt="item-image" className="Phone-img" />
 
             <p>
-              <span>Name: {item.name}</span>
-              <br />
-              <span>Category: {item.category}</span>
-
-              <br />
-              <span>Condition: Brand New</span>
-              <br />
-              <span>Damage analysis: {item.score} %</span>
-
-              {/* to be replaced once the backend is completed */}
-              {/* <span>Condition: {item.condition}</span> */}
-              {/* <br /> */}
-              {/* <span>Damage analysis: {item.damage_analysis}</span> */}
+              <span>{item.name}</span>
+              <br /><br />
+              <span className="item-score">Damage analysis: {item.score} </span>
 
             </p>
             </div>

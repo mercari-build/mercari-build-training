@@ -10,7 +10,6 @@ type formDataType = {
   name: string,
   category: string,
   image: string | File,
-  details: string,
   damage_analysis: boolean,
 }
 
@@ -20,7 +19,6 @@ export const Listing: React.FC<Prop> = (props) => {
     name: "",
     category: "",
     image: "",
-    details: "",
     damage_analysis: false,
   };
   const [values, setValues] = useState<formDataType>(initialState);
@@ -47,7 +45,6 @@ export const Listing: React.FC<Prop> = (props) => {
     data.append('name', values.name)
     data.append('category', values.category)
     data.append('image', values.image)
-    data.append('details', values.details)
     data.append('damage_analysis', JSON.stringify(values.damage_analysis))
 
     // To test what values are sent over
@@ -71,14 +68,13 @@ export const Listing: React.FC<Prop> = (props) => {
   return (
     <div className='Listing'>
       <form onSubmit={onSubmit} className="form">
-          <div className="group"> 
+          <div className="group">
             <input className="form_input" type='text' name='name' id='name' placeholder='Name' onChange={onValueChange} required />
             <input className="form_input" type='text' name='category' id='category' placeholder='Category' onChange={onValueChange} />
             <input className="form_file" type='file' name='image' id='image' onChange={onFileChange} required />
-            <br/>
-            <input className="form_input" type="text" name="details" id='details' placeholder='Describe the item condition' onChange={onValueChange} required />
-            <label><input type="checkbox"  name="damage_analysis" id="damage_analysis" onChange={setChecked}/>Analyse the condition</label>
-            <button className="form_submit" type='submit'>List this item</button>
+            {/* <label><input type="checkbox"  name="damage_analysis" id="damage_analysis" onChange={setChecked}/>Analyse the condition</label> */}
+            <button className="form_submit" >List item</button>
+            <button className="form_submit" type='submit'>List item & Analyse damage</button>
           </div>
       </form>
     </div>
