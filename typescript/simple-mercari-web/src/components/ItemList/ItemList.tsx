@@ -5,6 +5,7 @@ interface Item {
   name: string;
   category: string;
   image_filename: string;
+  score: number;
 };
 
 const server = process.env.API_URL || 'http://127.0.0.1:9000';
@@ -39,9 +40,6 @@ export const ItemList: React.FC<Prop> = (props) => {
         console.error('GET error:', error)
       })
   }
-
-
-
   useEffect(() => {
     if (reload) {
       fetchItems();
@@ -67,7 +65,7 @@ export const ItemList: React.FC<Prop> = (props) => {
               <br />
               <span>Condition: Brand New</span>
               <br />
-              <span>Damage analysis: 0 % </span>
+              <span>Damage analysis: {item.score} %</span>
 
               {/* to be replaced once the backend is completed */}
               {/* <span>Condition: {item.condition}</span> */}
