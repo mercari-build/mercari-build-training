@@ -29,7 +29,7 @@ SQLiteName = "../db/mercari.sqlite3"
 def format_items(items):
     items_format = []
     for item in items:
-        item_format = {"name": item[1], "category": item[2]}
+        item_format = {"name": item[1], "category": item[2], "image": item[3]}
         items_format.append(item_format)
 
     return {"items": f"{items_format}"}
