@@ -21,7 +21,7 @@ jobs:
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v0.4.0'
         with:
-          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          workload_identity_provider: projects/381045458779/locations/global/workloadIdentityPools/mercari-listing/providers/gha-provider
           service_account: ${{ secrets.SERVICE_ACCOUNT }}
 
       - name: Setup gcloud
