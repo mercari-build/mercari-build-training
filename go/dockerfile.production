@@ -1,6 +1,6 @@
 FROM golang:1.17-alpine
 
-PORT 8080
+ENV PORT 8080
 ENV GOPATH /go
 ENV GO111MODULE on
 
