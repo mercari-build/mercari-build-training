@@ -123,6 +123,27 @@ def search_item(keyword: str):  # query parameter
     return message
 
 
+@app.get("/items/{items_id}")
+def get_item_by_id(items_id):
+
+    logger.info(f"Search item with ID: {items_id}")
+
+    conn = sqlite3.connect(SQLiteName)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # select item matching keyword
+    cur.execute(
+        "SELECT name, category, image from items WHERE id=(?)", (items_id,))
+    item = cur.fetchone()
+    conn.close()
+    if item == []:
+        message = {"message": "No matching item"}
+    else:
+        message = item
+    return message
+
+
 @app.get("/image/{image_filename}")
 async def get_image(image_filename):
     # Create image path
