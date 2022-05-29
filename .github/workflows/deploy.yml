@@ -5,15 +5,6 @@ on:
     branches:
       - main
 
-env:
-  environment:
-      name: Production
-  SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
-  PORT: ${{ secrets.PORT }}
-  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  GCP_REGION: ${{ secrets.GCP_REGION }}
-  IMAGE: gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.SERVICE_NAME }}:${{ github.sha }}
-
 jobs:
   deploy-to-cloud-run:
     runs-on: ubuntu-latest
@@ -40,18 +31,18 @@ jobs:
         run: gcloud auth configure-docker --quiet
 
       - name: Build a docker image
-        run: docker build -t $IMAGE ./go
+        run: docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.SERVICE_NAME }}:${{ github.sha }} ./go
 
       - name: Push the docker image to Container Registry
-        run: docker push $IMAGE
+        run: docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.SERVICE_NAME }}:${{ github.sha }}
 
       - name: Deploy to Cloud Run
         run: |
-            gcloud run deploy $SERVICE_NAME \
-              --image $IMAGE \
-              --port $PORT \
-              --project $GCP_PROJECT_ID \
-              --region $GCP_REGION \
+            gcloud run deploy ${{ secrets.SERVICE_NAME }} \
+              --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.SERVICE_NAME }}:${{ github.sha }} \
+              --port ${{ secrets.PORT }} \
+              --project ${{ secrets.GCP_PROJECT_ID }} \
+              --region ${{ secrets.GCP_REGION }} \
               --platform=managed \
               --allow-unauthenticated \
               --quiet
