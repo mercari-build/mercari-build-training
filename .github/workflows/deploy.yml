@@ -5,9 +5,6 @@ on:
     branches:
       - main
 
-env:
-  SERVICE_ACCOUNT: github-actions@build-mercari-2022-team6.iam.gserviceaccount.com
-
 jobs:
   deploy-to-cloud-run:
     runs-on: ubuntu-latest
@@ -25,7 +22,7 @@ jobs:
         uses: 'google-github-actions/auth@v0.4.0'
         with:
           workload_identity_provider: projects/381045458779/locations/global/workloadIdentityPools/mercari-listing/providers/gha-provider
-          service_account: $SERVICE_ACCOUNT
+          service_account: github-actions@build-mercari-2022-team6.iam.gserviceaccount.com
 
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v0
