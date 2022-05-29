@@ -3,4 +3,6 @@ FROM node:16-alpine
 WORKDIR /app
 ADD ./typescript/simple-mercari-web /app
 
-CMD ["run", "npm", "ci"]
+RUN npm ci
+
+CMD ["npm", "start"]

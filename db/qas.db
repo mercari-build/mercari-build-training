@@ -1,0 +1,14 @@
+EATE TABLE IF NOT EXISTS qas(
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+    item_id INTEGER NOT NULL,
+	question STRING,
+	answer STRING,
+    qa_type_id INTEGER NOT NULL,
+    foreign key (item_id) REFERENCES items(id) ON DELETE CASCADE,
+    foreign key (qa_type_id) REFERENCES qa_types(id) ON DELETE CASCADE,
+    unique (item_id)
+);
+CREATE TABLE IF NOT EXISTS qa_types(
+    id INTEGER PRIMARY KEY AUTOINCREMENT, 
+  	label STRING
+)
