@@ -1,7 +1,6 @@
 import {Link, Outlet} from 'react-router-dom';
 import React, {useEffect, useState} from "react";
 import {QaModal} from "../components/Qa/QaModal";
-import TextCard from "../components/Qa/QaCard";
 
 // Itemの親コンポーネント
 function qaTest() {
@@ -19,7 +18,6 @@ function ParentItem() {
                 padding: '1rem 1rem 60px',
             }}>
                 <h2>商品詳細ページ</h2>
-                <TextCard/>
                 <Outlet/>
                 <div style={{
                     position: 'absolute',
