@@ -31,7 +31,7 @@ jobs:
         run: gcloud auth configure-docker --quiet
 
       - name: Build a docker image
-        run: docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.SERVICE_NAME }}:${{ github.sha }} . -f ./go/dockerfile
+        run: docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.SERVICE_NAME }}:${{ github.sha }} . -f ./go/dockerfile.production
 
       - name: Push the docker image to Container Registry
         run: docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.SERVICE_NAME }}:${{ github.sha }}
@@ -40,7 +40,6 @@ jobs:
         run: |
             gcloud run deploy mercari-build-2022-backend \
               --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.SERVICE_NAME }}:${{ github.sha }} \
-              --port 9000 \
               --project ${{ secrets.GCP_PROJECT_ID }} \
               --region ${{ secrets.GCP_REGION }} \
               --platform=managed \

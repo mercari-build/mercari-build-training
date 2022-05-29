@@ -1,5 +1,6 @@
 FROM golang:1.17-alpine
 
+PORT 8080
 ENV GOPATH /go
 ENV GO111MODULE on
 
@@ -15,9 +16,8 @@ WORKDIR /go/src/go
 ADD db /go/src/db
 ADD go /go/src/go
 
-RUN go mod tidy && \
-    go install github.com/cosmtrek/air@latest
+RUN go mod tidy
 
 WORKDIR /go/src/go/app
 
-CMD ["air"]
+CMD ["go run main.go"]
