@@ -15,8 +15,6 @@ env:
 jobs:
   deploy-to-cloud-run:
     runs-on: ubuntu-latest
-    environment:
-      - name: Production
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v3
