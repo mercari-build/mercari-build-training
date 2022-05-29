@@ -6,6 +6,8 @@ on:
       - main
 
 env:
+  environment:
+      name: Production
   SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
   PORT: ${{ secrets.PORT }}
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -38,7 +40,7 @@ jobs:
         run: gcloud auth configure-docker --quiet
 
       - name: Build a docker image
-        run: docker build -t $IMAGE .
+        run: docker build -t $IMAGE ./go
 
       - name: Push the docker image to Container Registry
         run: docker push $IMAGE
