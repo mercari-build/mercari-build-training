@@ -29,19 +29,8 @@ type Item struct {
 	Image string `json:"image"`
 }
 
-type ItemResponse struct {
-	Id int `json:"id"`
-	Name string `json:"name"`
-	Category string `json:"category"`
-	Image string `json:"image"`
-}
-
 type Items struct {
 	Items []Item `json:"items"`
-}
-
-type ItemsResponse struct {
-	Items []ItemResponse `json:"items"`
 }
 
 type Response struct {
@@ -91,28 +80,27 @@ func (item Item) Validate() error {
 // @Failure 500 {object} any
 // @Router /items [get]
 func (h Handler)GetItems(c echo.Context) error {
-	var items ItemsResponse
+	var items Items
 
 	// Exec Query
-	rows, err := h.DB.Query(`SELECT id, name, category, image FROM items`)
+	rows, err := h.DB.Query(`SELECT name, category, image FROM items`)
 	if err != nil {
 		return itemsError.ErrGetItems.Wrap(err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var id int
 		var name string
 		var category string
 		var image sql.NullString //NULLを許容する
 
 		// カーソルから値を取得
-		if err := rows.Scan(&id, &name, &category, &image); err != nil {
+		if err := rows.Scan(&name, &category, &image); err != nil {
 			return itemsError.ErrGetItems.Wrap(err)
 		}
 
 		fmt.Printf("name: %d, category: %s, image: %s\n", name, category, image.String)
-		items.Items = append(items.Items, ItemResponse{Id: id, Name: name, Category: category, Image: image.String}) // image -> {"hoge", true}
+		items.Items = append(items.Items, Item{Name: name, Category: category, Image: image.String}) // image -> {"hoge", true}
 	}
 
 	return c.JSON(http.StatusOK, items)

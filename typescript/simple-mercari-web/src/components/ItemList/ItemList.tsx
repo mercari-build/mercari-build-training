@@ -32,11 +32,11 @@ export const ItemList: React.FC<{}> = () => {
             })
             .catch(error => {
                 console.error('GET error:', error)
-            }
-        )
+            })
     }
 
     const fetchImage = (image: string): string => {
+
         fetch(server.concat('/image/').concat(image),
             {
                 method: 'GET',
@@ -80,4 +80,4 @@ export const ItemList: React.FC<{}> = () => {
             })}
         </div>
     )
-};
+}
