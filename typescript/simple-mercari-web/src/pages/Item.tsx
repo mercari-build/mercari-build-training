@@ -1,22 +1,15 @@
-import React, {useEffect, useState} from 'react';
-import {Listing} from "../Listing";
-import {Link} from "react-router-dom";
-
-
-interface Item {
-    id: number;
-    name: string;
-    category: string;
-    image: string;
-}
+import {Link, useParams} from "react-router-dom";
+import React, {useEffect, useState} from "react";
 
 const server = process.env.API_URL || 'http://127.0.0.1:9000';
-// const placeholderImage = process.env.PUBLIC_URL + '/logo192.png';
 
-export const ItemList: React.FC<{}> = () => {
-    const [items, setItems] = useState<Item[]>([])
+export const Item: React.FC<{}> = () => {
+    const {itemId} = useParams();
+    const [itemName, setItemName] = useState("")
+    const [itemCategory, setItemCategory] = useState("")
+    const [itemImage, setItemImage] = useState("")
     const fetchItems = () => {
-        fetch(server.concat('/items'),
+        fetch(server.concat('/items/' + itemId),
             {
                 method: 'GET',
                 mode: 'cors',
@@ -28,15 +21,16 @@ export const ItemList: React.FC<{}> = () => {
             .then(response => response.json())
             .then(data => {
                 console.log('GET success:', data);
-                setItems(data.items);
+                setItemName(data.name);
+                setItemCategory(data.category);
+                setItemImage(data.image);
             })
             .catch(error => {
-                console.error('GET error:', error)
-            })
+                    console.error('GET error:', error)
+                }
+            )
     }
-
     const fetchImage = (image: string): string => {
-
         fetch(server.concat('/image/').concat(image),
             {
                 method: 'GET',
@@ -58,26 +52,16 @@ export const ItemList: React.FC<{}> = () => {
 
     useEffect(() => {
         fetchItems();
-    }, []);
-
+    });
     return (
         <div>
-            <Listing/>
-            {items && items.map((item) => {
-                return (
-                    <div key={item.id} className='ItemList'>
-                        <Link to={"/item/" + item.id}>
-                        {/* TODO: Task 1: Replace the placeholder image with the item image */}
-                            <img src={fetchImage(item.image)}/>
-                        <p>
-                            <span>Name: {item.name}</span>
-                            <br/>
-                            <span>Category: {item.category}</span>
-                        </p>
-                    </Link>
-            </div>
-            )
-            })}
+            <h2>{itemName}</h2>
+            {/*<div>{itemCategory}</div>*/}
+            <img src={fetchImage(itemImage)}/>
+
+            <Link to={"/"}>
+                <div>もどる</div>
+            </Link>
         </div>
     )
-}
+};
