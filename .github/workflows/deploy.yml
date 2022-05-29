@@ -24,6 +24,7 @@ jobs:
         with:
           version: 'latest'
           project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT }}
           service_account_key: ${{ secrets.GCP_SA_KEY }}
           export_default_credentials: true
 
