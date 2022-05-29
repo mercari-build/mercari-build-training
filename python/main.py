@@ -84,6 +84,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: str = Form
     conn.close()
 
     logger.info(f"Receive item: name= {name}, category= {category}")
+
     return {"message": f"item received: {name}"}
 
 
