@@ -17,6 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: Production
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v3
