@@ -14,14 +14,12 @@ jobs:
       contents: 'read'
       id-token: 'write'
     steps:
-      - name: puts Environmental variables
-        run: echo ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }} ${{ secrets.SERVICE_ACCOUNT }} ${{ secrets.GCP_PROJECT_ID }} ${{ secrets.SERVICE_NAME }}
       - name: Checkout the repository
         uses: actions/checkout@v3
 
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v0'
+        uses: 'google-github-actions/auth@v0.4.0'
         with:
           workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.SERVICE_ACCOUNT }}
