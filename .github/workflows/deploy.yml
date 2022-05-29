@@ -15,7 +15,7 @@ jobs:
       id-token: 'write'
     steps:
       - name: puts Environmental variables
-        run: echo ${{ secrets }}
+        run: echo ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }} ${{ secrets.SERVICE_ACCOUNT }} ${{ secrets.GCP_PROJECT_ID }} ${{ secrets.SERVICE_NAME }}
       - name: Checkout the repository
         uses: actions/checkout@v3
 
