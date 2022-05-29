@@ -18,12 +18,15 @@ export const Item: React.FC<{}> = () => {
                     'Accept': 'application/json'
                 },
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log("res:",response)
+                response.json()
+            })
             .then(data => {
                 console.log('GET success:', data);
-                setItemName(data.name);
-                setItemCategory(data.category);
-                setItemImage(data.image);
+                // setItemName(data.name);
+                // setItemCategory(data.category);
+                // setItemImage(data.image);
             })
             .catch(error => {
                     console.error('GET error:', error)

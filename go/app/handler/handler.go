@@ -359,7 +359,6 @@ func (h Handler) AddItem(c echo.Context) error {
 	if err != nil {
 		return itemsError.ErrPostItem.Wrap(err)
 	}
-
 	// Validate item fields
 	if err := c.Validate(item); err != nil {
 		errs := err.(validation.Errors)
@@ -506,6 +505,7 @@ func (h Handler) AddQa(c echo.Context) error {
 	qa.Answer = c.FormValue("answer")
 	qa.QaTypeId, _ = strconv.Atoi(c.FormValue("qa_type_id"))
 
+    fmt.Println("aaaa",qa)
 	// Validate qa fields
 	if err := c.Validate(qa); err != nil {
 		errs := err.(validation.Errors)
@@ -545,7 +545,7 @@ func (h Handler) GetQas(c echo.Context) error {
 
 	// Exec Query
 	itemId, _ := strconv.Atoi(c.Param("item_id"))
-	c.Logger().Infof("SELECT id, item_id, question, answer, qa_type_id FROM items WHERE id = %s", itemId)
+	c.Logger().Infof("SELECT id, item_id, question, answer, qa_type_id FROM items WHERE item_id = %s", itemId)
 	rows, err := h.DB.Query("SELECT id, item_id, question, answer, qa_type_id FROM qas WHERE item_id = $1", itemId)
 	if err != nil {
 		return itemsError.ErrFindItem.Wrap(err)
