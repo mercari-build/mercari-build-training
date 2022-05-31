@@ -1,48 +1,201 @@
+* {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New';
+  outline: none;
+}
+
+
 .App {
   text-align: center;
 }
 
 .Title {
-  background-color: #222427;
+  background-color: #ff0211;
   min-height: 8vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: left;
-  font-size: calc(10px + 1vmin);
+  font-size: 3vmin;
   color: white;
+}
+
+#Listing-app {
+  width: 25%;
+  float: right;
+  height: max-content;
+  background-color: #4DC9FF;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+  font-size: 2vmin;
+  color: white;
+  margin-top: 5vmin;
 }
 
 .Listing {
-  background-color: #222427;
-  min-height: 8vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: left;
-  font-size: calc(10px + 1vmin);
+  padding: 1vmin;
+  height: max-content;
+}
+
+#nameInput,
+#categoryInput,
+#brandInput,
+#sizeInput,
+#productNumInput,
+#detailsInput {
+  padding: 1vmin;
+  margin-bottom: 1.5vh;
+  border-radius: 1.5vmin;
+  border-color: transparent;
+}
+
+.placeHolder {
+  color: gray;
+}
+
+.upload-btn {
+  display: inline-block;
+  cursor: pointer;
+  border: 2px solid #4DC9FF;
+  background-color: white;
+  padding: 0.6vmin;
+  border-radius: 1vmin;
+  color: black;
+}
+
+#upload-btn-img {
+  width: 2.5vmin;
+  height: 2.5vmin;
+  padding: none;
+  margin: 0 0.5vmin 0 0;
+}
+
+input[type="file"] {
+  display: none;
+}
+
+
+
+
+#submit-button {
+  float: right;
+  padding: 1vmin;
+  margin-bottom: 1.5vh;
+  background-color: #4c4e52;
   color: white;
+  border-radius: 1vmin;
+  border-color: transparent;
+  letter-spacing: -0.15vmin;
+}
+
+#ItemList-app {
+  width: 75%;
+  float: left;
+  background-color: white;
+}
+
+.GridListing {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 14vmax);
+  column-gap: 4vw;
+  row-gap: 2vh;
+  padding: calc(2vh + 1.5vw) 5vw;
+  padding-left: 2vw;
+  padding-right: 2vw;
+}
+
+.GridListing> :hover {
+  box-shadow: 0 1.5vw 2vh #CECECE;
 }
 
 .ItemList {
-  background-color: #222427;
-  min-height: 8vh;
+  background-color: #FFFFFF;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: left;
-  font-size: calc(10px + 1vmin);
-  color: white;
+  color: #222222;
+  padding: 2vmin 0 0 0;
+  border-radius: 0.5vmin;
+  border: 0.2vmin solid #CECECE;
+  width: 16vw;
+  aspect-ratio: 1.1;
+}
+
+.ListedImage {
+  width: calc(80vw / 6);
+  aspect-ratio: 0.9;
+  object-fit: cover;
+}
+
+.ItemInfo {
+  margin-bottom: none;
+}
+
+#item-name {
+  float: left;
+  font-size: 2.5vmin;
+
+}
+
+#item-category {
+  float: right;
+  font-size: 1.75vmin;
+  text-align: center;
+  padding: 0.25vmin;
+  background-color: #ECECEC;
+  border-color: none;
+  border-radius: 0.5vmin;
+  margin-top: 0.25vmin;
+  margin-left: 3vw;
+}
+
+#delete-btn-img {
+  width: 2.5vmin;
+  height: 2.5vmin;
+  padding: none;
+  margin: none;
+}
+
+#delete-btn {
+  background-color: transparent;
+  border-color: transparent;
+  padding: none;
+  width: 4vmin;
+  height: 4vmin;
+  padding: none;
+  margin: 0 0.5vmin 0.5vmin 20vmin;
+}
+
+
+#delete-btn :hover {
+  box-shadow: 0 1.5vw 2vh #4DC9FF;
 }
 
 .App-link {
-  color: #61dafb;
+  color: #4DC9FF;
+}
+
+.empty-state {
+  text-align: center;
+}
+
+#empty-image {
+  display: block;
+  margin-top: calc(1px + 0.5vmin);
+  margin-left: auto;
+  margin-right: auto;
+  width: 25%;
+}
+
+h3 {
+  margin: 0px;
+  font-weight: thick;
 }
 
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }

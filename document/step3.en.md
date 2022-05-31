@@ -135,12 +135,22 @@ Change the endpoints `GET /items` and `POST /items` such that items can have ima
 * Hash the image using sha256, and save it with the name `<hash>.jpg`
 * Modify items table such that the image file can be saved as a string
 
+```shell
+# POST the jpg file
+curl -X POST \
+  --url 'http://localhost:9000/items' \
+  -F 'name=jacket' \
+  -F 'category=fashion' \
+  -F 'image=@images/local_image.jpg'
+```
+
+
 Items table example:
 
-| id  | name   | category | image                                        |
-|:----|:-------|:---------|:---------------------------------------------|
-| 1   | jacket | fashion | 510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg |
-| 2   | ...    |          |                                              |
+| id   | name   | category | image_filename                                                       |
+| :--- | :----- | :------- | :------------------------------------------------------------------- |
+| 1    | jacket | fashion  | 510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg |
+| 2    | ...    |          |                                                                      |
 
 **:beginner: Point**
 
@@ -163,17 +173,17 @@ Modify the database as follows. This allows changes in the category names and yo
 
 **items table**
 
-| id  | name   | category_id | image                                        |
-|:----|:-------|:------------|:---------------------------------------------|
-| 1   | jacket | 1           | 510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg |
-| 2   | ...    |             |                                              |
+| id   | name   | category_id | image_filename                                                       |
+| :--- | :----- | :---------- | :------------------------------------------------------------------- |
+| 1    | jacket | 1           | 510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg |
+| 2    | ...    |             |                                                                      |
 
 **category table**
 
-| id  | name    | 
-|:----|:--------|
-| 1   | fashion |
-| ...|         |
+| id   | name    |
+| :--- | :------ |
+| 1    | fashion |
+| ...  |         |
 
 **:beginner: Points**
 * What is database **normalization**?

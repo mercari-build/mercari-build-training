@@ -1,6 +1,6 @@
 # Build@Mercari Training Program 2022
 
-This is @<your github id>'s build training repository.
+This is @e-yang08's build training repository.
 
 Build trainingの前半では個人で課題に取り組んでもらい、Web開発の基礎知識をつけていただきます。
 ドキュメントには詳細なやり方は記載しません。自身で検索したり、リファレンスを確認したり、チームメイトと協力して各課題をクリアしましょう。
@@ -14,7 +14,7 @@ The following icons indicate pointers for
 **:book: Reference**
 
 * そのセクションを理解するために参考になるUdemyやサイトのリンクです。課題内容がわからないときにはまずReferenceを確認しましょう。
-* Useful links for Udemy courses and external resources. First check those references if you're feeling stuck.
+* Useful links for Udemy courses and external resources. First check those references if you are feeling stuck.
 
 **:beginner: Point**
 
@@ -23,13 +23,13 @@ The following icons indicate pointers for
 
 ## Tasks
 
-- [ ] **STEP1** Git ([JA](document/step1.ja.md)/[EN](document/step1.en.md))
-- [ ] **STEP2** Setup environment ([JA](document/step2.ja.md)
+- [x] **STEP1** Git ([JA](document/step1.ja.md)/[EN](document/step1.en.md))
+- [x] **STEP2** Setup environment ([JA](document/step2.ja.md)
   /[EN](document/step2.en.md))
-- [ ] **STEP3** Develop API ([JA](document/step3.ja.md)
+- [x] **STEP3** Develop API ([JA](document/step3.ja.md)
   /[EN](document/step3.en.md))
-- [ ] **STEP4** Docker ([JA](document/step4.ja.md)/[EN](document/step4.en.md))
-- [ ] **STEP5** (Stretch) Frontend ([JA](document/step5.ja.md)
+- [x] **STEP4** Docker ([JA](document/step4.ja.md)/[EN](document/step4.en.md))
+- [x] **STEP5** (Stretch) Frontend ([JA](document/step5.ja.md)
   /[EN](document/step5.en.md))
 - [ ] **STEP6** (Stretch)  Run on docker-compose ([JA](document/step6.ja.md)
   /[EN](document/step6.en.md))
