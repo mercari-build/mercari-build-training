@@ -64,7 +64,7 @@ def root():
 
 
 @app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...), image: str = Form(...)):
+def add_item(name: str = Form(...), category: str = Form(...), image: str = Form(...), brand: str = Form(...), size: str = Form(...), product_id: int = Form(...), product_details: str = Form(...)):
 
     if not image.endswith(".jpg"):
         raise HTTPException(
@@ -76,9 +76,16 @@ def add_item(name: str = Form(...), category: str = Form(...), image: str = Form
     conn = sqlite3.connect(SQLiteName)
     # cursor
     cur = conn.cursor()
+    cur.execute(
+        "INSERT OR IGNORE INTO category(category_name) VALUES (?)", (category, ))
 
-    cur.execute("INSERT INTO items(name,category,image) VALUES (?,?,?)",
-                (name, category, hashed_img))
+    # retrieve category id
+    cur.execute(
+        "SELECT category_id FROM category WHERE category_name = (?)", (category, ))
+    category_id = cur.fetchone()[0]  # fetchone --> return (id,)
+    # insert item
+    cur.execute("""INSERT INTO items(name, category_id, brand, size, product_id, product_details, image) VALUES(?,?,?,?,?,?,?)""",
+                (name, category_id, brand, size, product_id, product_details, hashed_img))
 
     conn. commit()
     conn.close()
@@ -95,17 +102,24 @@ def display_item():
     # cursor
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM items")
+    cur.execute(
+        """SELECT items.name, category.category_name as category, 
+        items.brand, items.size, items.product_id, items.product_details, items.image
+        FROM items 
+        INNER JOIN category ON items.category_id = category.category_id""")
 
     item_list = cur.fetchall()
-
     # close connection
     conn.close()
+
+    if item_list == []:
+        raise HTTPException(
+            status_code=404, detail="No item to list")
 
     # return formatted list of items from db
     return format_items(item_list)
 
-
+# try to apply this keyword matching with details, category too
 @app.get("/search")
 def search_item(keyword: str):  # query parameter
     # connect
@@ -114,13 +128,22 @@ def search_item(keyword: str):  # query parameter
     cur = conn.cursor()
     conn.row_factory = sqlite3.Row
     # select item matching keyword
-    cur.execute("SELECT * from items WHERE name LIKE (?)", (f"%{keyword}%", ))
+    cur.execute(
+        """SELECT items.name, category.category_name as category, 
+        items.brand, items.size, items.product_id, items.product_details, items.image
+        FROM items 
+        INNER JOIN category ON items.category_id = category.category_id
+        WHERE items.name LIKE(?)""", (f"%{keyword}%", ))
     item_list = cur.fetchall()
+
     conn.close()
+
     if item_list == []:
-        message = {"message": "No matching item"}
+        raise HTTPException(
+            status_code=404, detail="No matching item present")
     else:
         message = format_items(item_list)
+
     return message
 
 
@@ -135,14 +158,79 @@ def get_item_by_id(items_id):
 
     # select item matching keyword
     cur.execute(
-        "SELECT name, category, image from items WHERE id=(?)", (items_id,))
+        """SELECT items.name, category.category_name as category, 
+        items.brand, items.size, items.product_id, items.product_details, items.image
+        FROM items 
+        INNER JOIN category ON items.category_id = category.category_id
+        WHERE id=(?)""", (items_id))
+
     item = cur.fetchone()
+
     conn.close()
-    if item == []:
-        message = {"message": "No matching item"}
+
+    if item is None:
+        raise HTTPException(
+            status_code=404, detail="No matching item present")
     else:
         message = item
+
     return message
+
+
+# for hackweek, enabling search by product id of a particular brand
+@app.get("/items/{brand}/{product_id}")
+def get_item_by_product_id(brand: str, product_id: int):
+    logger.info(f"Search item with ID: {product_id} from {brand}")
+
+    conn = sqlite3.connect(SQLiteName)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # select item matching keyword
+    cur.execute(
+        """SELECT items.name, category.category_name as category, 
+        items.brand, items.size, items.product_id, items.product_details, items.image
+        FROM items 
+        INNER JOIN category ON items.category_id = category.category_id
+        WHERE items.brand=(?) AND items.product_id=(?)""", (f"{brand}", product_id,))
+
+    item_list = cur.fetchall()
+
+    conn.close()
+
+    if item_list == []:
+        raise HTTPException(
+            status_code=404, detail="No matching item present")
+    else:
+        message = format_items(item_list)
+
+    return message
+
+
+@app.delete("/items/{items_id}")
+def delete_item_by_id(items_id: int):
+    logger.info(f"Delete item with ID: {items_id}")
+
+    conn = sqlite3.connect(SQLiteName)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # select item matching keyword
+    cur.execute(
+        """SELECT * FROM items 
+        WHERE id=(?)""", (items_id))
+    item = cur.fetchone()
+
+    if item is None:
+        raise HTTPException(
+            status_code=404, detail="No matching item to delete")
+
+    # no need to inner join with category table
+    cur.execute("""DELETE FROM items WHERE id=(?)""", (items_id))
+    conn.commit()
+
+    conn.close()
+    return {f"message: item (ID: {items_id}) deleted"}
 
 
 @app.get("/image/{image_filename}")
