@@ -1,0 +1,26 @@
+name: build
+run-name: ${{ github.actor }} is testing {{ github.ref_name }} 🚀
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Output docker image url
+        run: echo 'IMAGE_NAME=<path-to-your-repo>/mercari-build-training-2023:${{ github.ref_name }}' >> $GITHUB_ENV
+
+      - name: Sample command
+        run: |
+          echo 'Current path: $(pwd)'
+          echo 'Branch name is ${{ github.ref_name }}'
+          echo 'image name is ${{ env.IMAGE_NAME }}'
+
+      - name: Build docker
+        run: | 
+          echo "<Update here and build your image>"
+
+      - name: Push docker image to docker hub
+        run: | 
+          echo '<Push your image to docker hub>'
