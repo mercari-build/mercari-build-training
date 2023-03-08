@@ -129,4 +129,4 @@ STEP4-5 までで docker image の中は STEP2-2 と同じ状態になってい�
 
 ### Next
 
-[STEP5: Webのフロントエンドを実装する](step5.ja.md)
+[STEP5: Webのフロントエンドを実装する](step6.ja.md)

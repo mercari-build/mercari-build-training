@@ -29,10 +29,11 @@ The following icons indicate pointers for
 - [ ] **STEP3** Develop API ([JA](document/step3.ja.md)
   /[EN](document/step3.en.md))
 - [ ] **STEP4** Docker ([JA](document/step4.ja.md)/[EN](document/step4.en.md))
-- [ ] **STEP5** (Stretch) Frontend ([JA](document/step5.ja.md)
-  /[EN](document/step5.en.md))
-- [ ] **STEP6** (Stretch)  Run on docker-compose ([JA](document/step6.ja.md)
+- [ ] **STEP5** CI(Continuous Integration) ([JA](document/step5.ja.md)/[EN](document/step5.en.md))
+- [ ] **STEP6** (Stretch) Frontend ([JA](document/step6.ja.md)
   /[EN](document/step6.en.md))
+- [ ] **STEP7** (Stretch)  Run on docker-compose ([JA](document/step7.ja.md)
+  /[EN](document/step7.en.md))
 
 ### Other documents
 

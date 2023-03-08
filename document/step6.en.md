@@ -1,65 +1,77 @@
-# STEP6: Run frontend and API using docker-compose
-In this step, we will learn how to use docker-compose.
-
-**:book: Reference**
-
-* [Docker Compose Overview](https://docs.docker.com/compose/)
-* [Udemy - Hands on With Docker & Docker Compose From a Docker Captain](https://www.udemy.com/course/hands-on-with-docker-and-docker-compose/)
-
-## 1. (Revision) Building Docker Images
-
-**Revisit STEP4 and build a docker image for running the web frontend**
-
-You have a sample `dockerfile` In `typescript/simple-mercari-web`. Modify this file to run frontend on Docker.
-
-* Set the name of the repository as `build2022/web` and tag as `latest`.
-
-Run the following and check if you can successfully open [http://localhost:3000/](http://localhost:3000/) on your browser.
-
-`$ docker run -d -p 3000:3000 build2022/web:latest`
+# STEP5: Implement a simple Mercari webapp as frontend
 
 
-## 2. Installing Docker Compose
-**Install Docker Compose and check you can run `docker-compose -v`**
+## 1. Build local environment
+Install Node v16 from below.
+(16.15.0 LTS is recommended as of May 2022)
 
-**:book: Reference**
+https://nodejs.org/en/
 
-* [Install Docker Compose](https://docs.docker.com/compose/install/)
+If you would like to install multiple versions of Node, use [nvs](https://github.com/jasongin/nvs).
 
-## 3. Docker Compose Tutorial
-**Go through [Docker Compose tutorial](https://docs.docker.com/compose/gettingstarted/)**
+Run `node -v` and confirm that `v16.0.0` or above is displayed.
 
-:pushpin: Sample code is in Python but the knowledge of Python or the environment is not necessary. Use this tutorial regardless of the backend language you chose in STEP3.
+Move to the following directory and install dependencies with the following command.
+```shell
+cd typescript/simple-mercari-web
+npm ci
+```
 
-**:beginner: Point**
+After launching the web application with the following command, check your web app from your browser at [http://localhost:3000/](http://localhost:3000/).
+```shell
+npm start
+```
 
-Let's check if you can answer the following questions.
+Run the backend servers in Python/Go as described in Step3.
+This simple web application allows you to do two things
+- Add a new item (Listing)
+- View the list of itemas (ItemList)
+  
+These functionalities are carved out as components called `src/components/Listing` and `src/components/ItemList`, and called from the main `App.tsx`.
 
-* How many services are defined in the docker-compose file in the tutorial? What exactly do these services do?
-* web service and redis services get docker images with different methods. When running `docker-compose up`, check how where each image id downloaded.
-* In docker-compose, you can connect to different services from a service. How does the web service resolve the name for the redis service and connect to it?
+:pushpin: Sample code is in React but the knowledge of React is not necessary.
 
-## 4. Run frontend and API using Docker Compose
-**Referring to the tutorial material, run the frontend and API using Docker Compose**
+### (Optional) Task 1: Add a new item
+Use the listing form to add a new item. In this screen, you can input name, category and a image for a new item.
 
-
-Set up `docker-compose.yml` under `mercari-build-training-2022/`
-
-Make a new file `docker-compose.yml` considering the following points.
-
-* Docker image to use
-    * (Option 1: Difficulty ☆) Use `build2022/app:latest` and `build2022/web:latest` made in STEP4 and STEP6-1
-    * (Option 2: Difficulty ☆☆☆) Build from `{go|python}/dockerfile` and `typescript/simple-mercari-web/dockerfile`
-* Port numbers
-    * API : 9000
-    * Frontend : 3000
-* Connecting betweeen services
-    * Frontend should send requests to an environment variable `API_URL`
-    * While API will not send requests to frontend, [CORS](https://developer.mozilla.org/ja/docs/Web/HTTP/CORS) needs to be set up such that frontend knows where the requests are coming from
-    * Set an environment variable `FRONT_URL` for frontend URL
+If your API from STEP3 only accepts name and category, modify `typescript/simple-mercari-web/src/components/Listing/Listing.tsx` and delete the image field.
 
 
-Run `docker-compose up` and check if the following operates properly
-- [http://localhost:3000/](http://localhost:3000/) displayes the frontend page
-- You can add an new item (Listing)
-- You can view the list of all items (ItemList)
+### (Optional) Task 2. Show item images 
+
+In this screen, item images are all rendered as Build@Mercari logo. Specify the item image as `http://localhost:9000/image/<item_id>.jpg` and see if they can be displayed on the web app.
+
+
+### (Optional) Task 3. Change the styling with HTML and CSS
+These two components are styled by CSS. To see what types of changes can be made, try modifying `ItemList` component CSS. These are specifed in `App.css` and they are applied by `className` attribute (e.g. `<div className='Listing'></div>`).
+```css
+.Listing {
+  ...
+}
+.ItemList {
+  ...
+}
+```
+Try editing the HTML tags returned in each component and see how the UI changes.
+
+
+### (Optional) Task 4. Change the UI for ItemList
+
+Current `ItemList` shows one column of items sequentially. Use the following reference to change this style into a grid system where multiple items are displayed in the same row.
+
+
+**:book: References**
+
+- [HTML basics](https://developer.mozilla.org/en-US/docs/Learn/Getting_started_with_the_web/HTML_basics)
+
+
+- [CSS basics](https://developer.mozilla.org/en-US/docs/Learn/Getting_started_with_the_web/CSS_basics)
+
+
+- [Basic Concepts of grid layout](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Grid_Layout/Basic_Concepts_of_Grid_Layout)
+
+---
+
+### Next
+
+[STEP7: Run frontend and API using docker-compose](step7.en.md)

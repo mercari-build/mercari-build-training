@@ -11,11 +11,12 @@ jobs:
       - name: Output docker image url
         run: echo 'IMAGE_NAME=<path-to-your-repo>/mercari-build-training-2023:${{ github.ref_name }}' >> $GITHUB_ENV
 
-      - name: Sample command
+      - name: Sample commands
         run: |
-          echo 'Current path: $(pwd)'
+          echo 'Current path:'
+          pwd
           echo 'Branch name is ${{ github.ref_name }}'
-          echo 'image name is ${{ env.IMAGE_NAME }}'
+          echo 'Image name is ${{ env.IMAGE_NAME }}'
 
       - name: Build docker
         run: | 
