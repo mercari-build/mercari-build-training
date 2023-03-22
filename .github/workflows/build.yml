@@ -1,5 +1,5 @@
 name: build
-run-name: ${{ github.actor }} is testing {{ github.ref_name }} 🚀
+run-name: ${{ github.actor }} is testing ${{ github.ref_name }} 🚀
 on: [push]
 jobs:
   build:
