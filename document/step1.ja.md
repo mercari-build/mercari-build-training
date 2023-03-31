@@ -6,11 +6,11 @@
 * [Gitを使ったバージョン管理](https://backlog.com/ja/git-tutorial/intro/01/)
 * [Udemy - Git & Github基礎講座](https://www.udemy.com/course/git-github-a/)
 
-## **mercari-build-training-2023** リポジトリをフォークする
+## **mercari-build-training-2022** リポジトリをフォークする
 
-* [mercari-build-training-2023](https://github.com/mercari-build/mercari-build-training-2023)
+* [mercari-build-training-2022](https://github.com/mercari-build/mercari-build-training-2022)
   をあなたのGithubにForkします。
-* Forkに成功すると `https://github.com/<your github id>/mercari-build-training-2023`
+* Forkに成功すると `https://github.com/<your github id>/mercari-build-training-2022`
   というようなリポジトリができます。
 
 ## Gitをインストールする
@@ -30,25 +30,25 @@
    
 ## Gitの基本コマンドを使う
 
-1. `https://github.com/<your github id>/mercari-build-training-2023` を **clone**
+1. `https://github.com/<your github id>/mercari-build-training-2022` を **clone**
    します。 cloneすると、github上のリポジトリを自分のローカルにDownloadできます。
    ```shell
    $ cd <your working space>
-   $ git clone https://github.com/<your github id>/mercari-build-training-2023
+   $ git clone https://github.com/<your github id>/mercari-build-training-2022
    ```
 
 **:bangbang: 注意**
 
 cloneができたら必ず以下のコマンドを実行してください。
 ```shell
-$ cd mercari-build-training-2023
+$ cd mercari-build-training-2022
 $ git config --local core.hooksPath .githooks/ 
 ```
 これは mercari-build-training-2022 が githooks という機能を使うために必要なものです。
 
 2. `first-pull-request`というブランチを作り、そのブランチに**checkout**します
    ```shell
-   $ cd <your working space>/mercari-build-training-2023
+   $ cd <your working space>/mercari-build-training-2022
    $ git branch first-pull-request
    $ git checkout first-pull-request
    ```

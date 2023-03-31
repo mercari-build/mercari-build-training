@@ -7,10 +7,10 @@ In this step, we will learn how to use Git and Github.
 * [GitHub Ultimate: Master Git and GitHub - Beginner to Expert](https://www.udemy.com/course/github-ultimate/)
 
 
-## Fork this **mercari-build-training-2023** repository
+## Fork this **mercari-build-training-2022** repository
 
-* Fork [mercari-build-training-2023](https://github.com/mercari-build/mercari-build-training-2023) 
-* You will see be able to see `https://github.com/<your github id>/mercari-build-training-2023` if successful.
+* Fork [mercari-build-training-2022](https://github.com/mercari-build/mercari-build-training-2022) 
+* You will see be able to see `https://github.com/<your github id>/mercari-build-training-2022` if successful.
 
 
 ## Install Git
@@ -30,24 +30,24 @@ In this step, we will learn how to use Git and Github.
 
 ## Use basic commands in Git
 
-1. **Clone** `https://github.com/<your github id>/mercari-build-training-2023` onto your local using the following command.
+1. **Clone** `https://github.com/<your github id>/mercari-build-training-2022` onto your local using the following command.
    ```shell
    $ cd <your working space>
-   $ git clone https://github.com/<your github id>/mercari-build-training-2023
+   $ git clone https://github.com/<your github id>/mercari-build-training-2022
    ```
 
 **:bangbang: Caution**
 
 Please definitely run the following command after cloning repository. 
 ```
-cd mercari-build-training-2023
+cd mercari-build-training-2022
 git config --local core.hooksPath .githooks/ 
 ```
-This is required to use githooks in mercari-build-training-2023 repository.
+This is required to use githooks in mercari-build-training-2022 repository.
 
 2. Make a new branch named `first-pull-request` and **checkout** into this branch
    ```shell
-   $ cd <your working space>/mercari-build-training-2023
+   $ cd <your working space>/mercari-build-training-2022
    $ git branch first-pull-request
    $ git checkout first-pull-request
    ```
