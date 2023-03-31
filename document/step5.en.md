@@ -26,7 +26,7 @@ Run the backend servers in Python/Go as described in Step3.
 This simple web application allows you to do two things
 - Add a new item (Listing)
 - View the list of itemas (ItemList)
-  
+
 These functionalities are carved out as components called `src/components/Listing` and `src/components/ItemList`, and called from the main `App.tsx`.
 
 :pushpin: Sample code is in React but the knowledge of React is not necessary.
@@ -37,7 +37,7 @@ Use the listing form to add a new item. In this screen, you can input name, cate
 If your API from STEP3 only accepts name and category, modify `typescript/simple-mercari-web/src/components/Listing/Listing.tsx` and delete the image field.
 
 
-### (Optional) Task 2. Show item images 
+### (Optional) Task 2. Show item images
 
 In this screen, item images are all rendered as Build@Mercari logo. Specify the item image as `http://localhost:9000/image/<item_id>.jpg` and see if they can be displayed on the web app.
 
