@@ -1,4 +1,4 @@
-module mercari-build-training-2022
+module mercari-build-training-2023
 
 go 1.17
 

@@ -67,7 +67,7 @@ If the version does not correspond to the Python version you installed, double c
 
 ### 3. Install dependencies
 
-In Go, dependent libraries are managed in a file called `go.mod`. 
+In Go, dependent libraries are managed in a file called `go.mod`.
 You can install the dependencies by running the following command.
 
 ```shell

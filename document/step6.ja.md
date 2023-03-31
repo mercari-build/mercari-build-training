@@ -12,7 +12,7 @@
 
 `typescript/simple-mercari-web`以下にフロントエンド用の `dockerfile` がすでに用意されています。これを変更しフロントエンドが docker 上で立ち上がるようにしましょう。
 
-* 名前（リポジトリ名）は `build2022/web`, タグは`latest` とします。
+* 名前（リポジトリ名）は `build2023/web`, タグは`latest` とします。
 
 `$ docker run -d -p 3000:3000 build2022/web:latest`
 
@@ -41,12 +41,12 @@
 ## 4. Docker ComposeでAPIとフロントエンドを動かす
 **チュートリアルを参考にしながら、今回作成したサービスのフロントエンドとバックエンドのAPIをDocker Composeで動かせるようにしましょう**
 
-`docker-compose.yml` は `mercari-build-training-2022/` 以下に作成することにします。
+`docker-compose.yml` は `mercari-build-training-2023/` 以下に作成することにします。
 
 以下の点を参考にしながら `docker-compose.yml` を作成しましょう。
 
 * 使用する docker image
-    * (Option 1: 難易度 ☆) STEP4 と STEP6-1 でそれぞれ build した `build2022/app:latest` と `build2022/web:latest` を使う
+    * (Option 1: 難易度 ☆) STEP4 と STEP6-1 でそれぞれ build した `build2023/app:latest` と `build2022/web:latest` を使う
     * (Option 2: 難易度 ☆☆☆) `{go|python}/dockerfile` と `typescript/simple-mercari-web/dockerfile` から build するようにする
 * 使用する port
     * API : 9000
