@@ -90,4 +90,4 @@ $ git config --local core.hooksPath .githooks/
 ---
 ### Next
 
-[STEP2: 環境構築](step2.ja.md)
+[STEP2: 環境構築](02-local-env.ja.md)

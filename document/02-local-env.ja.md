@@ -106,4 +106,4 @@ $ go run app/main.go
 ---
 ### Next
 
-[STEP3: 出品APIを作る](step3.ja.md)
+[STEP3: 出品APIを作る](03-api.ja.md)

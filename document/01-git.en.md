@@ -90,4 +90,4 @@ Check if you understand the following concepts.
 
 ### Next
 
-[STEP2: Building local environmentSTEP2: Building local environment](step2.en.md)
+[STEP2: Building local environment](02-local-env.en.md)

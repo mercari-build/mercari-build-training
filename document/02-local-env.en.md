@@ -105,4 +105,4 @@ The following resources are useful to dive deeper into building environments and
 
 ### Next
 
-[STEP3: Make a listing API](step3.en.md)
+[STEP3: Make a listing API](03-api.en.md)
