@@ -1,4 +1,0 @@
-FROM alpine
-
-# STEP4-4では以下は変更しない
-CMD ["go", "version"]
