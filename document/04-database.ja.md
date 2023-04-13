@@ -73,6 +73,8 @@ $ curl -X GET 'http://127.0.0.1:9000/search?keyword=jacket'
 **:beginner: Point**
 * データベースの**正規化**とは何でしょうか？
 
+---
+
 ### Next
 
 [STEP5: 仮想環境でアプリを動かす](05-docker.ja.md)

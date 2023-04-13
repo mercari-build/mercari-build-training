@@ -101,7 +101,7 @@ $ curl -X GET 'http://127.0.0.1:9000/items'
 
 * 画像は `images` というフォルダを作成し保存します
 * ポストされた画像のファイルを sha256 で hash化し、`<hash>.jpg`という名前で保存します
-* itemsテーブルに画像のファイル名をstringで保存できるように変更を加えます
+* itemsに画像のファイル名をstringで保存できるように変更を加えます
 
 ```shell
 # ローカルから.jpgをポストする
@@ -111,6 +111,8 @@ curl -X POST \
   -F 'category=fashion' \
   -F 'image=@images/local_image.jpg'
 ```
+
+
 ```json
 {"items": [{"name": "jacket", "category": "fashion", "image_filename": "510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg"}, ...]}
 ```
