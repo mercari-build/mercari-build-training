@@ -1,4 +1,4 @@
-# STEP4: Run the application in a virtual environment
+# STEP5: Run the application in a virtual environment
 
 In this step, we will learn how to use Docker.
 
@@ -95,9 +95,9 @@ ERRO[0000] error waiting for container: context canceled
 `"python"` part will be replaced with `"go"` if you're using Go.
 
 
-**Modify the `dockerfile` so that you can use the same version of Python/Go as STEP2 in your docker image.**
+**Modify the `Dockerfile` so that you can use the same version of Python/Go as STEP2 in your docker image.**
 
-Run the image with the modified `dockerfile`, check if the same message is displayed as STEP2-2.
+Run the image with the modified `Dockerfile`, check if the same message is displayed as STEP2-2.
 
 **:book: Reference**
 
@@ -130,4 +130,4 @@ Make sure you understand the following concepts
 
 ### Next
 
-[STEP5: Implement a simple Mercari webapp as frontend](06-frontend.en.md)
+[STEP5: Implement a simple Mercari webapp as frontend](07-frontend.en.md)

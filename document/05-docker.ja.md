@@ -1,4 +1,4 @@
-# STEP4: 仮想環境でアプリを動かす
+# STEP5: 仮想環境でアプリを動かす
 
 このステップでは docker の使い方を学びます。
 
@@ -74,7 +74,7 @@ docker はホスト上に存在しないイメージを使う際には、自動�
 
 
 ## 4. Docker Image を Build する
-**pythonで開発をしている人は`python/`, Goの人は`go/`以下にある`dockerfile`をbuildしてみましょう。**
+**pythonで開発をしている人は`python/`, Goの人は`go/`以下にある`Dockerfile`をbuildしてみましょう。**
 
 * 名前（リポジトリ名）は `build2023/app`, タグは`latest` とします。
 
@@ -129,4 +129,4 @@ STEP4-5 までで docker image の中は STEP2-2 と同じ状態になってい�
 
 ### Next
 
-[STEP5: Webのフロントエンドを実装する](06-frontend.ja.md)
+[STEP5: Webのフロントエンドを実装する](07-frontend.ja.md)

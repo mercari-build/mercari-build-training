@@ -1,4 +1,4 @@
-# STEP5: Webのフロントエンドを実装する
+# STEP7: Webのフロントエンドを実装する
 
 ## 1. 環境構築
 以下からv16のNodeをインストールしてください。
@@ -70,4 +70,4 @@ CSSだけではなく、各コンポーネントでreturnされているHTMLタ�
 
 ### Next
 
-[STEP6: docker-composeでAPIとフロントエンドを動かす](07-docker-compose.ja.md)
+[STEP6: docker-composeでAPIとフロントエンドを動かす](08-docker-compose.ja.md)
