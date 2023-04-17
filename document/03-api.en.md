@@ -91,49 +91,13 @@ $ curl -X GET 'http://127.0.0.1:9000/items'
 {"items": [{"name": "jacket", "category": "fashion"}, ...]}
 ```
 
-## 4. Write into a database
-
-In the previous step, we saved data into `items.json`. We will move this into a database.
-We will use a database called **SQLite**.
-
-**:book: Reference**
-
-* (JA)[SQLite入門](https://www.dbonline.jp/sqlite/)
-* (JA)[Udemy -【SQLiteで学ぶ】ゼロから始めるデータベースとSQL超入門](https://www.udemy.com/course/basic_database_sqlite/)
-* (JA)[Udemy - はじめてのSQLserver データベース　SQL未経験者〜初心者向けコース](https://www.udemy.com/course/sqlserver-for-beginner/)
-* (EN)[https://www.sqlitetutorial.net/](https://www.sqlitetutorial.net/)
-* (EN)[Udemy - Intro To SQLite Databases for Python Programming](https://www.udemy.com/course/using-sqlite3-databases-with-python/)
-
-Install SQlite, and make a database file called `mercari.sqlite3`. Open this file and make a table called `items`. Define the items table as follows and save the schema into `db/items.db`.
-
-* id: int (Identifier unique for each item)
-* name: string (Name of the item)
-* category: string (Category of the item)
-
-Change the endpoints `GET /items` and `POST /items` such that items are saved into the database and can be returned based on GET request. Add `mercari.sqlite3` to your `.gitignore` such that it is not commited. `items.db` shoud be commited. 
-
-**:beginner: Points**
-
-* What are the advantages of saving into a databse such as SQLite instead of saving into a single JSON file?
-
-## 5. Search for an item
-
-Make an endpoint to return a list of items that include a specified keyword called `GET /search`.
-
-```shell
-# Request a list of items containing string "jacket"
-$ curl -X GET 'http://127.0.0.1:9000/search?keyword=jacket'
-# Expected response for a list of items with name containing "jacket"
-{"items": [{"name": "jacket", "category": "fashion"}, ...]}
-```
-
-## 6. Add an image to an item
+## 4. Add an image to an item
 
 Change the endpoints `GET /items` and `POST /items` such that items can have images while listing.
 
 * Make a directory called `images`
 * Hash the image using sha256, and save it with the name `<hash>.jpg`
-* Modify items table such that the image file can be saved as a string
+* Modify items such that the image file can be saved as a string
 
 ```shell
 # POST the jpg file
@@ -144,13 +108,10 @@ curl -X POST \
   -F 'image=@images/local_image.jpg'
 ```
 
+```json
+{"items": [{"name": "jacket", "category": "fashion", "image_filename": "510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg"}, ...]}
+```
 
-Items table example:
-
-| id   | name   | category | image_filename                                                       |
-| :--- | :----- | :------- | :------------------------------------------------------------------- |
-| 1    | jacket | fashion  | 510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg |
-| 2    | ...    |          |                                                                      |
 
 **:beginner: Point**
 
@@ -158,7 +119,7 @@ Items table example:
 * What other hashing functions are out there except for sha256?
 
 
-## 7. Return item details
+## 5. Return item details
 
 Make an endpoint `GET /items/<item_id>` to return item details.
 
@@ -167,29 +128,7 @@ $ curl -X GET 'http://127.0.0.1:9000/items/1'
 {"name": "jacket", "category": "fashion", "image": "..."}
 ```
 
-## 8. (Optional) Move the category information to a separate table
-
-Modify the database as follows. This allows changes in the category names and you will not have to change all categories in the items table when they do. Since `GET items` should still return the name of the category, join these two tables when returning responses.
-
-**items table**
-
-| id   | name   | category_id | image_filename                                                       |
-| :--- | :----- | :---------- | :------------------------------------------------------------------- |
-| 1    | jacket | 1           | 510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg |
-| 2    | ...    |             |                                                                      |
-
-**category table**
-
-| id   | name    |
-| :--- | :------ |
-| 1    | fashion |
-| ...  |         |
-
-**:beginner: Points**
-* What is database **normalization**?
-
-
-## 9. (Optional) Understand Loggers
+## 6. (Optional) Understand Loggers
 Open `http://127.0.0.1:9000/image/no_image.jpg` on your browser.
 This returns an image called `no image` but the debug log is not displayed on your console.
 ```
@@ -215,4 +154,4 @@ Check if you understand the following concepts.
 
 ### Next
 
-[STEP4: Run the application in a virtual environment](05-docker.en.md)
+[STEP4: Database](04-database.en.md)
