@@ -54,7 +54,7 @@ Make a new file `docker-compose.yml` considering the following points.
     * API : 9000
     * Frontend : 3000
 * Connecting betweeen services
-    * Frontend should send requests to an environment variable `API_URL`
+    * Frontend should send requests to an environment variable `REACT_APP_API_URL`
     * While API will not send requests to frontend, [CORS](https://developer.mozilla.org/ja/docs/Web/HTTP/CORS) needs to be set up such that frontend knows where the requests are coming from
     * Set an environment variable `FRONT_URL` for frontend URL
 
