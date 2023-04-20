@@ -8,7 +8,7 @@ In the previous step, we saved data into `items.json`. We will move this into a 
 
 * (EN)[https://www.sqlitetutorial.net/](https://www.sqlitetutorial.net/)
 * (EN)[Udemy Business - SQLite for beginners](https://mercari.udemy.com/course/sqlite-for-beginners/)
-* (EN)[Udemy Business - ](https://mercari.udemy.com/course/relational-database-design/)
+* (EN)[Udemy Business - Relational Database Designs](https://mercari.udemy.com/course/relational-database-design/)
 ## 1. Write into a database
 We will use a database called **SQLite**.
 
