@@ -4,9 +4,11 @@
 
 **:book: Reference**
 
-* [docker docs](https://matsuand.github.io/docs.docker.jp.onthefly/get-started/overview/)
-* [Udemy - ゼロからはじめる Dockerによるアプリケーション実行環境構築](https://www.udemy.com/course/docker-k/)
+* (JA)[docker docs](https://matsuand.github.io/docs.docker.jp.onthefly/get-started/overview/)
+* (JA)[Udemy Business - ゼロからはじめる Dockerによるアプリケーション実行環境構築](https://mercari.udemy.com/course/docker-k/)
 
+* (EN)[docker docs](https://docs.docker.com/get-started/overview/)
+* (EN)[Udemy Business - Docker for the Absolute Beginner - Hands On - DevOps](https://mercari.udemy.com/course/learn-docker/)
 ## 1. Docker をインストールする
 **最新のdockerをインストールし、`docker -v` が実行できることを確認しましょう。**
 

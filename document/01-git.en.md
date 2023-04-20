@@ -3,8 +3,13 @@
 In this step, we will learn how to use Git and Github.
 
 **:book: Reference**
-* [Git basics](https://www.atlassian.com/git)
-* [GitHub Ultimate: Master Git and GitHub - Beginner to Expert](https://www.udemy.com/course/github-ultimate/)
+
+* (JA)[Gitを使ったバージョン管理](https://backlog.com/ja/git-tutorial/intro/01/)
+* (JA)[Udemy Business - Git：はじめてのGitとGitHub](https://mercari.udemy.com/course/intro_git/)
+
+* (EN)[Git basics](https://www.atlassian.com/git)
+* (EN)[Udemy Business: GitHub Ultimate: Master Git and GitHub - Beginner to Expert](https://mercari.udemy.com/course/github-ultimate/)
+
 
 
 ## Fork this **mercari-build-training-2023** repository

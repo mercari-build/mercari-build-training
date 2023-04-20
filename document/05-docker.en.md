@@ -4,8 +4,11 @@ In this step, we will learn how to use Docker.
 
 **:book: Reference**
 
-* [docker docs](https://docs.docker.com/get-started/overview/)
-* [Udemy - ゼロからはじめる Dockerによるアプリケーション実行環境構築](https://www.udemy.com/course/docker-k/)
+* (JA)[docker docs](https://matsuand.github.io/docs.docker.jp.onthefly/get-started/overview/)
+* (JA)[Udemy Business - ゼロからはじめる Dockerによるアプリケーション実行環境構築](https://mercari.udemy.com/course/docker-k/)
+
+* (EN)[docker docs](https://docs.docker.com/get-started/overview/)
+* (EN)[Udemy Business - Docker for the Absolute Beginner - Hands On - DevOps](https://mercari.udemy.com/course/learn-docker/)
 
 ## 1. Install Docker
 **Install docker of the latest version, and check if you can run `docker -v`.**
