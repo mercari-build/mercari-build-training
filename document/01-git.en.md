@@ -8,7 +8,7 @@ In this step, we will learn how to use Git and Github.
 * (JA)[Udemy Business - Git：はじめてのGitとGitHub](https://mercari.udemy.com/course/intro_git/)
 
 * (EN)[Git basics](https://www.atlassian.com/git)
-* (EN)[Udemy Business: GitHub Ultimate: Master Git and GitHub - Beginner to Expert](https://mercari.udemy.com/course/github-ultimate/)
+* (EN)[Udemy Business - GitHub Ultimate: Master Git and GitHub - Beginner to Expert](https://mercari.udemy.com/course/github-ultimate/)
 
 
 
