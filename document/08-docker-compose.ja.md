@@ -47,7 +47,7 @@
 
 * 使用する docker image
     * (Option 1: 難易度 ☆) STEP4 と STEP6-1 でそれぞれ build した `build2023/app:latest` と `build2023/web:latest` を使う
-    * (Option 2: 難易度 ☆☆☆) `{go|python}/dockerfile` と `typescript/simple-mercari-web/dockerfile` から build するようにする
+    * (Option 2: 難易度 ☆☆☆) `{go|python}/Dockerfile` と `typescript/simple-mercari-web/Dockerfile` から build するようにする
 * 使用する port
     * API : 9000
     * フロントエンド : 3000
