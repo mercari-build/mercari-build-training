@@ -97,8 +97,12 @@ If successful, you can access the local host `http://127.0.0.1:9000` on our brow
 
 The following resources are useful to dive deeper into building environments and Linux.
 
-* [An Introduction to Linux Basics](https://www.digitalocean.com/community/tutorials/an-introduction-to-linux-basics)
-* [Linux Mastery: Master the Linux Command Line in 11.5 Hours](https://www.udemy.com/course/linux-mastery/)
+* (JA)[book - [試して理解]Linuxのしくみ ~実験と図解で学ぶOSとハードウェアの基礎知識](https://www.amazon.co.jp/dp/477419607X/ref=cm_sw_r_tw_dp_178K0A3YTGA97XRH318R)
+* (JA)[Udemy Business - もう絶対に忘れない Linux コマンド【Linux 100本ノック+名前の由来+丁寧な解説で、長期記憶に焼き付けろ！](https://mercari.udemy.com/course/linux100test/)
+  * ↑わかりやすい講座だと思い貼ってますが、コマンドの暗記は特にしなくていいです
+
+* (EN)[An Introduction to Linux Basics](https://www.digitalocean.com/community/tutorials/an-introduction-to-linux-basics)
+* (EN)[Udemy Business - Linux Mastery: Master the Linux Command Line in 11.5 Hours](https://mercari.udemy.com/course/linux-mastery/)
   * You do NOT have to memorize the commands!
 
 ---

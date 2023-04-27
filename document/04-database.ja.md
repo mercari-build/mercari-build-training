@@ -5,10 +5,11 @@
 **:book: Reference**
 
 * (JA)[SQLite入門](https://www.dbonline.jp/sqlite/)
-* (JA)[Udemy -【SQLiteで学ぶ】ゼロから始めるデータベースとSQL超入門](https://www.udemy.com/course/basic_database_sqlite/)
-* (JA)[Udemy - はじめてのSQLserver データベース　SQL未経験者〜初心者向けコース](https://www.udemy.com/course/sqlserver-for-beginner/)
+* (JA)[Udemy Business - データベース講座１：データベース論理設計](https://mercari.udemy.com/course/database-logic/)
+
 * (EN)[https://www.sqlitetutorial.net/](https://www.sqlitetutorial.net/)
-* (EN)[Udemy - Intro To SQLite Databases for Python Programming](https://www.udemy.com/course/using-sqlite3-databases-with-python/)
+* (EN)[Udemy Business - SQLite for beginners](https://mercari.udemy.com/course/sqlite-for-beginners/)
+* (EN)[Udemy Business - Relational Database Designs](https://mercari.udemy.com/course/relational-database-design/)
 
 ## 1. SQLiteに情報を移行する
 今回は **SQLite**というデータベースを使います。

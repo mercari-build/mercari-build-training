@@ -4,12 +4,12 @@
 
 **:book: Reference**
 
-* (JA) [Udemy -【基礎からわかる！】Webアプリケーションの仕組み](https://www.udemy.com/course/tobach_01_webapp_structure/)
+* (JA) [Udemy Business - REST WebAPI サービス 設計](https://mercari.udemy.com/course/rest-webapi-development/)
 * (JA) [HTTP レスポンスステータスコード](https://developer.mozilla.org/ja/docs/Web/HTTP/Status)
 * (JA) [HTTP リクエストメソッド](https://developer.mozilla.org/ja/docs/Web/HTTP/Methods)
 * (JA) [APIとは？意味やメリット、使い方を世界一わかりやすく解説](https://www.sejuku.net/blog/7087)
 
-* (EN) [API and Web Service Introduction](https://www.udemy.com/course/api-and-web-service-introduction/)
+* (EN) [Udemy Business - API and Web Service Introduction](https://mercari.udemy.com/course/api-and-web-service-introduction/)
 * (EN) [HTTP response status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
 * (EN) [HTTP request methods](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods)
 

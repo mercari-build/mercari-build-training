@@ -3,8 +3,11 @@ In this step, we will learn how to use docker-compose.
 
 **:book: Reference**
 
-* [Docker Compose Overview](https://docs.docker.com/compose/)
-* [Udemy - Hands on With Docker & Docker Compose From a Docker Captain](https://www.udemy.com/course/hands-on-with-docker-and-docker-compose/)
+* (JA)[Docker Compose の概要](https://matsuand.github.io/docs.docker.jp.onthefly/compose/)
+* (JA)[Udemy Business - 駆け出しエンジニアのためのDocker入門](https://mercari.udemy.com/course/docker-startup/)
+
+* (EN)[Docker Compose Overview](https://docs.docker.com/compose/)
+* (EN)[Udemy Business - Docker for the Absolute Beginner - Hands On - DevOps](https://mercari.udemy.com/course/learn-docker/)
 
 ## 1. (Revision) Building Docker Images
 

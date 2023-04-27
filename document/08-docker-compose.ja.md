@@ -4,8 +4,11 @@
 
 **:book: Reference**
 
-* [Docker Compose の概要](https://matsuand.github.io/docs.docker.jp.onthefly/compose/)
-* [Udemy - 駆け出しエンジニアのためのDocker入門](https://www.udemy.com/course/docker-startup/)
+* (JA)[Docker Compose の概要](https://matsuand.github.io/docs.docker.jp.onthefly/compose/)
+* (JA)[Udemy Business - 駆け出しエンジニアのためのDocker入門](https://mercari.udemy.com/course/docker-startup/)
+
+* (EN)[Docker Compose Overview](https://docs.docker.com/compose/)
+* (EN)[Udemy Business - Docker for the Absolute Beginner - Hands On - DevOps](https://mercari.udemy.com/course/learn-docker/)
 ## 1. (復習) フロントエンドの docker image を作成する
 
 **STEP4を思い出しながらフロントエンドの docker image を作成しましょう。**
