@@ -32,7 +32,10 @@ def get_item():
             mydata = json.load(f)
             return mydata
     except FileNotFoundError:
-        return {}
+        items = {"items": []}
+        with open("items.json", "w") as f:
+            json.dump(items, f)
+        return items
 
 @app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
@@ -42,9 +45,9 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     file = image.file.read()
     image_hash = hashlib.sha256(file).hexdigest()
     filename = image_hash + ".jpg"
-    path = "images/" + filename
-    with open(path, "w") as f:
-        f.write(filename)
+    path = images / filename
+    with open(path, "wb") as f:
+        f.write(file)
 
     # Add new items into json file
     try:
@@ -79,5 +82,11 @@ def get_itemsid(item_id:int):
         with open("items.json", "r") as f:
             mydata = json.load(f)
             return mydata["items"][item_id]
-    except:
-        logger.debug("item is not accessible")
+    except KeyError:
+        raise HTTPException(
+            status_code=404, detail="'items' not EXIST"
+        )
+    except IndexError:
+        raise HTTPException(
+            status_code=404, detail=f"item_id {item_id} not exist"
+        )
