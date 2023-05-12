@@ -82,10 +82,6 @@ def get_itemsid(item_id:int):
         with open("items.json", "r") as f:
             mydata = json.load(f)
             return mydata["items"][item_id]
-    except KeyError:
-        raise HTTPException(
-            status_code=404, detail="'items' not EXIST"
-        )
     except IndexError:
         raise HTTPException(
             status_code=404, detail=f"item_id {item_id} not exist"
