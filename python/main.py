@@ -6,6 +6,7 @@ import hashlib
 from fastapi import FastAPI, Form, HTTPException, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+import sqlite3
 
 
 app = FastAPI()
@@ -20,26 +21,41 @@ app.add_middleware(
     allow_methods=["GET","POST","PUT","DELETE"],
     allow_headers=["*"],
 )
-
+dbpath = pathlib.Path(__file__).parent.parent.resolve() / "db" / "mercari.sqlite3"
+db_setup_path = pathlib.Path(__file__).parent.parent.resolve() / "db" / "items.db"
+conn = sqlite3.connect(dbpath)
+with open(db_setup_path, 'r') as f:
+    db = f.read()
+cursor = conn.cursor()
+cursor.executescript(db)
+conn.commit()
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
 
 @app.get("/items")
 def get_item():
-    try:
-        with open("items.json", "r") as f:
-            mydata = json.load(f)
-            return mydata
-    except FileNotFoundError:
-        items = {"items": []}
-        with open("items.json", "w") as f:
-            json.dump(items, f)
-        return items
+    conn = sqlite3.connect(dbpath)
+    cursor = conn.cursor()
+    cursor.execute(("""
+        SELECT items.id, items.name, items.category_id, items.image_name, category.name 
+        FROM items
+        INNER JOIN category ON items.id = category.id"""))
+    items = cursor.fetchall()
+    result = []
+    for i in items:
+        item = {
+            "id": i[0],
+            "name": i[1],
+            "category": i[4],
+            "image_name": i[3]
+        }
+        result.append(item)
+    return {"items": result}
 
 @app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
-    logger.info(f"Receive item: {name}, Receive category: {category}, Receive image:{image.filename}")
+def add_item(id: int = Form(...), name: str = Form(...), category: str = Form(...), image: UploadFile = File(...), category_id: int = Form(...)):
+    logger.info(f"Received item: {id}, Receive item: {name}, Receive category: {category_id}, Receive image:{image.filename}")
 
     # Hash the image using sha256, and save it with the name <hash>.jpg
     file = image.file.read()
@@ -49,18 +65,15 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     with open(path, "wb") as f:
         f.write(file)
 
-    # Add new items into json file
-    try:
-        with open("items.json", "r") as f:
-            items = json.load(f)
-    except FileNotFoundError:
-        items = {"items": []}
-
-    items["items"].append({"name": name, "category": category, "image_filename": filename})
-    with open("items.json", "w") as f:
-        json.dump(items, f)
-
-    return {"message": f"item received: {name}, category received: {category}, image received: {filename}"}
+    # Add new items into items.db
+    conn = sqlite3.connect(dbpath)
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO items (id, name, category_id, image_name) VALUES (?, ?, ?, ?)",
+                   (id, name, category_id, filename,))
+    cursor.execute("INSERT INTO category (id, name) VALUES (?, ?)", (id, category))
+    conn.commit()
+    conn.close()
+    return {"message": f"items received: {id}, items received: {name}, items received: {category_id}, items received: {filename}, category received: {id}, category received{category}"}
 
 @app.get("/image/{image_filename}")
 async def get_image(image_filename):
@@ -86,3 +99,23 @@ def get_itemsid(item_id:int):
         raise HTTPException(
             status_code=404, detail=f"item_id {item_id} not exist"
         )
+@app.get("/search")
+def get_keyword(keyword: str):
+    conn = sqlite3.connect(dbpath)
+    cursor = conn.cursor()
+    cursor.execute("""SELECT items.name, category.name 
+                    FROM items
+                    INNER JOIN category ON items.id = category.id
+                    WHERE items.name like ?""", (keyword,))
+    items = cursor.fetchall()
+    conn.close()
+    result = []
+    for i in items:
+        item = {
+            "name": i[0],
+            "category": i[1]
+        }
+        result.append(item)
+    return {"items": result}
+
+
