@@ -21,26 +21,27 @@ app.add_middleware(
     allow_methods=["GET","POST","PUT","DELETE"],
     allow_headers=["*"],
 )
-dbpath = pathlib.Path(__file__).parent.parent.resolve() / "db" / "mercari.sqlite3"
+sqlpath = pathlib.Path(__file__).parent.parent.resolve() / "db" / "mercari.sqlite3"
 db_setup_path = pathlib.Path(__file__).parent.parent.resolve() / "db" / "items.db"
-conn = sqlite3.connect(dbpath)
+conn = sqlite3.connect(sqlpath)
 with open(db_setup_path, 'r') as f:
     db = f.read()
 cursor = conn.cursor()
 cursor.executescript(db)
 conn.commit()
+conn.close()
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
 
 @app.get("/items")
 def get_item():
-    conn = sqlite3.connect(dbpath)
+    conn = sqlite3.connect(sqlpath)
     cursor = conn.cursor()
     cursor.execute(("""
         SELECT items.id, items.name, items.category_id, items.image_name, category.name 
         FROM items
-        INNER JOIN category ON items.id = category.id"""))
+        INNER JOIN category ON items.category_id = category.id"""))
     items = cursor.fetchall()
     result = []
     for i in items:
@@ -54,8 +55,8 @@ def get_item():
     return {"items": result}
 
 @app.post("/items")
-def add_item(id: int = Form(...), name: str = Form(...), category: str = Form(...), image: UploadFile = File(...), category_id: int = Form(...)):
-    logger.info(f"Received item: {id}, Receive item: {name}, Receive category: {category_id}, Receive image:{image.filename}")
+def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
+    logger.info(f"Received item: {id}, Receive item: {name}, Receive image:{image.filename}")
 
     # Hash the image using sha256, and save it with the name <hash>.jpg
     file = image.file.read()
@@ -66,14 +67,21 @@ def add_item(id: int = Form(...), name: str = Form(...), category: str = Form(..
         f.write(file)
 
     # Add new items into items.db
-    conn = sqlite3.connect(dbpath)
+    conn = sqlite3.connect(sqlpath)
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO items (id, name, category_id, image_name) VALUES (?, ?, ?, ?)",
-                   (id, name, category_id, filename,))
-    cursor.execute("INSERT INTO category (id, name) VALUES (?, ?)", (id, category))
+    cursor.execute("SELECT id FROM category WHERE name = ? ", (category,))
+    category_id = cursor.fetchone()
+    if category_id is None:
+        cursor.execute("INSERT INTO category (name) VALUES (?)", (category,))
+        conn.commit()
+        category_id = cursor.fechone()[0]
+    else:
+        category_id = category_id[0]
+    cursor.execute("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
+                   (name, category_id, filename,))
     conn.commit()
     conn.close()
-    return {"message": f"items received: {id}, items received: {name}, items received: {category_id}, items received: {filename}, category received: {id}, category received{category}"}
+    return {"message": f"items received: {name}, items received: {category_id}, items received: {filename}, category received{category}"}
 
 @app.get("/image/{image_filename}")
 async def get_image(image_filename):
@@ -101,12 +109,12 @@ def get_itemsid(item_id:int):
         )
 @app.get("/search")
 def get_keyword(keyword: str):
-    conn = sqlite3.connect(dbpath)
+    conn = sqlite3.connect(sqlpath)
     cursor = conn.cursor()
     cursor.execute("""SELECT items.name, category.name 
                     FROM items
-                    INNER JOIN category ON items.id = category.id
-                    WHERE items.name like ?""", (keyword,))
+                    INNER JOIN category ON items.category_id = category.id
+                    WHERE items.name = ?""", (keyword,))
     items = cursor.fetchall()
     conn.close()
     result = []
