@@ -73,8 +73,8 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     category_id = cursor.fetchone()
     if category_id is None:
         cursor.execute("INSERT INTO category (name) VALUES (?)", (category,))
-        conn.commit()
-        category_id = cursor.fechone()[0]
+        cursor.execute("SELECT id FROM category WHERE name = ?", (category,))
+        category_id = cursor.fetchone()[0]
     else:
         category_id = category_id[0]
     cursor.execute("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
