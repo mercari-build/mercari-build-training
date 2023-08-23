@@ -1,11 +1,14 @@
-# STEP4: Run the application in a virtual environment
+# STEP5: Run the application in a virtual environment
 
 In this step, we will learn how to use Docker.
 
 **:book: Reference**
 
-* [docker docs](https://docs.docker.com/get-started/overview/)
-* [Udemy - ゼロからはじめる Dockerによるアプリケーション実行環境構築](https://www.udemy.com/course/docker-k/)
+* (JA)[docker docs](https://matsuand.github.io/docs.docker.jp.onthefly/get-started/overview/)
+* (JA)[Udemy Business - ゼロからはじめる Dockerによるアプリケーション実行環境構築](https://mercari.udemy.com/course/docker-k/)
+
+* (EN)[docker docs](https://docs.docker.com/get-started/overview/)
+* (EN)[Udemy Business - Docker for the Absolute Beginner - Hands On - DevOps](https://mercari.udemy.com/course/learn-docker/)
 
 ## 1. Install Docker
 **Install docker of the latest version, and check if you can run `docker -v`.**
@@ -16,7 +19,7 @@ In this step, we will learn how to use Docker.
 
 
 ## 2. Run Docker commands
-**Make sure that you're in `mercari-build-training-2022/` directory, and run the following command.**
+**Make sure that you're in `mercari-build-training-2023/` directory, and run the following command.**
 
 ```shell
 $ docker run -v $(pwd)/data/text_en.png:/tmp/img.png wakanapo/tesseract-ocr tesseract /tmp/img.png stdout -l eng
@@ -95,9 +98,9 @@ ERRO[0000] error waiting for container: context canceled
 `"python"` part will be replaced with `"go"` if you're using Go.
 
 
-**Modify the `dockerfile` so that you can use the same version of Python/Go as STEP2 in your docker image.**
+**Modify the `Dockerfile` so that you can use the same version of Python/Go as STEP2 in your docker image.**
 
-Run the image with the modified `dockerfile`, check if the same message is displayed as STEP2-2.
+Run the image with the modified `Dockerfile`, check if the same message is displayed as STEP2-2.
 
 **:book: Reference**
 
@@ -130,4 +133,4 @@ Make sure you understand the following concepts
 
 ### Next
 
-[STEP5: Implement a simple Mercari webapp as frontend](step5.en.md)
+[STEP5: Implement a simple Mercari webapp as frontend](07-frontend.en.md)

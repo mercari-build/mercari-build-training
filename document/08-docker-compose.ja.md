@@ -1,20 +1,23 @@
-# STEP6: docker-composeでAPIとフロントエンドを動かす
+# STEP8: docker-composeでAPIとフロントエンドを動かす
 
 このステップでは docker-compose の使い方を学びます。
 
 **:book: Reference**
 
-* [Docker Compose の概要](https://matsuand.github.io/docs.docker.jp.onthefly/compose/)
-* [Udemy - 駆け出しエンジニアのためのDocker入門](https://www.udemy.com/course/docker-startup/)
+* (JA)[Docker Compose の概要](https://matsuand.github.io/docs.docker.jp.onthefly/compose/)
+* (JA)[Udemy Business - 駆け出しエンジニアのためのDocker入門](https://mercari.udemy.com/course/docker-startup/)
+
+* (EN)[Docker Compose Overview](https://docs.docker.com/compose/)
+* (EN)[Udemy Business - Docker for the Absolute Beginner - Hands On - DevOps](https://mercari.udemy.com/course/learn-docker/)
 ## 1. (復習) フロントエンドの docker image を作成する
 
 **STEP4を思い出しながらフロントエンドの docker image を作成しましょう。**
 
-`typescript/simple-mercari-web`以下にフロントエンド用の `dockerfile` がすでに用意されています。これを変更しフロントエンドが docker 上で立ち上がるようにしましょう。
+`typescript/simple-mercari-web`以下にフロントエンド用の `Dockerfile` がすでに用意されています。これを変更しフロントエンドが docker 上で立ち上がるようにしましょう。
 
-* 名前（リポジトリ名）は `build2022/web`, タグは`latest` とします。
+* 名前（リポジトリ名）は `build2023/web`, タグは`latest` とします。
 
-`$ docker run -d -p 3000:3000 build2022/web:latest`
+`$ docker run -d -p 3000:3000 build2023/web:latest`
 
 を実行し、ブラウザから[http://localhost:3000/](http://localhost:3000/)が正しく開ければ成功です。
 
@@ -41,18 +44,18 @@
 ## 4. Docker ComposeでAPIとフロントエンドを動かす
 **チュートリアルを参考にしながら、今回作成したサービスのフロントエンドとバックエンドのAPIをDocker Composeで動かせるようにしましょう**
 
-`docker-compose.yml` は `mercari-build-training-2022/` 以下に作成することにします。
+`docker-compose.yml` は `mercari-build-training-2023/` 以下に作成することにします。
 
 以下の点を参考にしながら `docker-compose.yml` を作成しましょう。
 
 * 使用する docker image
-    * (Option 1: 難易度 ☆) STEP4 と STEP6-1 でそれぞれ build した `build2022/app:latest` と `build2022/web:latest` を使う
-    * (Option 2: 難易度 ☆☆☆) `{go|python}/dockerfile` と `typescript/simple-mercari-web/dockerfile` から build するようにする
+    * (Option 1: 難易度 ☆) STEP4 と STEP6-1 でそれぞれ build した `build2023/app:latest` と `build2023/web:latest` を使う
+    * (Option 2: 難易度 ☆☆☆) `{go|python}/Dockerfile` と `typescript/simple-mercari-web/Dockerfile` から build するようにする
 * 使用する port
     * API : 9000
     * フロントエンド : 3000
 * サービス間の接続
-    * フロントエンドは`API_URL`という環境変数で設定されたURLのAPIにリクエストを送ります
+    * フロントエンドは`REACT_APP_API_URL`という環境変数で設定されたURLのAPIにリクエストを送ります
     * APIはフロントエンドにリクエストは送りませんが[CORS](https://developer.mozilla.org/ja/docs/Web/HTTP/CORS)という仕組みのために、どこからリクエストが来るのか知っておく必要があります
     `FRONT_URL`という環境変数でフロントエンドのURLを指定しています
 

@@ -3,14 +3,17 @@
 このステップではGitとGithubの使い方を学びます。
 
 **:book: Reference**
-* [Gitを使ったバージョン管理](https://backlog.com/ja/git-tutorial/intro/01/)
-* [Udemy - Git & Github基礎講座](https://www.udemy.com/course/git-github-a/)
 
-## **mercari-build-training-2022** リポジトリをフォークする
+* (JA)[Gitを使ったバージョン管理](https://backlog.com/ja/git-tutorial/intro/01/)
+* (JA)[Udemy Business - Git：はじめてのGitとGitHub](https://mercari.udemy.com/course/intro_git/)
 
-* [mercari-build-training-2022](https://github.com/mercari-build/mercari-build-training-2022)
+* (EN)[Git basics](https://www.atlassian.com/git)
+* (EN)[Udemy Business - GitHub Ultimate: Master Git and GitHub - Beginner to Expert](https://mercari.udemy.com/course/github-ultimate/)
+## **mercari-build-training-2023** リポジトリをフォークする
+
+* [mercari-build-training-2023](https://github.com/mercari-build/mercari-build-training-2023)
   をあなたのGithubにForkします。
-* Forkに成功すると `https://github.com/<your github id>/mercari-build-training-2022`
+* Forkに成功すると `https://github.com/<your github id>/mercari-build-training-2023`
   というようなリポジトリができます。
 
 ## Gitをインストールする
@@ -30,25 +33,25 @@
    
 ## Gitの基本コマンドを使う
 
-1. `https://github.com/<your github id>/mercari-build-training-2022` を **clone**
+1. `https://github.com/<your github id>/mercari-build-training-2023` を **clone**
    します。 cloneすると、github上のリポジトリを自分のローカルにDownloadできます。
    ```shell
    $ cd <your working space>
-   $ git clone https://github.com/<your github id>/mercari-build-training-2022
+   $ git clone https://github.com/<your github id>/mercari-build-training-2023
    ```
 
 **:bangbang: 注意**
 
 cloneができたら必ず以下のコマンドを実行してください。
 ```shell
-$ cd mercari-build-training-2022
+$ cd mercari-build-training-2023
 $ git config --local core.hooksPath .githooks/ 
 ```
 これは mercari-build-training-2022 が githooks という機能を使うために必要なものです。
 
 2. `first-pull-request`というブランチを作り、そのブランチに**checkout**します
    ```shell
-   $ cd <your working space>/mercari-build-training-2022
+   $ cd <your working space>/mercari-build-training-2023
    $ git branch first-pull-request
    $ git checkout first-pull-request
    ```
@@ -90,4 +93,4 @@ $ git config --local core.hooksPath .githooks/
 ---
 ### Next
 
-[STEP2: 環境構築](step2.ja.md)
+[STEP2: 環境構築](02-local-env.ja.md)
