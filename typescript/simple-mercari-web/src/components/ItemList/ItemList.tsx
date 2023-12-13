@@ -7,7 +7,7 @@ interface Item {
   image_filename: string;
 };
 
-const server = process.env.API_URL || 'http://127.0.0.1:9000';
+const server = process.env.REACT_APP_API_URL || 'http://127.0.0.1:9000';
 const placeholderImage = process.env.PUBLIC_URL + '/logo192.png';
 
 interface Prop {

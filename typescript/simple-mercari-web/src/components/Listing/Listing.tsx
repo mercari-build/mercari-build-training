@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const server = process.env.API_URL || 'http://127.0.0.1:9000';
+const server = process.env.REACT_APP_API_URL || 'http://127.0.0.1:9000';
 
 interface Prop {
   onListingCompleted?: () => void;

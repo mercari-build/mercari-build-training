@@ -1,4 +1,8 @@
 FROM alpine
 
-# STEP4-4では以下は変更しない
+RUN addgroup -S mercari && adduser -S trainee -G mercari
+# RUN chown -R trainee:mercari /path/to/db
+
+USER trainee
+
 CMD ["go", "version"]

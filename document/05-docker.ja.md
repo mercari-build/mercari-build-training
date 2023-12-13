@@ -1,12 +1,14 @@
-# STEP4: 仮想環境でアプリを動かす
+# STEP5: 仮想環境でアプリを動かす
 
 このステップでは docker の使い方を学びます。
 
 **:book: Reference**
 
-* [docker docs](https://matsuand.github.io/docs.docker.jp.onthefly/get-started/overview/)
-* [Udemy - ゼロからはじめる Dockerによるアプリケーション実行環境構築](https://www.udemy.com/course/docker-k/)
+* (JA)[docker docs](https://matsuand.github.io/docs.docker.jp.onthefly/get-started/overview/)
+* (JA)[Udemy Business - ゼロからはじめる Dockerによるアプリケーション実行環境構築](https://mercari.udemy.com/course/docker-k/)
 
+* (EN)[docker docs](https://docs.docker.com/get-started/overview/)
+* (EN)[Udemy Business - Docker for the Absolute Beginner - Hands On - DevOps](https://mercari.udemy.com/course/learn-docker/)
 ## 1. Docker をインストールする
 **最新のdockerをインストールし、`docker -v` が実行できることを確認しましょう。**
 
@@ -74,11 +76,11 @@ docker はホスト上に存在しないイメージを使う際には、自動�
 
 
 ## 4. Docker Image を Build する
-**pythonで開発をしている人は`python/`, Goの人は`go/`以下にある`dockerfile`をbuildしてみましょう。**
+**pythonで開発をしている人は`python/`, Goの人は`go/`以下にある`Dockerfile`をbuildしてみましょう。**
 
-* 名前（リポジトリ名）は `build2022/app`, タグは`latest` とします。
+* 名前（リポジトリ名）は `build2023/app`, タグは`latest` とします。
 
-イメージ一覧の中に `build2022/app` という image があれば成功です。
+イメージ一覧の中に `build2023/app` という image があれば成功です。
 
 
 **:book: Reference**
@@ -91,7 +93,7 @@ docker はホスト上に存在しないイメージを使う際には、自動�
 ```
 docker: Error response from daemon: OCI runtime create failed: container_linux.go:380: starting container process caused: exec: "python": executable file not found in $PATH: unknown.
 ERRO[0000] error waiting for container: context canceled 
-```    
+```
 Goの場合は、上のエラーメッセージの`"python"`の部分が`"go"`になります。
 
 
@@ -110,7 +112,7 @@ STEP4-5 までで docker image の中は STEP2-2 と同じ状態になってい�
 
 **`dockerfile`を変更し、必要なファイルをコピーしたり依存ライブラリをインストールしたりして, docker image 上で 出品 API が動くようにしましょう。**
 
-`$ docker run -d -p 9000:9000 build2022/app:latest`
+`$ docker run -d -p 9000:9000 build2023/app:latest`
 
 を実行しSTEP3と同様にしてAPIを叩ければ成功です。
 
@@ -129,4 +131,4 @@ STEP4-5 までで docker image の中は STEP2-2 と同じ状態になってい�
 
 ### Next
 
-[STEP5: Webのフロントエンドを実装する](step5.ja.md)
+[STEP5: Webのフロントエンドを実装する](07-frontend.ja.md)

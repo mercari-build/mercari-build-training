@@ -1,4 +1,4 @@
-# Build@Mercari Training Program 2022
+# Build@Mercari Training Program 2023
 
 This is @<your github id>'s build training repository.
 
@@ -23,16 +23,19 @@ The following icons indicate pointers for
 
 ## Tasks
 
-- [ ] **STEP1** Git ([JA](document/step1.ja.md)/[EN](document/step1.en.md))
-- [ ] **STEP2** Setup environment ([JA](document/step2.ja.md)
-  /[EN](document/step2.en.md))
-- [ ] **STEP3** Develop API ([JA](document/step3.ja.md)
-  /[EN](document/step3.en.md))
-- [ ] **STEP4** Docker ([JA](document/step4.ja.md)/[EN](document/step4.en.md))
-- [ ] **STEP5** (Stretch) Frontend ([JA](document/step5.ja.md)
-  /[EN](document/step5.en.md))
-- [ ] **STEP6** (Stretch)  Run on docker-compose ([JA](document/step6.ja.md)
-  /[EN](document/step6.en.md))
+- [ ] **STEP1** Git ([JA](document/01-git.ja.md)/[EN](document/01-git.en.md))
+- [ ] **STEP2** Setup environment ([JA](document/02-local-env.ja.md)
+  /[EN](document/02-local-env.en.md))
+- [ ] **STEP3** Develop API ([JA](document/03-api.ja.md)
+  /[EN](document/03-api.en.md))
+- [ ] **STEP4** Database ([JA](document/04-database.ja.md)/[EN](document/04-database.en.md))
+- [ ] **STEP5** Docker ([JA](document/05-docker.ja.md)/[EN](document/05-docker.en.md))
+- [ ] **STEP6** Continuous Integration(CI) ([JA](document/06-ci.ja.md)
+  /[EN](document/06-ci.en.md))
+- [ ] **STEP7** (Stretch) Frontend ([JA](document/07-frontend.ja.md)
+  /[EN](document/07-frontend.en.md))
+- [ ] **STEP8** (Stretch)  Run on docker-compose ([JA](document/08-docker-compose.ja.md)
+  /[EN](document/08-docker-compose.en.md))
 
 ### Other documents
 
