@@ -34,12 +34,21 @@ The following icons indicate pointers for
   /[EN](document/06-ci.en.md))
 - [ ] **STEP7** (Stretch) Frontend ([JA](document/07-frontend.ja.md)
   /[EN](document/07-frontend.en.md))
-- [ ] **STEP8** (Stretch)  Run on docker-compose ([JA](document/08-docker-compose.ja.md)
+- [ ] **STEP8** (Stretch)  Run multi service ([JA](document/08-docker-compose.ja.md)
   /[EN](document/08-docker-compose.en.md))
 - [ ] **Extra1** Data structure and algorithm (TBU)
 - [ ] **Extra2** (Stretch) Data analysis (TBU)
 
-
 ### Other documents
 
 - 効率的に開発できるようになるためのTips / Tips for efficient development ([JA](document/tips.ja.md)/[EN](document/tips.en.md))
+
+### Which one should I choose, Python or Go?
+
+* Mercari uses Go for building the backend of their applications. If you like taking on challenges, using Go will let you develop in an environment similar to Mercari's.
+* Python is a relatively easy-to-write programming language. Choosing Python may make it easier for you to understand the overall flow.
+
+
+* MercariではBackend開発にGoを利用しています。挑戦できそうな方はこちらを選んでいただくとよりMercariに近い環境で開発いただけます。
+* Pythonは比較的簡単にかけるプログラミング言語です。Pythonを選んだほうが全体のフローの理解がしやすいかと思われます。
+
