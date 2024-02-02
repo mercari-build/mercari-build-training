@@ -6,8 +6,8 @@ Choose either Python or Go and build your local environment.
 ## Building Python environment
 
 ### 1. Install Python
-* If your local version is below Python3.7, install Python3.10.
-* If you have Python3.7 or above, you can skip the installation step.
+* If your local version is below Python3.8, install Python3.10.
+* If you have Python3.8 or above, you can skip the installation step.
 
 ### 2. Check your Python version
 
