@@ -68,6 +68,12 @@ $ go version
 
 * [PATHを通すとは？- 初心者でも分かる解説](https://hara-chan.com/it/programming/environment-variable-path/)
 
+Go関連のおすすめサイト
+* [A Tour of Go](https://go.dev/tour/welcome/)
+* [Go: The Complete Developer's Guide (Golang)](https://mercari.udemy.com/course/go-the-complete-developers-guide/)
+  * ↑英語ですが、字幕もあり聞き取りやすいです。Section11はこのtrainingの内容と近く特に参考になると思います。
+
+
 ### 3. 依存ライブラリをインストールする
 
 Goでは、`go.mod`というファイルで依存しているライブラリを管理しています。

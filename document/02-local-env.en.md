@@ -68,6 +68,11 @@ If the version does not correspond to the Python version you installed, double c
 
 * [GOROOT and GOPATH](https://www.jetbrains.com/help/go/configuring-goroot-and-gopath.html)
 
+Recommendation web page about Go
+* [A Tour of Go](https://go.dev/tour/welcome/)
+* [Go: The Complete Developer's Guide (Golang)](https://mercari.udemy.com/course/go-the-complete-developers-guide/)
+  * Section11 is closely related to the content of this training and is particularly recommended as a reference.
+
 ### 3. Install dependencies
 
 In Go, dependent libraries are managed in a file called `go.mod`.
