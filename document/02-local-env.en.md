@@ -6,8 +6,8 @@ Choose either Python or Go and build your local environment.
 ## Building Python environment
 
 ### 1. Install Python
-* If your local version is below Python3.7, install Python3.10.
-* If you have Python3.7 or above, you can skip the installation step.
+* If your local version is below Python3.8, install Python3.10.
+* If you have Python3.8 or above, you can skip the installation step.
 
 ### 2. Check your Python version
 
@@ -47,8 +47,11 @@ If successful, you can access the local host `http://127.0.0.1:9000` on our brow
 
 ## Building Go environment
 ### 1. Install Go
-* If your local version is below Go1.14, install Go1.18.
-* If you have Go1.14 or above, you can skip the installation step.
+* If your local version is below Go1.20, install Go1.21.
+* If you have Go1.20 or above, you can skip the installation step.
+
+Download it from [this link](https://go.dev/dl/)!  
+※ If you are using a Mac and are unsure whether to download the `x86-64` or `ARM64` version, click on the Apple logo at the top left corner > select "About This Mac". If the chip is listed as "Apple" choose `ARM64`; if it's "Intel" select `x86-64`.
 
 ### 2. Check your Go version
 
@@ -64,6 +67,11 @@ If the version does not correspond to the Python version you installed, double c
 **:book: Reference**
 
 * [GOROOT and GOPATH](https://www.jetbrains.com/help/go/configuring-goroot-and-gopath.html)
+
+Recommendation web page about Go
+* [A Tour of Go](https://go.dev/tour/welcome/)
+* [Go: The Complete Developer's Guide (Golang)](https://mercari.udemy.com/course/go-the-complete-developers-guide/)
+  * Section11 is closely related to the content of this training and is particularly recommended as a reference.
 
 ### 3. Install dependencies
 

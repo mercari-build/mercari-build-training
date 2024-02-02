@@ -2,14 +2,14 @@
 
 
 ## 1. Build local environment
-Install Node v16 from below.
-(16.15.0 LTS is recommended as of May 2022)
+Install Node v20 from below.
+(20.11.0 LTS is recommended as of Jan 2024)
 
 https://nodejs.org/en/
 
 If you would like to install multiple versions of Node, use [nvs](https://github.com/jasongin/nvs).
 
-Run `node -v` and confirm that `v16.0.0` or above is displayed.
+Run `node -v` and confirm that `v20.0.0` or above is displayed.
 
 Move to the following directory and install dependencies with the following command.
 ```shell

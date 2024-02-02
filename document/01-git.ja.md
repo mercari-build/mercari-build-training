@@ -9,11 +9,11 @@
 
 * (EN)[Git basics](https://www.atlassian.com/git)
 * (EN)[Udemy Business - GitHub Ultimate: Master Git and GitHub - Beginner to Expert](https://mercari.udemy.com/course/github-ultimate/)
-## **mercari-build-training-2023** リポジトリをフォークする
+## **mercari-build-training** リポジトリをフォークする
 
-* [mercari-build-training-2023](https://github.com/mercari-build/mercari-build-training-2023)
+* [mercari-build-training](https://github.com/mercari-build/mercari-build-training)
   をあなたのGithubにForkします。
-* Forkに成功すると `https://github.com/<your github id>/mercari-build-training-2023`
+* Forkに成功すると `https://github.com/<your github id>/mercari-build-training`
   というようなリポジトリができます。
 
 ## Gitをインストールする
@@ -33,27 +33,27 @@
    
 ## Gitの基本コマンドを使う
 
-1. `https://github.com/<your github id>/mercari-build-training-2023` を **clone**
+1. `https://github.com/<your github id>/mercari-build-training` を **clone**
    します。 cloneすると、github上のリポジトリを自分のローカルにDownloadできます。
    ```shell
    $ cd <your working space>
-   $ git clone https://github.com/<your github id>/mercari-build-training-2023
+   $ git clone https://github.com/<your github id>/mercari-build-training
    ```
 
 **:bangbang: 注意**
 
 cloneができたら必ず以下のコマンドを実行してください。
 ```shell
-$ cd mercari-build-training-2023
+$ cd mercari-build-training
 $ git config --local core.hooksPath .githooks/ 
 ```
-これは mercari-build-training-2022 が githooks という機能を使うために必要なものです。
+これは mercari-build-training が githooks という機能を使うために必要なものです。
 
-2. `first-pull-request`というブランチを作り、そのブランチに**checkout**します
+2. `first-pull-request`というブランチを作り、そのブランチに**switch**します
    ```shell
-   $ cd <your working space>/mercari-build-training-2023
+   $ cd <your working space>/mercari-build-training
    $ git branch first-pull-request
-   $ git checkout first-pull-request
+   $ git switch first-pull-request
    ```
 3. README.md の中にある`@<your github id>` の部分をあなたのgithub idに書き換えてください
 4. 書き換えた内容を **commit**します
@@ -66,7 +66,7 @@ $ git config --local core.hooksPath .githooks/
    ```shell
    $ git push origin first-pull-request:first-pull-request
    ```
-6. `https://github.com/<your github id>/mercari-build-training-2022`を開き、**Pull Request**(PR)を作ります。
+6. `https://github.com/<your github id>/mercari-build-training`を開き、**Pull Request**(PR)を作ります。
     - base branch: `main`
     - target branch: `first-pull-request`
 

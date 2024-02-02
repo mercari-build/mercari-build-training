@@ -12,10 +12,10 @@ In this step, we will learn how to use Git and Github.
 
 
 
-## Fork this **mercari-build-training-2023** repository
+## Fork this **mercari-build-training** repository
 
-* Fork [mercari-build-training-2023](https://github.com/mercari-build/mercari-build-training-2023) 
-* You will see be able to see `https://github.com/<your github id>/mercari-build-training-2023` if successful.
+* Fork [mercari-build-training](https://github.com/mercari-build/mercari-build-training) 
+* You will see be able to see `https://github.com/<your github id>/mercari-build-training` if successful.
 
 
 ## Install Git
@@ -35,26 +35,26 @@ In this step, we will learn how to use Git and Github.
 
 ## Use basic commands in Git
 
-1. **Clone** `https://github.com/<your github id>/mercari-build-training-2023` onto your local using the following command.
+1. **Clone** `https://github.com/<your github id>/mercari-build-training` onto your local using the following command.
    ```shell
    $ cd <your working space>
-   $ git clone https://github.com/<your github id>/mercari-build-training-2023
+   $ git clone https://github.com/<your github id>/mercari-build-training
    ```
 
 **:bangbang: Caution**
 
 Please definitely run the following command after cloning repository. 
 ```
-cd mercari-build-training-2023
+cd mercari-build-training
 git config --local core.hooksPath .githooks/ 
 ```
-This is required to use githooks in mercari-build-training-2023 repository.
+This is required to use githooks in mercari-build-training repository.
 
-2. Make a new branch named `first-pull-request` and **checkout** into this branch
+2. Make a new branch named `first-pull-request` and **switch** into this branch
    ```shell
-   $ cd <your working space>/mercari-build-training-2023
+   $ cd <your working space>/mercari-build-training
    $ git branch first-pull-request
-   $ git checkout first-pull-request
+   $ git switch first-pull-request
    ```
 3. Replace `@<your github id>` on README.md with your Github ID.
 4. **commit** the changes you made with the following commands.
@@ -67,7 +67,7 @@ This is required to use githooks in mercari-build-training-2023 repository.
    ```shell
    $ git push origin first-pull-request:first-pull-request
    ```
-6. Open `https://github.com/<your github id>/mercari-build-training-2022` and make a **Pull Request** (PR).
+6. Open `https://github.com/<your github id>/mercari-build-training` and make a **Pull Request** (PR).
     - base branch: `main`
     - target branch: `first-pull-request`
 

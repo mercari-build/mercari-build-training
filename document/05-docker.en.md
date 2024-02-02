@@ -19,7 +19,7 @@ In this step, we will learn how to use Docker.
 
 
 ## 2. Run Docker commands
-**Make sure that you're in `mercari-build-training-2023/` directory, and run the following command.**
+**Make sure that you're in `mercari-build-training/` directory, and run the following command.**
 
 ```shell
 $ docker run -v $(pwd)/data/text_en.png:/tmp/img.png wakanapo/tesseract-ocr tesseract /tmp/img.png stdout -l eng
@@ -78,9 +78,9 @@ Make sure you understand the following commands and when to use them.
 ## 4. Building a Docker Image
 **Build the docker file under the directory `python/` if you're using Python and `go/` if you're using Go.**
 
-* Set the name of the image to be `build2022/app` with `latest` tag.
+* Set the name of the image to be `build2024/app` with `latest` tag.
 
-Check that you can now see `build2022/app` in the list of images.
+Check that you can now see `build2024/app` in the list of images.
 
 
 **:book: Reference**
@@ -114,7 +114,7 @@ The environment within the docker image should be the same as STEP2-2 after STEP
 **Mofify `dockerfile` to copy necessary files and install dependencies such that you can run the listing API on docker**
 
 
-`$ docker run -d -p 9000:9000 build2022/app:latest`
+`$ docker run -d -p 9000:9000 build2024/app:latest`
 
 Check if the above command results in the same response as STEP3.
 

@@ -1,4 +1,4 @@
-# Build@Mercari Training Program 2023
+# Build@Mercari Training Program 
 
 This is @<your github id>'s build training repository.
 
