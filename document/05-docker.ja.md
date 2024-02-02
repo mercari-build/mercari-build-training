@@ -16,7 +16,7 @@
 
 * [Docker のダウンロードとインストール](https://matsuand.github.io/docs.docker.jp.onthefly/get-started/#download-and-install-docker)
 ## 2. Docker を触ってみる
-**`mercari-build-training-2022/` 以下にいることを確認して次のコマンドを実行してみましょう。**
+**`mercari-build-training/` 以下にいることを確認して次のコマンドを実行してみましょう。**
 
 ```shell
 $ docker run -v $(pwd)/data/text_en.png:/tmp/img.png wakanapo/tesseract-ocr tesseract /tmp/img.png stdout -l eng
@@ -78,9 +78,9 @@ docker はホスト上に存在しないイメージを使う際には、自動�
 ## 4. Docker Image を Build する
 **pythonで開発をしている人は`python/`, Goの人は`go/`以下にある`Dockerfile`をbuildしてみましょう。**
 
-* 名前（リポジトリ名）は `build2023/app`, タグは`latest` とします。
+* 名前（リポジトリ名）は `build2024/app`, タグは`latest` とします。
 
-イメージ一覧の中に `build2023/app` という image があれば成功です。
+イメージ一覧の中に `build2024/app` という image があれば成功です。
 
 
 **:book: Reference**
@@ -112,7 +112,7 @@ STEP4-5 までで docker image の中は STEP2-2 と同じ状態になってい�
 
 **`dockerfile`を変更し、必要なファイルをコピーしたり依存ライブラリをインストールしたりして, docker image 上で 出品 API が動くようにしましょう。**
 
-`$ docker run -d -p 9000:9000 build2023/app:latest`
+`$ docker run -d -p 9000:9000 build2024/app:latest`
 
 を実行しSTEP3と同様にしてAPIを叩ければ成功です。
 

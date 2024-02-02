@@ -19,7 +19,7 @@ In this step, we will learn how to use Docker.
 
 
 ## 2. Run Docker commands
-**Make sure that you're in `mercari-build-training-2023/` directory, and run the following command.**
+**Make sure that you're in `mercari-build-training/` directory, and run the following command.**
 
 ```shell
 $ docker run -v $(pwd)/data/text_en.png:/tmp/img.png wakanapo/tesseract-ocr tesseract /tmp/img.png stdout -l eng
