@@ -50,11 +50,11 @@ git config --local core.hooksPath .githooks/
 ```
 This is required to use githooks in mercari-build-training-2023 repository.
 
-2. Make a new branch named `first-pull-request` and **checkout** into this branch
+2. Make a new branch named `first-pull-request` and **switch** into this branch
    ```shell
    $ cd <your working space>/mercari-build-training-2023
    $ git branch first-pull-request
-   $ git checkout first-pull-request
+   $ git switch first-pull-request
    ```
 3. Replace `@<your github id>` on README.md with your Github ID.
 4. **commit** the changes you made with the following commands.

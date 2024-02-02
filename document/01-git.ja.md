@@ -49,11 +49,11 @@ $ git config --local core.hooksPath .githooks/
 ```
 これは mercari-build-training-2022 が githooks という機能を使うために必要なものです。
 
-2. `first-pull-request`というブランチを作り、そのブランチに**checkout**します
+2. `first-pull-request`というブランチを作り、そのブランチに**switch**します
    ```shell
    $ cd <your working space>/mercari-build-training-2023
    $ git branch first-pull-request
-   $ git checkout first-pull-request
+   $ git switch first-pull-request
    ```
 3. README.md の中にある`@<your github id>` の部分をあなたのgithub idに書き換えてください
 4. 書き換えた内容を **commit**します
