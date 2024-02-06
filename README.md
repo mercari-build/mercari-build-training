@@ -36,6 +36,7 @@ The following icons indicate pointers for
   /[EN](document/07-frontend.en.md))
 - [ ] **STEP8** (Stretch)  Run on docker-compose ([JA](document/08-docker-compose.ja.md)
   /[EN](document/08-docker-compose.en.md))
+- [ ] **EXTRA2** (Stretch)  Data Analysis ([Link](document/extra-02-data-analysis.md))
 
 ### Other documents
 
