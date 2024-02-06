@@ -12,6 +12,9 @@ Extra2 では extra ディレクトリ配下の [extra-02-data-analysis-ja.ipynb
 
 * (EN) [Welcome To Colaboratory](https://g.co/kgs/Z6J7Mct)
 * (JA) [Colaboratory へようこそ](https://g.co/kgs/3R2GzaR)
+* (EN) [Python for Data Science and Machine Learning Bootcamp](https://mercari.udemy.com/course/python-for-data-science-and-machine-learning-bootcamp/)
+* (JA) [実践 Python データサイエンス](https://mercari.udemy.com/course/python-jp/)
+* (JA) [データ分析コンペで楽しみながら学べるPython×データ分析講座](https://mercari.udemy.com/course/python-data/)
 
 ### How to Use (利用方法)
 
