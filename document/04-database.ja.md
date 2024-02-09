@@ -64,7 +64,7 @@ $ curl -X GET 'http://127.0.0.1:9000/search?keyword=jacket'
 | 1    | jacket | 1           | 510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg |
 | 2    | ...    |             |                                                                      |
 
-**category table**
+**categories table**
 
 | id   | name    |
 | :--- | :------ |

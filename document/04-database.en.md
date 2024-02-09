@@ -49,7 +49,7 @@ Since `GET items` should return the category name as before, **join** these two 
 | 1    | jacket | 1           | 510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg |
 | 2    | ...    |             |                                                                      |
 
-**category table**
+**categories table**
 
 | id   | name    |
 | :--- | :------ |
