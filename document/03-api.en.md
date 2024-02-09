@@ -44,7 +44,7 @@ $ curl -X POST \
 
 **:beginner: Points**
 
-* Understand the difference betweeen GET and POST requests.
+* Understand the difference between GET and POST requests.
 * Why do we not see `{"message": "item received: <name>"}` on accessing `http://127.0.0.1:9000/items` from your browser?
   * What is the **HTTP Status Code** when you receive these responses?
   * What do different types of status code mean?
@@ -60,7 +60,7 @@ Make an endpoint to add a new item
 * (EN) [RESTful web API design](https://docs.microsoft.com/en-us/azure/architecture/best-practices/api-design)
 * (EN) [HTTP response status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
 
-The endpoint already implemented (`POST /items`) takes `name` as an argument. Modify the API such that it also accepts `category` informaton.
+The endpoint already implemented (`POST /items`) takes `name` as an argument. Modify the API such that it also accepts `category` information.
 
 * name: Name of the item (string)
 * category: Category of the item (string)

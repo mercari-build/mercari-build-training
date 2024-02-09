@@ -43,7 +43,7 @@ In this screen, item images are all rendered as Build@Mercari logo. Specify the 
 
 
 ### (Optional) Task 3. Change the styling with HTML and CSS
-These two components are styled by CSS. To see what types of changes can be made, try modifying `ItemList` component CSS. These are specifed in `App.css` and they are applied by `className` attribute (e.g. `<div className='Listing'></div>`).
+These two components are styled by CSS. To see what types of changes can be made, try modifying `ItemList` component CSS. These are specified in `App.css` and they are applied by `className` attribute (e.g. `<div className='Listing'></div>`).
 ```css
 .Listing {
   ...

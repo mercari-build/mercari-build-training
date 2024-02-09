@@ -25,9 +25,9 @@ In this step, we will learn how to use Docker.
 $ docker run -v $(pwd)/data/text_en.png:/tmp/img.png wakanapo/tesseract-ocr tesseract /tmp/img.png stdout -l eng
 ```
 
-What message was diplayed after running this command?
+What message was displayed after running this command?
 
-Running this command downlods the corresponding docker image from [the registry](https://hub.docker.com/repository/docker/wakanapo/tesseract-ocr) to your local machine.
+Running this command downloads the corresponding docker image from [the registry](https://hub.docker.com/repository/docker/wakanapo/tesseract-ocr) to your local machine.
 
 This docker image has a functionality to read texts from images (OCR).
 Using a docker allows you to run applications using an environment built within the docker image without altering your local system.
@@ -58,7 +58,7 @@ $ docker help
 Docker will download images automatically if they are not found on your local system. You can also download the image beforehand.
 
 
-**Look for a commmand to download an image from the registry and download an image called `alpine`**
+**Look for a command to download an image from the registry and download an image called `alpine`**
 
 Check that you can see `alpine` in the list of images.
 
@@ -111,7 +111,7 @@ Run the image with the modified `Dockerfile`, check if the same message is displ
 
 The environment within the docker image should be the same as STEP2-2 after STEP4-5.
 
-**Mofify `dockerfile` to copy necessary files and install dependencies such that you can run the listing API on docker**
+**Modify `dockerfile` to copy necessary files and install dependencies such that you can run the listing API on docker**
 
 
 `$ docker run -d -p 9000:9000 build2024/app:latest`

@@ -30,7 +30,7 @@ In this step, we will learn how to use Git and Github.
 2. Set your name and email address using git config. Check if your email address shows up.
    ```shell
    $ git config user.email
-   <your-email-adress>
+   <your-email-address>
    ```
 
 ## Use basic commands in Git
