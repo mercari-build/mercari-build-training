@@ -4,7 +4,7 @@ interface Item {
   id: number;
   name: string;
   category: string;
-  image_filename: string;
+  image_name: string;
 };
 
 const server = process.env.REACT_APP_API_URL || 'http://127.0.0.1:9000';

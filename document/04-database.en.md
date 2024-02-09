@@ -44,7 +44,7 @@ Since `GET items` should return the category name as before, **join** these two 
 
 **items table**
 
-| id   | name   | category_id | image_filename                                                       |
+| id   | name   | category_id | image_name                                                       |
 | :--- | :----- | :---------- | :------------------------------------------------------------------- |
 | 1    | jacket | 1           | 510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg |
 | 2    | ...    |             |                                                                      |
