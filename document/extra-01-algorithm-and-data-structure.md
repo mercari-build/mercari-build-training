@@ -10,7 +10,7 @@ Extra1では、基本的なアルゴリズムとデータ構造を学んだ後�
 
 * (EN) [Python Data Structures & Algorithms + LEETCODE Exercises](https://mercari.udemy.com/course/data-structures-algorithms-python/)
 
-**::beginner: point**
+**:beginner: point**
 * 時間計算量と空間計算量について説明してください。
 * ビッグオー記法について説明してください。
 * 安定ソートと非安定ソートについて説明してください。
@@ -21,11 +21,68 @@ Extra1では、基本的なアルゴリズムとデータ構造を学んだ後�
 * 連想配列について説明してください。
 
 ## 演習
-### [Intersection of Two Linked Lists](https://leetcode.com/problems/intersection-of-two-linked-lists/description)
-
 ### [Word Pattern](https://leetcode.com/problems/word-pattern/description/)
+英小文字からなるパターン `p` と、空白区切りの文字列 `s` が与えられるので、`s` が `p` に従うかどうかを判定してください。 例えば、`p = "abba"`, `s = "dog cat cat dog"` の場合、`s` は `p` に従い、`p="abba"`, `s="dog cat cat fish"` の場合、`s` は `p` に従いません。
+
+**:beginner: checkpoint**
+#### Step1: 文字列 `s` を空白で区切る方法を考えてみましょう。
+<details>
+<summary>ヒント</summary>
+* 各言語では、文字列操作のためのライブラリや関数などが標準で提供されているはずです。
+* Web 検索や ChatGPT を駆使して、"文字列 空白区切り" などで検索してみましょう。
+</details>
+
+#### Step2: パターン `p` の書く文字が、`s` のどの部分に対応するかを管理する方法を考えてみましょう。
+<details>
+<summary>ヒント</summary>
+* 例えば、Example 1 の場合、`p` の各文字に対応する `s` 内の単語は、`a => dog`, `b => cat` です。
+* このような対応を管理するために、辞書やハッシュテーブルを使うと良いでしょう。
+* 例えば、Python では、`dict` を使って、`p` の各文字に対応する `s` 内の単語を管理できます。
+* こちらも、Web 検索や ChatGPT を駆使して、"Python 辞書" などで検索してみましょう。
+</details>
+
 
 ### [Find All Numbers Disappeared in an Array](https://leetcode.com/problems/find-all-numbers-disappeared-in-an-array/description/)
+n 個の整数からなる配列 nums が与えられ、nums[i] は [1, n] の範囲にあります。この配列に現れない [1, n] の範囲のすべての整数を返してください。
+
+**:beginner: checkpoint**
+
+#### Step1: O(n^2)-time and O(1)-space で解く
+<details>
+<summary>ヒント</summary>
+* Simple な 2 重ループを使って、O(n^2)-time and O(1)-space で解ける
+</details>
+
+#### Step2: O(n)-time and O(n)-space で解く
+<details>
+<summary>ヒント</summary>
+* 配列 nums 内に要素が出現したかどうかを記録するための配列を用意することで、O(n)-time and O(n)-space で解ける
+</details>
+
+#### 発展: O(n)-time and O(1)-space で解けますか？
+
+### [Intersection of Two Linked Lists](https://leetcode.com/problems/intersection-of-two-linked-lists/description)
+2 つの単方向 Linked List が与えられるので、2 つのリストが交差するノードを返してください。交差しない場合は、`null` を返してください。
+
+**:beginner: checkpoint**
+
+#### Step1: O(n)-time and O(n)-space で解く
+<details>
+<summary>ヒント</summary>
+* Hash Table を使ってノードを記録することで、O(n)-time and O(n)-space で解ける
+</details>
+
+#### Step2: O(n)-time and O(1)-space で解く
+<details>
+<summary>ヒント</summary>
+* 2つのリストの長さを比較して、長いリストを短いリストと同じ長さにすることで、O(n)-time and O(1)-space で解ける
+</details>
+
+#### 発展: two pointers を使って解く方法 (おまけ)
+<details>
+<summary>ヒント</summary>
+* 片方の tail から head にポインタをはり、Floyd's Linked List Cycle Finding Algorithm に帰着する
+</details>
 
 
 ### [Koko Eating Bananas](https://leetcode.com/problems/koko-eating-bananas/) (optinal)
