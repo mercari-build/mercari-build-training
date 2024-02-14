@@ -1,6 +1,6 @@
 # Extra1: Algorithms and Data Structures
 
-In Extra1, after learning the basic algorithms and data structures, we will practice using problems from LeetCode. On Thursday, 2/22, from 18:00, we will provide problem explanations in Japanese. It is recommended to solve the problems in advance.
+In Extra1, after learning the basic algorithms and data structures, we will practice using problems from LeetCode. On Thursday, 2/28, from 17:00, we will provide problem explanations in Japanese. It is recommended to solve the problems in advance.
 
 ## Textbooks
 
@@ -89,9 +89,7 @@ Is it possible to solve it in O(1)-space, excluding the input and return?
 <details>
 <summary>Hint</summary>
 
-* By comparing the lengths of the two lists and adjusting the longer list to match the length of the shorter one, you can solve it in O(n)-time and O(1
-
-)-space.
+* By comparing the lengths of the two lists and adjusting the longer list to match the length of the shorter one, you can solve it in O(n)-time and O(1)-space.
 * This will be covered in the explanation.
 </details>
 
