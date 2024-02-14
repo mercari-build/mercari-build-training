@@ -90,3 +90,21 @@ Is it possible to solve it in O(1)-space, excluding the input and return?
 <summary>Hint</summary>
 
 * By comparing the lengths of the two lists and adjusting the longer list to match the length of the shorter one, you can solve it in O(n)-time and O(1
+
+)-space.
+* This will be covered in the explanation.
+</details>
+
+#### Advanced: Solve using two pointers (bonus)
+<details>
+<summary>Hint</summary>
+
+* Start a pointer at the tail of one list and proceed to the head, reducing the problem to Floyd's Linked List Cycle Finding Algorithm.
+</details>
+
+
+### [Koko Eating Bananas](https://leetcode.com/problems/koko-eating-bananas/) (optional)
+
+### [Non-overlapping Intervals](https://leetcode.com/problems/non-overlapping-intervals/description/) (optional)
+
+### [Longest Substring Without Repeating Characters](https://leetcode.com/problems/longest-substring-without-repeating-characters/description/) (optional)
