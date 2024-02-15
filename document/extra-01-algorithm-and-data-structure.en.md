@@ -1,6 +1,6 @@
 # Extra1: Algorithms and Data Structures
 
-In Extra1, after learning the basic algorithms and data structures, we will practice using problems from LeetCode. On Thursday, 2/28, from 17:00, we will provide problem explanations in Japanese. It is recommended to solve the problems in advance.
+In Extra1, after learning about basic algorithms and data structures, you will practice using problems from LeetCode. It is recommended to solve the problems before looking at the explanations.
 
 ## Textbooks
 
@@ -11,13 +11,16 @@ In Extra1, after learning the basic algorithms and data structures, we will prac
 * (EN) [Python Data Structures & Algorithms + LEETCODE Exercises](https://mercari.udemy.com/course/data-structures-algorithms-python/)
 
 **:beginner: Point**
-* Please explain time complexity and space complexity.
-* Please explain Big O notation.
-* Please explain associative arrays.
-* What is a binary search, and why is its computational complexity \(O(\log n)\)?
-* Explain the difference between LinkedList and Array.
-* Explain hash tables and estimate their computational complexity.
-* Explain graph search algorithms and discuss the use cases for BFS/DFS.
+* First, look up the following terms and be able to explain what they are.
+    * Time complexity and space complexity
+    * Big O notation
+    * Associative arrays
+    * Study the following basic algorithms on Udemy or other platforms and be able to explain them.
+        * What is binary search? Explain why the time complexity of binary search is $O(\log n)$.
+        * Explain the difference between LinkedList and Array.
+        * Explain the hash table and estimate the time complexity.
+        * Explain graph search algorithms and explain the difference between BFS (Breadth First Search) and DFS (Depth First Search).
+
 
 ## Exercises
 ### [Word Pattern](https://leetcode.com/problems/word-pattern/description/)
