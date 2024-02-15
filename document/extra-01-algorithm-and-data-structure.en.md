@@ -15,11 +15,11 @@ In Extra1, after learning about basic algorithms and data structures, you will p
     * Time complexity and space complexity
     * Big O notation
     * Associative arrays
-    * Study the following basic algorithms on Udemy or other platforms and be able to explain them.
-        * What is binary search? Explain why the time complexity of binary search is $O(\log n)$.
-        * Explain the difference between LinkedList and Array.
-        * Explain the hash table and estimate the time complexity.
-        * Explain graph search algorithms and explain the difference between BFS (Breadth First Search) and DFS (Depth First Search).
+* Study the following basic algorithms on Udemy or other platforms and be able to explain them.
+    * What is binary search? Explain why the time complexity of binary search is $O(\log n)$.
+    * Explain the difference between LinkedList and Array.
+    * Explain the hash table and estimate the time complexity.
+    * Explain graph search algorithms and explain the difference between BFS (Breadth First Search) and DFS (Depth First Search).
 
 
 ## Exercises
