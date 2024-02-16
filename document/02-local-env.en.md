@@ -30,6 +30,8 @@ You can install the dependencies by running the following command.
 
 ```shell
 $ cd python
+$ python -m venv .venv
+$ source .venv/bin/activate
 $ pip install -r requirements.txt
 ```
 
