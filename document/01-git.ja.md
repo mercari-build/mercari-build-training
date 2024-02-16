@@ -28,7 +28,7 @@
 2. git configに自分の名前とemailアドレスを設定します。以下のコマンドを実行してあなたのemailアドレスが表示されればOKです。
    ```shell
    $ git config user.email
-   <your-email-adress>
+   <your-email-address>
    ```
    
 ## Gitの基本コマンドを使う

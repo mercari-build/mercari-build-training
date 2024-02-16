@@ -56,13 +56,13 @@ Make a new file `docker-compose.yml` considering the following points.
 * Port numbers
     * API : 9000
     * Frontend : 3000
-* Connecting betweeen services
+* Connecting between services
     * Frontend should send requests to an environment variable `REACT_APP_API_URL`
     * While API will not send requests to frontend, [CORS](https://developer.mozilla.org/ja/docs/Web/HTTP/CORS) needs to be set up such that frontend knows where the requests are coming from
     * Set an environment variable `FRONT_URL` for frontend URL
 
 
 Run `docker-compose up` and check if the following operates properly
-- [http://localhost:3000/](http://localhost:3000/) displayes the frontend page
+- [http://localhost:3000/](http://localhost:3000/) displays the frontend page
 - You can add an new item (Listing)
 - You can view the list of all items (ItemList)

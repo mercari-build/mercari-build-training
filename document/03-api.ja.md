@@ -114,7 +114,7 @@ curl -X POST \
 
 
 ```json
-{"items": [{"name": "jacket", "category": "fashion", "image_filename": "510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg"}, ...]}
+{"items": [{"name": "jacket", "category": "fashion", "image_name": "510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg"}, ...]}
 ```
 
 
@@ -129,7 +129,7 @@ curl -X POST \
 
 ```shell
 $ curl -X GET 'http://127.0.0.1:9000/items/1'
-{"name": "jacket", "category": "fashion", "image_filename": "..."}
+{"name": "jacket", "category": "fashion", "image_name": "..."}
 ```
 
 ## 6. (Optional) Loggerについて調べる

@@ -20,7 +20,7 @@ We will use a database called **SQLite**.
   * category: string (Category of the item)
   * image_name: string (Filename of the imeage)
 
-Change the endpoints `GET /items` and `POST /items` such that items are saved into the database and can be returned based on GET request. Add `mercari.sqlite3` to your `.gitignore` such that it is not commited. `items.db` shoud be commited. 
+Change the endpoints `GET /items` and `POST /items` such that items are saved into the database and can be returned based on GET request. Add `mercari.sqlite3` to your `.gitignore` such that it is not committed. `items.db` should be committed. 
 
 **:beginner: Points**
 
@@ -44,12 +44,12 @@ Since `GET items` should return the category name as before, **join** these two 
 
 **items table**
 
-| id   | name   | category_id | image_filename                                                       |
+| id   | name   | category_id | image_name                                                       |
 | :--- | :----- | :---------- | :------------------------------------------------------------------- |
 | 1    | jacket | 1           | 510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg |
 | 2    | ...    |             |                                                                      |
 
-**category table**
+**categories table**
 
 | id   | name    |
 | :--- | :------ |
