@@ -1,6 +1,7 @@
 import os
 import logging
 import pathlib
+import json
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,6 +23,14 @@ app.add_middleware(
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
+
+@app.get("/items")
+def return_sample_json():
+    json_path = "sample.json"
+    sample_json_load = json.load(open(json_path,'r'))
+    print(sample_json_load)
+    return sample_json_load
+
 
 
 @app.post("/items")
