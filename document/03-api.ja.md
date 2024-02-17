@@ -13,6 +13,16 @@
 * (EN) [HTTP response status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
 * (EN) [HTTP request methods](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods)
 
+## Curlをインストール
+### 1. Curlをインストールする
+```shell
+$ brew install curl
+```
+### 2. Curlのバージョンをチェックする
+```shell
+$ curl　--version
+```
+
 ### GETリクエスト
 
 サービスをローカルで立ち上げると、ブラウザで `http://127.0.0.1:9000` からサービスにアクセスすることができるようになりました。
