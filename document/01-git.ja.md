@@ -1,6 +1,6 @@
 # STEP1: Git
 
-このステップではGitとGithubの使い方を学びます。
+このステップではGitとGitHubの使い方を学びます。
 
 **:book: Reference**
 
@@ -12,7 +12,7 @@
 ## **mercari-build-training** リポジトリをフォークする
 
 * [mercari-build-training](https://github.com/mercari-build/mercari-build-training)
-  をあなたのGithubにForkします。
+  をあなたのGitHubにForkします。
 * Forkに成功すると `https://github.com/<your github id>/mercari-build-training`
   というようなリポジトリができます。
 

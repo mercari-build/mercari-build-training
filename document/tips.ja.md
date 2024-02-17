@@ -50,7 +50,7 @@ Errorを読んでも理解できなかったり、わからなくなってしま
 公式(英語)を理解できるのがもちろんベストだけど、わからないことを英語の硬い文章から理解するのは難しいですよね。
 Qiitaなどの「これで動いた」という記事を最初に見るとしても、概要がわかったら最終的にはオフィシャルドキュメントを参照するようにしましょう。
 
-例: dockerfileの書き方なら [公式リファレンス](https://docs.docker.com/engine/reference/builder/) や [日本語版リファレンス](https://docs.docker.jp/engine/reference/builder.html) を参考にする
+例: Dockerfileの書き方なら [公式リファレンス](https://docs.docker.com/engine/reference/builder/) や [日本語版リファレンス](https://docs.docker.jp/engine/reference/builder.html) を参考にする
 
 これができるようになると、開発の流れがこのように変わります。
 

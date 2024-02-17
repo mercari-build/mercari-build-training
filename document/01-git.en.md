@@ -1,6 +1,6 @@
 # STEP1: Git
 
-In this step, we will learn how to use Git and Github.
+In this step, we will learn how to use Git and GitHub.
 
 **:book: Reference**
 
@@ -56,14 +56,14 @@ This is required to use githooks in mercari-build-training repository.
    $ git branch first-pull-request
    $ git switch first-pull-request
    ```
-3. Replace `@<your github id>` on README.md with your Github ID.
+3. Replace `@<your github id>` on README.md with your GitHub ID.
 4. **commit** the changes you made with the following commands.
    ```shell
    $ git status # Check your change
    $ git add README.md # Add README.md file to the list of files to commit
    $ git commit -m "Update github id" # Brief description about the changes
    ```
-5. **push** changes to Github.
+5. **push** changes to GitHub.
    ```shell
    $ git push origin first-pull-request:first-pull-request
    ```
