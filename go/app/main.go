@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	ImgDir = "images"
+	ImgDir    = "images"
 	ItemsJson = "items.json"
 )
 
@@ -28,8 +28,9 @@ type Items struct {
 }
 
 type Item struct {
-	Name     string `json:"name"`
-	Category string `json:"category"`
+	Name      string `json:"name"`
+	Category  string `json:"category"`
+	ImageName string `json:"image_name"`
 }
 
 func root(c echo.Context) error {
@@ -41,7 +42,9 @@ func loadItems() Items {
 	// Load items.json
 	file, err := os.Open(ItemsJson)
 	if err != nil {
-		log.Fatal(err)
+		// log.Fatal(err)
+		new_items := new(Items)
+		return *new_items
 	}
 	defer file.Close()
 	var items Items
@@ -66,6 +69,7 @@ func addItem(c echo.Context) error {
 	new_item := new(Item)
 	new_item.Name = name
 	new_item.Category = category
+	getImg(c)
 	items.Items = append(items.Items, *new_item)
 
 	// Convert item_obj to json
@@ -96,6 +100,7 @@ func getItems(c echo.Context) error {
 func getImg(c echo.Context) error {
 	// Create image path
 	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
+	c.Logger().Infof("items: %s", imgPath)
 
 	if !strings.HasSuffix(imgPath, ".jpg") {
 		res := Response{Message: "Image path does not end with .jpg"}
@@ -130,7 +135,6 @@ func main() {
 	e.POST("/items", addItem)
 	e.GET("/items", getItems)
 	e.GET("/image/:imageFilename", getImg)
-
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
