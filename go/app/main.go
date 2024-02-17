@@ -59,12 +59,12 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Logger.SetLevel(log.INFO)
 
-	front_url := os.Getenv("FRONT_URL")
-	if front_url == "" {
-		front_url = "http://localhost:3000"
+	frontURL := os.Getenv("FRONT_URL")
+	if frontURL == "" {
+		frontURL = "http://localhost:3000"
 	}
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{front_url},
+		AllowOrigins: []string{frontURL},
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 
