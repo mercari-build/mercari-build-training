@@ -1,0 +1,15 @@
+STEP3のメモ
+
+
+・POINT1
+    ・GETとPOST→GETは情報を取得するとき、POSTは情報を書き込んだりするときに使う
+        GETとPOSTの違いについて
+        https://qiita.com/kanataxa/items/522efb74421255f0e0a1
+
+        HTTP リクエストメソッド
+        https://developer.mozilla.org/ja/docs/Web/HTTP/Methods
+
+curlコマンドでPOSTする, 様々な形式別メモ
+https://weblabo.oscasierra.net/curl-post/
+
+
