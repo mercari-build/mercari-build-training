@@ -13,12 +13,12 @@
 * (EN) [HTTP response status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
 * (EN) [HTTP request methods](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods)
 
-## Curlをインストール
-### 1. Curlをインストールする
+## curlをインストール
+### 1. curlをインストールする
 ```shell
 $ brew install curl
 ```
-### 2. Curlのバージョンをチェックする
+### 2. curlのバージョンをチェックする
 ```shell
 $ curl　--version
 ```
