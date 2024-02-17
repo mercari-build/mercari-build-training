@@ -1,13 +1,15 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path"
 	"strings"
-
-	"encoding/json"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -69,7 +71,7 @@ func addItem(c echo.Context) error {
 	new_item := new(Item)
 	new_item.Name = name
 	new_item.Category = category
-	getImg(c)
+	new_item.ImageName = registerImg(c) + ".jpg"
 	items.Items = append(items.Items, *new_item)
 
 	// Convert item_obj to json
@@ -88,6 +90,43 @@ func addItem(c echo.Context) error {
 	res := Response{Message: message}
 
 	return c.JSON(http.StatusOK, res)
+}
+
+func registerImg(c echo.Context) string {
+	// Read uploaded file
+	header, err := c.FormFile("image")
+	if err != nil {
+		log.Fatal(err)
+	}
+	src, err := header.Open()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer src.Close()
+
+	// Convert src to hash
+	hash := sha256.New()
+	if _, err := io.Copy(hash, src); err != nil {
+		log.Fatal(err)
+	}
+	hex_hash := hex.EncodeToString(hash.Sum(nil))
+
+	// Reset the read position of the file
+	if _, err := src.Seek(0, 0); err != nil {
+		log.Fatal(err)
+	}
+
+	// Save file to images/
+	file, err := os.Create(path.Join(ImgDir, hex_hash+".jpg"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	if _, err := io.Copy(file, src); err != nil {
+		log.Fatal(err)
+	}
+
+	return hex_hash
 }
 
 func getItems(c echo.Context) error {
