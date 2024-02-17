@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path"
@@ -20,9 +21,56 @@ type Response struct {
 	Message string `json:"message"`
 }
 
+/*
+3-3 Get a list of items
+
+	<---- no need struct since error type return
+	only requires entire json to string. if something
+	has to done with seperate items or item, use this code
+	---->
+	items : [{name,category},,,]
+	declare two structs for items and item
+	type Items struct {
+		Items []Item `json:"items"`
+	}
+
+	type Item struct {
+		Name     string `json:"name"`
+		Category string `json:"category"`
+	}
+*/
+
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
+}
+
+/*
+3-3 Get a list of items
+
+	GET getItem (<echo.Context> C)
+	parse the json file from items.json
+	return entire elements of items.json
+	as array.
+*/
+func getItem(c echo.Context) error {
+	json, err := os.Open("items.json")
+
+	if err != nil {
+		res := "items.json file not exist!"
+		return c.JSON(http.StatusOK, res)
+	}
+	defer json.Close()
+
+	//ioutil.ReadAll deprecated from go 1.16
+	byteValue, err := io.ReadAll(json)
+	if err != nil {
+		res := "no items exist!"
+		return c.JSON(http.StatusOK, res)
+	}
+
+	ret := string(byteValue)
+	return c.JSONBlob(http.StatusOK, []byte(ret))
 }
 
 func addItem(c echo.Context) error {
@@ -71,8 +119,9 @@ func main() {
 	// Routes
 	e.GET("/", root)
 	e.POST("/items", addItem)
+	//3-3. GET a list of items
+	e.GET("/items", getItem)
 	e.GET("/image/:imageFilename", getImg)
-
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
