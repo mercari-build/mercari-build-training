@@ -156,14 +156,14 @@ func getItemById(c echo.Context) error {
 func getImg(c echo.Context) error {
 	// Create image path
 	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
-	c.Logger().Infof("items: %s", imgPath)
+	c.Logger().Infof("items: %s", imgPath) // log level: "INFO"
 
 	if !strings.HasSuffix(imgPath, ".jpg") {
 		res := Response{Message: "Image path does not end with .jpg"}
 		return c.JSON(http.StatusBadRequest, res)
 	}
 	if _, err := os.Stat(imgPath); err != nil {
-		c.Logger().Debugf("Image not found: %s", imgPath)
+		c.Logger().Debugf("Image not found: %s", imgPath) // log level: "DEBUG"
 		imgPath = path.Join(ImgDir, "default.jpg")
 	}
 	return c.File(imgPath)
@@ -175,7 +175,8 @@ func main() {
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Logger.SetLevel(log.INFO)
+	// e.Logger.SetLevel(log.INFO)
+	e.Logger.SetLevel(log.DEBUG) // Print logs whose log level is no less than "DEBUG"
 
 	frontURL := os.Getenv("FRONT_URL")
 	if frontURL == "" {
