@@ -7,6 +7,8 @@ import (
 	"path"
 	"strings"
 
+	"encoding/json"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -14,10 +16,20 @@ import (
 
 const (
 	ImgDir = "images"
+	ItemsJson = "items.json"
 )
 
 type Response struct {
 	Message string `json:"message"`
+}
+
+type Items struct {
+	Items []Item `json:"items"`
+}
+
+type Item struct {
+	Name     string `json:"name"`
+	Category string `json:"category"`
 }
 
 func root(c echo.Context) error {
@@ -25,10 +37,48 @@ func root(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+func loadItems() Items {
+	// Load items.json
+	file, err := os.Open(ItemsJson)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	var items Items
+	decoder := json.NewDecoder(file)
+	if err := decoder.Decode(&items); err != nil {
+		log.Fatal(err)
+	}
+	return items
+}
+
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
-	c.Logger().Infof("Receive item: %s", name)
+	category := c.FormValue("category")
+	c.Logger().Infof("Receive item: name=%s, category=%s", name, category)
+
+	// Load items.json
+	items := loadItems()
+	c.Logger().Infof("items: %+v", items)
+
+	// Create objects
+	new_item := new(Item)
+	new_item.Name = name
+	new_item.Category = category
+	items.Items = append(items.Items, *new_item)
+
+	// Convert item_obj to json
+	file, err := os.Create(ItemsJson)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	// Write updated items to the file
+	encoder := json.NewEncoder(file)
+	if err := encoder.Encode(items); err != nil {
+		log.Fatal(err)
+	}
 
 	message := fmt.Sprintf("item received: %s", name)
 	res := Response{Message: message}
