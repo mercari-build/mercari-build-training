@@ -71,7 +71,7 @@ func addItem(c echo.Context) error {
 	new_item := new(Item)
 	new_item.Name = name
 	new_item.Category = category
-	new_item.ImageName = registerImg(c) + ".jpg"
+	new_item.ImageName = registerImg(c)
 	items.Items = append(items.Items, *new_item)
 
 	// Convert item_obj to json
@@ -117,7 +117,8 @@ func registerImg(c echo.Context) string {
 	}
 
 	// Save file to images/
-	file, err := os.Create(path.Join(ImgDir, hex_hash+".jpg"))
+	filename := hex_hash + path.Ext(header.Filename)
+	file, err := os.Create(path.Join(ImgDir, filename))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -126,7 +127,7 @@ func registerImg(c echo.Context) string {
 		log.Fatal(err)
 	}
 
-	return hex_hash
+	return filename
 }
 
 func getItems(c echo.Context) error {
