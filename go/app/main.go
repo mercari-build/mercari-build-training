@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -137,6 +138,21 @@ func getItems(c echo.Context) error {
 	return c.JSON(http.StatusOK, items)
 }
 
+func getItemById(c echo.Context) error {
+	// Convert id string to int
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	c.Logger().Infof("items: %v", id)
+
+	items := loadItems()
+	if len(items.Items) < id && id >= 0 {
+		log.Fatal("index out of range")
+	}
+	return c.JSON(http.StatusOK, items.Items[id])
+}
+
 func getImg(c echo.Context) error {
 	// Create image path
 	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
@@ -174,6 +190,7 @@ func main() {
 	e.GET("/", root)
 	e.POST("/items", addItem)
 	e.GET("/items", getItems)
+	e.GET("/items/:id", getItemById)
 	e.GET("/image/:imageFilename", getImg)
 
 	// Start server
