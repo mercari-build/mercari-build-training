@@ -11,6 +11,7 @@ logger = logging.getLogger("uvicorn")
 logger.level = logging.INFO
 images = pathlib.Path(__file__).parent.resolve() / "images"
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
+json_path = "sample.json"
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -26,7 +27,6 @@ def root():
 
 @app.get("/items")
 def return_sample_json():
-    json_path = "sample.json"
     sample_json_load = json.load(open(json_path,'r'))
     print(sample_json_load)
     return sample_json_load
@@ -34,9 +34,14 @@ def return_sample_json():
 
 
 @app.post("/items")
-def add_item(name: str = Form(...)):
+def add_item(name: str = Form(),category:str = Form()):
     logger.info(f"Receive item: {name}")
-    return {"message": f"item received: {name}"}
+    logger.info(f"Recive category : {category}")
+    item_dict = {"name":name,"category":category}
+    with open("./edited.json", "w") as js:
+        json.dump(item_dict, js, indent = 4)
+        print("success creating json")
+    return {"message": f"item received: name = {name} category ={category}"}
 
 
 @app.get("/image/{image_name}")
