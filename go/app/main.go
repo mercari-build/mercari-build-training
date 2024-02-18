@@ -4,8 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
@@ -36,26 +38,41 @@ type Item struct {
 	ImageName string `json:"image_name"`
 }
 
+func httpErrorHandler(err error, c echo.Context, code int, message string) *echo.HTTPError {
+	c.Logger().Error(err)
+	return echo.NewHTTPError(code, message)
+}
+
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
 }
 
-func loadItems() Items {
+func loadItems() (Items, error) {
 	// Load items.json
-	file, err := os.Open(ItemsJson)
-	if err != nil {
-		// log.Fatal(err)
+	_, err := os.Stat(ItemsJson)
+	if err == nil {
+		// ItemsJson exists
+		file, err := os.Open(ItemsJson)
+		if err != nil {
+			return Items{}, err
+		}
+		defer file.Close()
+		var items Items
+		decoder := json.NewDecoder(file)
+		if err := decoder.Decode(&items); err != nil {
+			return Items{}, err
+		}
+		return items, nil
+
+	} else if errors.Is(err, os.ErrNotExist) {
+		// ItemsJson does not exist
 		new_items := new(Items)
-		return *new_items
+		return *new_items, nil
+
 	}
-	defer file.Close()
-	var items Items
-	decoder := json.NewDecoder(file)
-	if err := decoder.Decode(&items); err != nil {
-		log.Fatal(err)
-	}
-	return items
+	// Other errors
+	return Items{}, err
 }
 
 func addItem(c echo.Context) error {
@@ -65,90 +82,99 @@ func addItem(c echo.Context) error {
 	c.Logger().Infof("Receive item: name=%s, category=%s", name, category)
 
 	// Load items.json
-	items := loadItems()
+	items, err := loadItems()
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load items")
+	}
 	c.Logger().Infof("items: %+v", items)
 
 	// Create objects
 	new_item := new(Item)
 	new_item.Name = name
 	new_item.Category = category
-	new_item.ImageName = registerImg(c)
+
+	// Register image
+	header, err := c.FormFile("image")
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusBadRequest, "Image not found")
+	}
+	new_item.ImageName, err = registerImg(header)
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to register image")
+	}
 	items.Items = append(items.Items, *new_item)
 
 	// Convert item_obj to json
 	file, err := os.Create(ItemsJson)
 	if err != nil {
-		log.Fatal(err)
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to create json")
 	}
 	defer file.Close()
 	// Write updated items to the file
 	encoder := json.NewEncoder(file)
 	if err := encoder.Encode(items); err != nil {
-		log.Fatal(err)
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to write json")
 	}
 
 	message := fmt.Sprintf("item received: %s", name)
 	res := Response{Message: message}
 
-	return c.JSON(http.StatusOK, res)
+	return c.JSON(http.StatusCreated, res)
 }
 
-func registerImg(c echo.Context) string {
+func registerImg(header *multipart.FileHeader) (string, error) {
 	// Read uploaded file
-	header, err := c.FormFile("image")
-	if err != nil {
-		log.Fatal(err)
-	}
 	src, err := header.Open()
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	defer src.Close()
 
 	// Convert src to hash
 	hash := sha256.New()
 	if _, err := io.Copy(hash, src); err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	hex_hash := hex.EncodeToString(hash.Sum(nil))
 
 	// Reset the read position of the file
 	if _, err := src.Seek(0, 0); err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	// Save file to images/
 	filename := hex_hash + path.Ext(header.Filename)
 	file, err := os.Create(path.Join(ImgDir, filename))
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	defer file.Close()
 	if _, err := io.Copy(file, src); err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
-	return filename
+	return filename, nil
 }
 
 func getItems(c echo.Context) error {
 	// Load items.json
-	items := loadItems()
+	items, _ := loadItems()
 	c.Logger().Infof("items: %+v", items)
 	return c.JSON(http.StatusOK, items)
 }
 
 func getItemById(c echo.Context) error {
+	// Load items
+	items, err := loadItems()
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load items")
+	}
+
 	// Convert id string to int
 	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	c.Logger().Infof("items: %v", id)
-
-	items := loadItems()
-	if len(items.Items) < id && id >= 0 {
-		log.Fatal("index out of range")
+	if err != nil || id < 0 || len(items.Items) <= id {
+		err_msg := fmt.Sprintf("id not found: '%s'. id must be non-negative integer and less than %d", c.Param("id"), len(items.Items))
+		return httpErrorHandler(fmt.Errorf(err_msg), c, http.StatusBadRequest, err_msg)
 	}
 	return c.JSON(http.StatusOK, items.Items[id])
 }
