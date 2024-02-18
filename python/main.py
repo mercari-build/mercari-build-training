@@ -2,7 +2,8 @@ import os
 import json
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException
+import hashlib
+from fastapi import FastAPI, Form, HTTPException,File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -26,20 +27,26 @@ def root():
     return {"message": "Hello, world!"}
 
 
+# 商品を登録する
 @app.post("/items")
-def add_item(name: str = Form(...),category: str = Form(...)):
+def add_item(name: str = Form(...),category: str = Form(...),image: UploadFile = File(...)):
     logger.info(f"Receive item: {name}")
     logger.info(f"Receive item: {category}")
-    save_items_to_file(name,category)
+    logger.info(f"Receive item: {image}")
+
+    jpg = os.path.basename(image)
+    hashed_jpg = get_hash_by_sha256(jpg)
+    save_items_to_file(name,category,hashed_jpg)
     return {"message": f"item received: {name}"}
 
 
-# 新しい商品をjsonファイルに保存する。 {"items": [{"name": "jacket", "category": "fashion"}, ...]}
-def save_items_to_file(name,category):
-    new_item = {"name": name, "category": category}
+# 新しい商品をitem.jsonファイルに保存
+# {"items": [{"name": "jacket", "category": "fashion"}, ...]}
+def save_items_to_file(name,category,image_name):
+    new_item = {"name": name, "category": category, "image_name": image_name}
     if os.path.exists(items_file):
-        with open(items_file) as f:
-            now_data = json.load(items_file)
+        with open(items_file,'r') as f:
+            now_data = json.load(f)
         now_data["items"].append(new_item)
         with open(items_file, 'w') as f:
             json.dump(now_data, f, indent=2)
@@ -48,6 +55,21 @@ def save_items_to_file(name,category):
         with open(items_file, 'w') as f:
             json.dump(first_item, f, indent=2)
 
+
+# sha256でハッシュ化
+def get_hash_by_sha256(image):
+    hs = hashlib.sha256(image.encode()).hexdigest()
+    return hs
+
+
+
+
+# items.jsonファイルに登録された商品一覧を取得
+@app.get("/items")
+def get_items():
+    with open(items_file) as f:
+        items = json.load(f)
+    return items
 
 
 @app.get("/image/{image_name}")
