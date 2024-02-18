@@ -109,7 +109,7 @@ curl -X POST \
   --url 'http://localhost:9000/items' \
   -F 'name=jacket' \
   -F 'category=fashion' \
-  -F 'image=@images/local_image.jpg'
+  -F 'image=@images/default.jpg'
 ```
 
 
@@ -160,4 +160,4 @@ Image not found: <image path>
 
 ### Next
 
-[STEP5: データベース](04-database.ja.md)
+[STEP4: データベース](04-database.ja.md)
