@@ -14,6 +14,9 @@
 * (EN) [HTTP request methods](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods)
 
 ##  Install curl
+Check if you can see `{"message": "command not found"}` on your console.
+You need to install curl.
+This how to install curl be used on macOS and Linux and Windows Subsystem for Linux (WSL). 
 ### 1. How to install curl
 ```shell
 $ brew install curl
