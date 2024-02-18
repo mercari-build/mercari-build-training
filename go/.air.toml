@@ -1,5 +1,5 @@
 [build]
-cmd = "go build -o ./tmp/main ./app/main.go"
+cmd = "go build -o ./tmp/main ./app/*.go"
 bin = "./tmp/main"
 include_ext = ["go", "tpl", "tmpl", "html"]
 exclude_dir = ["assets", "tmp", "vendor"]
