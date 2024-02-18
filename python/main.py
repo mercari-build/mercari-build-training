@@ -10,7 +10,8 @@ import sqlite3
 環境変数
 '''
 json_path = "sample.json"
-db_path = "/Users/horiguchitakahiro/Desktop/mercari2/mercari-build-training/db/mercari.sqlite3"
+db_path = "/Users/horiguchitakahiro/Desktop/mercari2/mercari-build-training/db/main.sqlite3"
+category_db_path = "/Users/horiguchitakahiro/Desktop/mercari2/mercari-build-training/db/category.sqlite3"
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -24,6 +25,35 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
+def get_category_id(category_name:str):
+    '''
+    Returns:
+        (inserting_frag,index)
+    '''
+    conn = sqlite3.connect(category_db_path)
+    c = conn.cursor()
+    category_table = "category"
+    sql_command = f"""SELECT id FROM {category_table} WHERE category = ?"""
+    c.execute(sql_command, (category_name,))
+    
+    # 結果を取得
+    data = c.fetchone()
+    
+    if data:
+        conn.close()
+        return False,data[0]
+    else:
+        sql_command = f"""SELECT MAX(id) FROM {category_table}"""
+        c.execute(sql_command)
+        data = c.fetchone()
+        conn.close()
+        logger.info(data)
+        if data[0]:
+            return True,data[0] + 1
+        else:
+            return True,1
+
+
 '''
 curl -X GET \
     --url 'http://localhost:9000'
@@ -35,12 +65,19 @@ def root():
     sql_command = f"""CREATE TABLE IF NOT EXISTS {table} (
     id INTEGER PRIMARY KEY,
     name TEXT,
-    category TEXT,
+    category INTEGER,
     image BLOB
     );"""
     sql_connect.execute(sql_command) # SQL実行
-    print("sql login success")
-    sql_connect.close()
+
+    category_sql_connect = sqlite3.connect(category_db_path)
+    table = "category"
+    sql_command = f"""CREATE TABLE IF NOT EXISTS {table} (
+    id INTEGER PRIMARY KEY,
+    category TEXT
+    );"""
+    category_sql_connect.execute(sql_command) # SQL実行
+    category_sql_connect.close()
     return {"message": "Hello, world!"}
 '''
 curl -X GET \
@@ -51,6 +88,18 @@ def get_items():
     sql_connect = sqlite3.connect(db_path)
     sql_cur = sql_connect.cursor()
     sql_cur.execute('SELECT * FROM items')
+
+    rev = sql_cur.fetchall()
+    return rev
+'''
+curl -X GET \
+    --url 'http://localhost:9000/category' \
+'''
+@app.get("/category")
+def get_category():
+    sql_connect = sqlite3.connect(category_db_path)
+    sql_cur = sql_connect.cursor()
+    sql_cur.execute('SELECT * FROM category')
 
     rev = sql_cur.fetchall()
     return rev
@@ -67,23 +116,38 @@ curl -X POST \
   -F 'name=jacket' \
   -F 'category=fashion' \
   -F 'image=@images/local_image.jpg'
+curl -X POST \
+    --url 'http://localhost:9000/items' \
+  -F 'name=ps4' \
+  -F 'category=game' \
+  -F 'image=@images/local_image.jpg'
 '''
 @app.post("/items")
 async def add_item(name: str = Form(),category:str = Form(),image:UploadFile = File()):
     data = await image.read()  # アップロードされた画像をbytesに変換する処理
     sha256 = hashlib.sha256(data).hexdigest()
-    print('SHA256ハッシュ値：\n {0}'.format(sha256))
-    logger.info(f"Receive item: {name}")
-    logger.info(f"Recive category : {category}")
-    sql_connect = sqlite3.connect(db_path)
-    cur = sql_connect.cursor()
-    sqlite_command = f"insert into items(name,category,image) values('{name}','{category}','{sha256}')"
 
-    print(sqlite_command)
-    cur.execute(sqlite_command)
+    sql_connect = sqlite3.connect(db_path)
+    category_connect = sqlite3.connect(category_db_path)
+    cur = sql_connect.cursor()
+    category_cur = category_connect.cursor()
+    inserting_flag,category_id = get_category_id(category)
+
+    item_inserting_command = f"insert into items(name,category,image) values('{name}','{category_id}','{sha256}')"
+
+    cur.execute(item_inserting_command)
+
     sql_connect.commit()
+    if inserting_flag:
+        category_inserting_command = f"insert into category(category) values('{category}')"
+        category_cur.execute(category_inserting_command)
+        category_cur.close()
+        category_connect.commit()
+
     cur.close()
+
     sql_connect.close()
+    category_connect.close()
     print("success sqlite insertion")
     #item_dict = {"name":name,"category":category}
     # with open("./edited.json", "w") as js:
