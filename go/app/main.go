@@ -1,12 +1,14 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -28,8 +30,9 @@ func root(c echo.Context) error {
 }
 
 type Item struct {
-	Name     string `json:"name"`
-	Category string `json:"category"`
+	Name      string `json:"name"`
+	Category  string `json:"category"`
+	ImageName string `json:"image_name"`
 }
 
 type AllItems struct {
@@ -41,15 +44,50 @@ func addItem(c echo.Context) error {
 	name := c.FormValue("name")
 	category := c.FormValue("category")
 
-	// 既存のデータを読み込む
-	allItems, err := LoadItems()
+	// 画像ファイルを取得
+	imageFile, err := c.FormFile("image")
+	if err != nil {
+		res := Response{Message: "Failed to get image file"}
+		return c.JSON(http.StatusBadRequest, res)
+	}
+	src, err := imageFile.Open()
+	if err != nil {
+		res := Response{Message: "Failed to open image file"}
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+	defer src.Close()
+
+	// 画像ファイルをハッシュ化
+	hash := sha256.New()
+	if _, err := io.Copy(hash, src); err != nil {
+		res := Response{Message: "Failed to hash image file"}
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+	hashedImageName := fmt.Sprintf("%x.jpeg", hash.Sum(nil))
+
+	// 画像ファイルを保存
+	dst, err := os.Create("images/" + hashedImageName)
+	if err != nil {
+		res := Response{Message: "Failed to create image file: " + hashedImageName}
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+	defer dst.Close()
+	src.Seek(0, 0) // ファイルポインタを先頭に戻す
+	//srcからdstへ内容をコピー
+	if _, err := io.Copy(dst, src); err != nil {
+		res := Response{Message: "Failed to save image file"}
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+
+	// JSONファイルの既存のデータを読み込む
+	allItems, err := LoadItemsFromJSON()
 	if err != nil {
 		res := Response{Message: "Failed to load items.json"}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
 
 	// 新しいデータを追加
-	allItems.Items = append(allItems.Items, Item{Name: name, Category: category})
+	allItems.Items = append(allItems.Items, Item{Name: name, Category: category, ImageName: hashedImageName})
 
 	// ファイルに書き込み
 	jsonData, err := json.MarshalIndent(allItems, "", "  ")
@@ -65,14 +103,14 @@ func addItem(c echo.Context) error {
 
 	c.Logger().Infof("Receive item: %s", name)
 
-	message := fmt.Sprintf("item received: name=%s,category=%s", name, category)
+	message := fmt.Sprintf("item received: name=%s,category=%s,images=%s", name, category, hashedImageName)
 	res := Response{Message: message}
 
 	return c.JSON(http.StatusOK, res)
 }
 
 func getAllItems(c echo.Context) error {
-	allItems, err := LoadItems()
+	allItems, err := LoadItemsFromJSON()
 	if err != nil {
 		res := Response{Message: "Failed to load items.json"}
 		return c.JSON(http.StatusInternalServerError, res)
@@ -81,7 +119,27 @@ func getAllItems(c echo.Context) error {
 	return c.JSON(http.StatusOK, allItems)
 }
 
-func LoadItems() (*AllItems, error) {
+func getItemById(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		res := Response{Message: "Failed to get id in getItemById"}
+		return c.JSON(http.StatusBadRequest, res)
+	}
+	allItems, err := LoadItemsFromJSON()
+	if err != nil {
+		res := Response{Message: "Failed to load items.json in getItemById"}
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+
+	if id <= 0 || id > len(allItems.Items) {
+		res := Response{Message: "Invalid id"}
+		return c.JSON(http.StatusBadRequest, res)
+	}
+
+	return c.JSON(http.StatusOK, allItems.Items[id-1])
+}
+
+func LoadItemsFromJSON() (*AllItems, error) {
 	jsonFile, err := os.Open("items.json")
 	if err != nil {
 		return nil, err
@@ -133,6 +191,7 @@ func main() {
 	e.GET("/", root)
 	e.POST("/items", addItem)
 	e.GET("/items", getAllItems)
+	e.GET("/items/:id", getItemById)
 	e.GET("/image/:imageFilename", getImg)
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
