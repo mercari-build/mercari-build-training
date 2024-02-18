@@ -1,4 +1,5 @@
 import os
+import sqlite3
 import json
 import logging
 import pathlib
@@ -11,6 +12,7 @@ app = FastAPI()
 logger = logging.getLogger("uvicorn")
 logger.level = logging.DEBUG
 images = pathlib.Path(__file__).parent.resolve() / "images"
+db_path = pathlib.Path(__file__).parent.resolve() / "/Users/yurainagaki/mercari/mercari-build-training/db/items.db"
 items_file = pathlib.Path(__file__).parent.resolve() / "items.json"
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
@@ -21,6 +23,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+#create database
+def create_table():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category_id INTEGER NOT NULL,
+            image_name TEXT NOT NULL,
+            FOREIGN KEY (category_id) REFERENCES categories(id)
+        )
+    """)
+    conn.commit()
+    conn.close()
+create_table()
 
 @app.get("/")
 def root():
@@ -28,7 +52,7 @@ def root():
 
 
 @app.post("/items")
-async def add_item(name: str = Form(...), category: str = Form(...),image: UploadFile = File(...)):
+async def add_item(name: str = Form(...), category_name: str = Form(...),image: UploadFile = File(...)):
     contents = await image.read()
     hash_sha256 = hashlib.sha256(contents).hexdigest()
     image_filename = f"{hash_sha256}.jpg"
@@ -36,32 +60,59 @@ async def add_item(name: str = Form(...), category: str = Form(...),image: Uploa
     with open(image_path, "wb") as file:
         file.write(contents)
     
-    item = {"name": name, "category": category,"image_name": image_filename}
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM categories WHERE name = ?", (category_name,))
+    category = cursor.fetchone()
+
+    if not category:
+        cursor.execute("INSERT INTO categories (name) VALUES (?)", (category_name,))
+        conn.commit()
+        category_id = cursor.lastrowid
+    else:
+        category_id = category[0]
+    
+    cursor.execute("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)", (name, category_name, image_filename))
+    conn.commit()
+    conn.close()
+
+    item = {"name": name, "category_id": category_name,"image_name": image_filename}
     logger.info(f"Receive item: {item}")
-    save_item(item)
+    # save_item(item)
     return {"message": f"Item received: {item}","image_name": image_filename}
 
 
-def save_item(item):
-    if items_file.exists():
-        with open(items_file, "r+", encoding="utf-8") as file:
-            data = json.load(file)
-            data["items"].append(item)
-            file.seek(0)
-            json.dump(data, file, indent=4)
-            file.truncate()
-    else:
-        with open(items_file, "w", encoding="utf-8") as file:
-            json.dump({"items": [item]}, file, indent=4)
+# def save_item(item):
+#     if items_file.exists():
+#         with open(items_file, "r+", encoding="utf-8") as file:
+#             data = json.load(file)
+#             data["items"].append(item)
+#             file.seek(0)
+#             json.dump(data, file, indent=4)
+#             file.truncate()
+#     else:
+#         with open(items_file, "w", encoding="utf-8") as file:
+#             json.dump({"items": [item]}, file, indent=4)
+    
     
 
 @app.get("/items/{item_id}")
 def get_items(item_id: int):
-    items = load_items()
-    if item_id < 0 or item_id >= len(items):
-        raise HTTPException(status_code=404, detail="Item not found")
-    return items[item_id]
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("""
+    SELECT items.id, items.name, categories.name AS category_name, items.image_name
+    FROM items
+    JOIN categories ON items.category_id = categories.id
+    WHERE items.id = ?
+    """, (item_id,))
 
+    item = cursor.fetchone()
+    conn.close()
+
+    if item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {"id": item_id, "name": item[0], "category_name": item[1], "image_name": item[2]}
 
 def load_items():
     if items_file.exists():
@@ -75,6 +126,21 @@ def load_items():
     else:
         return []
 
+@app.get("/search")
+async def search_items(keyword: str):
+    if not keyword:
+        raise HTTPException(status_code=400, detail="Keyword must not be empty")
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    # Use '%' wildcards to search for any occurrence of the keyword within the name column
+    search_query = f"%{keyword}%"
+    cursor.execute("SELECT id, name, category_id, image_name FROM items WHERE name LIKE ?", (search_query,))
+    # Fetch all matching items
+    items = [{"id": row[0], "name": row[1], "category_id": row[2], "image_name": row[3]} for row in cursor.fetchall()]
+    # Close the database connection
+    conn.close()
+    return JSONResponse(content={"items": items})
+    
 
 
 @app.get("/image/{image_name}")
@@ -93,4 +159,4 @@ async def get_image(image_name):
     
     return FileResponse(image)
 
-#uvicorn main:app --reload --log-level debug --port 9005
+#uvicorn main:app --reload --log-level debug --port NUMBEROFPORT
