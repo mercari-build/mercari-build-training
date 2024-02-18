@@ -15,6 +15,9 @@
 
 ## curlをインストール
 ### 1. curlをインストールする
+もしcurlがインストールされていなければ、curllコマンドを使用すると`{"message": "command not found"}`がコンソール上で返ってきます。
+その場合、curlをインストールする必要があります。
+このcurlのインストール方法は、macOS、Linux、Windows Subsystem for Linux (WSL)で使用できます。
 ```shell
 $ brew install curl
 ```
