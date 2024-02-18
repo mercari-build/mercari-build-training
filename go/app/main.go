@@ -166,6 +166,29 @@ func getImg(c echo.Context) error {
 	return c.File(imgPath)
 }
 
+func searchItems(c echo.Context) error {
+	// Load items
+	items, err := loadItems()
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load items")
+	}
+
+	// Get keyword
+	// example: curl -X GET 'http://127.0.0.1:9000/search?keyword=jacket'
+	keyword := c.QueryParam("keyword")
+	c.Logger().Infof("keyword=%s", keyword)
+
+	// Search items
+	var res_items Items
+	for _, item := range items.Items {
+		if strings.Contains(item.Name, keyword) {
+			res_items.Items = append(res_items.Items, item)
+		}
+	}
+	c.Logger().Infof("items: %+v", res_items)
+	return c.JSON(http.StatusOK, res_items)
+}
+
 func main() {
 	e := echo.New()
 
@@ -190,6 +213,7 @@ func main() {
 	e.GET("/items", getItems)
 	e.GET("/items/:id", getItemById)
 	e.GET("/image/:imageFilename", getImg)
+	e.GET("/search", searchItems)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
