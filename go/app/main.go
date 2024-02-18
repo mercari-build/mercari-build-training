@@ -3,8 +3,6 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -19,26 +17,6 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-const (
-	ImgDir    = "images"
-	ItemsJson = "items.json"
-)
-
-type Response struct {
-	Message string `json:"message"`
-}
-
-type Items struct {
-	Items []Item `json:"items"`
-}
-
-type Item struct {
-	Name      string `json:"name"`
-	Category  string `json:"category"`
-	ImageName string `json:"image_name"`
-	Id        int    `json:"id"`
-}
-
 func httpErrorHandler(err error, c echo.Context, code int, message string) *echo.HTTPError {
 	c.Logger().Error(err)
 	return echo.NewHTTPError(code, message)
@@ -47,37 +25,6 @@ func httpErrorHandler(err error, c echo.Context, code int, message string) *echo
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
-}
-
-func loadItems() (Items, error) {
-	// Load items.json
-	_, err := os.Stat(ItemsJson)
-	if err == nil {
-		// ItemsJson exists
-		file, err := os.Open(ItemsJson)
-		if err != nil {
-			return Items{}, err
-		}
-		defer file.Close()
-		var items Items
-		decoder := json.NewDecoder(file)
-		if err := decoder.Decode(&items); err == io.EOF {
-			// Empty file
-			new_items := new(Items)
-			return *new_items, nil
-		} else if err != nil {
-			return Items{}, err
-		}
-		return items, nil
-
-	} else if errors.Is(err, os.ErrNotExist) {
-		// ItemsJson does not exist
-		new_items := new(Items)
-		return *new_items, nil
-
-	}
-	// Other errors
-	return Items{}, err
 }
 
 func addItem(c echo.Context) error {
@@ -119,16 +66,10 @@ func addItem(c echo.Context) error {
 	}
 	items.Items = append(items.Items, *new_item)
 
-	// Convert item_obj to json
-	file, err := os.Create(ItemsJson)
+	// Insert new item to database
+	err = insertItem(*new_item)
 	if err != nil {
-		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to create json")
-	}
-	defer file.Close()
-	// Write updated items to the file
-	encoder := json.NewEncoder(file)
-	if err := encoder.Encode(items); err != nil {
-		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to write json")
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to insert item")
 	}
 
 	message := fmt.Sprintf("item received: %s", name)
