@@ -90,7 +90,6 @@ func addItem(c echo.Context) error {
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load items")
 	}
-	c.Logger().Infof("items: %+v", items)
 
 	// Create objects
 	new_item := new(Item)
@@ -180,13 +179,13 @@ func getItemById(c echo.Context) error {
 		err_msg := fmt.Sprintf("id not found: '%s'. id must be non-negative integer and less than %d", c.Param("id"), len(items.Items))
 		return httpErrorHandler(fmt.Errorf(err_msg), c, http.StatusBadRequest, err_msg)
 	}
+	c.Logger().Infof("item: %+v", items.Items[id])
 	return c.JSON(http.StatusOK, items.Items[id])
 }
 
 func getImg(c echo.Context) error {
 	// Create image path
 	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
-	c.Logger().Infof("items: %s", imgPath) // log level: "INFO"
 
 	if !strings.HasSuffix(imgPath, ".jpg") {
 		res := Response{Message: "Image path does not end with .jpg"}
