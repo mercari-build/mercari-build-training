@@ -33,7 +33,7 @@ func addItem(c echo.Context) error {
 	message := fmt.Sprintf("item received: %s", name)
 	res := Response{Message: message}
 
-	return c.JSON(http.StatusOK, res)
+	return c.JSON(http.StatusCreated, res)
 }
 
 func getImg(c echo.Context) error {
