@@ -34,20 +34,23 @@ def add_item(name: str = Form(...),category: str = Form(...),image: UploadFile =
     logger.info(f"Receive item: {category}")
     logger.info(f"Receive item: {image}")
 
-    jpg = os.path.basename(image)
+    jpg = image.filename
     hashed_jpg = get_hash_by_sha256(jpg)
     save_items_to_file(name,category,hashed_jpg)
     return {"message": f"item received: {name}"}
 
 
 # 新しい商品をitem.jsonファイルに保存
-# {"items": [{"name": "jacket", "category": "fashion"}, ...]}
+# {"items": [{"name": "jacket", "category": "fashion", "image_name": "xxxxx.jpg"}, ...]}
 def save_items_to_file(name,category,image_name):
-    new_item = {"name": name, "category": category, "image_name": image_name}
+    new_item = {"name": name, "category": category, "image_name": image_name+".jpg"}
     if os.path.exists(items_file):
         with open(items_file,'r') as f:
             now_data = json.load(f)
-        now_data["items"].append(new_item)
+        if new_item in now_data["items"]:
+            return 
+        else:
+            now_data["items"].append(new_item)
         with open(items_file, 'w') as f:
             json.dump(now_data, f, indent=2)
     else:
@@ -70,6 +73,16 @@ def get_items():
     with open(items_file) as f:
         items = json.load(f)
     return items
+
+# items.jsonファイルに登録された商品のn番目の詳細を取得
+@app.get("/items/{item_number}")
+def get_items_item(item_number: int):
+    with open(items_file) as f:
+        items = json.load(f)
+    if item_number > len(items["items"]):
+        return {"message": "item not found"}
+    return items["items"][item_number-1]
+    
 
 
 @app.get("/image/{image_name}")
