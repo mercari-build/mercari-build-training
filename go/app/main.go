@@ -95,8 +95,8 @@ func addItem(c echo.Context) error {
 		res := Response{Message: "Failed to marshal allItems"}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
-	err = os.WriteFile("items.json", jsonData, 0644)
-	if err != nil {
+	// 0644: パーミッション(所有者は読み書き可能)
+	if err = os.WriteFile("items.json", jsonData, 0644); err != nil {
 		res := Response{Message: "Failed to write items.json"}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
