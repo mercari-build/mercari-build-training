@@ -3,13 +3,12 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -19,38 +18,39 @@ import (
 )
 
 const (
-	ImgDir       = "images"
-	ItemsFile    = "items.json"
-	ImgExtension = ".jpg"
+	ImgDir = "images"
 )
+
+type Response struct {
+	Message string `json:"message"`
+}
 
 type Item struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Category  string `json:"category"`
-	ImageName string `json:"imageName"`
+	ImageName string `json:"image_name"`
 }
 
-type Items struct {
-	Items []Item `json:"items"`
-	MaxID int    `json:"maxId"`
+type ItemResponse struct {
+	Name      string `json:"name"`
+	Category  string `json:"category"`
+	ImageName string `json:"image_name"`
 }
 
-type Response struct {
-	Message string `json:"message"`
-}
+var items []Item
 
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
 }
 
-func saveImage(src multipart.File) (string, error) {
-	// ファイルポインタをリセット
-	_, err := src.Seek(0, io.SeekStart)
+func saveImage(fileHeader *multipart.FileHeader) (string, error) {
+	src, err := fileHeader.Open()
 	if err != nil {
 		return "", err
 	}
+	defer src.Close()
 
 	// SHA-256 ハッシュを計算
 	hash := sha256.New()
@@ -58,173 +58,95 @@ func saveImage(src multipart.File) (string, error) {
 		return "", err
 	}
 	hashInBytes := hash.Sum(nil)
-	imageName := hex.EncodeToString(hashInBytes) + ImgExtension
+	hashedFileName := hex.EncodeToString(hashInBytes) + ".jpg"
+
+	// ファイルポインタをリセット
+	_, err = src.Seek(0, io.SeekStart)
+	if err != nil {
+		return "", err
+	}
 
 	// 画像ファイルを保存
-	dst, err := os.Create(path.Join(ImgDir, imageName))
+	dst, err := os.Create(filepath.Join("images", hashedFileName))
 	if err != nil {
 		return "", err
 	}
 	defer dst.Close()
 
-	// ファイルの内容を再度読み込み
-	_, err = src.Seek(0, io.SeekStart)
-	if err != nil {
-		return "", err
-	}
 	if _, err := io.Copy(dst, src); err != nil {
 		return "", err
 	}
-	return imageName, nil
-}
 
-func loadItemsFromFile(filename string) (Items, error) {
-	var items Items
-
-	file, err := os.ReadFile(filename)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return Items{Items: []Item{}, MaxID: 0}, nil
-		}
-		return items, fmt.Errorf("failed to read file '%s': %w", filename, err)
-	}
-
-	if len(file) == 0 {
-		return Items{Items: []Item{}, MaxID: 0}, nil
-	}
-
-	err = json.Unmarshal(file, &items)
-	if err != nil {
-		return Items{Items: []Item{}, MaxID: 0}, fmt.Errorf("failed to unmarshal items: %w", err)
-	}
-
-	// MaxIDを更新
-	maxID := 0
-	for _, item := range items.Items {
-		id, err := strconv.Atoi(item.ID)
-		if err != nil {
-			return items, fmt.Errorf("invalid item ID '%s': %w", item.ID, err)
-		}
-		if id > maxID {
-			maxID = id
-		}
-	}
-	items.MaxID = maxID
-
-	return items, nil
-}
-
-func saveItemsToFile(filename string, items Items) error {
-	itemsData, err := json.Marshal(items)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(filename, itemsData, 0644)
+	return hashedFileName, nil
 }
 
 func addItem(c echo.Context) error {
-	// Get form data for name and category
+	// Get form data
 	name := c.FormValue("name")
 	category := c.FormValue("category")
 	c.Logger().Infof("Received item: %s, Category: %s", name, category)
 
-	// Initialize imageName as empty
+	fileHeader, err := c.FormFile("image")
 	var imageName string
-
-	// Attempt to get the image file from the form
-	file, err := c.FormFile("image")
 	if err == nil {
-		src, err := file.Open()
+		imageName, err = saveImage(fileHeader)
 		if err != nil {
-			return err
-		}
-		defer src.Close()
-
-		buffer := make([]byte, 512) // MIMEタイプを検出するために最初の512バイトを読み込む
-		_, err = src.Read(buffer)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to read file for MIME type detection")
-		}
-
-		// ファイルポインタをリセット
-		_, err = src.Seek(0, io.SeekStart)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to reset file pointer")
-		}
-
-		mimeType := http.DetectContentType(buffer)
-		if !strings.HasPrefix(mimeType, "image/") {
-			return echo.NewHTTPError(http.StatusBadRequest, "The uploaded file is not an image")
-		}
-
-		imageName, err = saveImage(src)
-		if err != nil {
-			c.Logger().Errorf("Failed to save image: %v", err)
-			return echo.NewHTTPError(http.StatusInternalServerError, "Failed to save image")
+			return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
 		}
 	} else {
-		// Log the absence of an image file or set a default imageName if necessary
-		c.Logger().Info("No image file provided")
-		// imageName can be set to a default or left empty
+		imageName = "default.jpg"
 	}
 
-	// Proceed with adding the item to the list
-	items, err := loadItemsFromFile(ItemsFile)
-	if err != nil {
-		c.Logger().Errorf("Failed to load items: %v", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load items")
+	newItem := Item{
+		ID:        strconv.Itoa(len(items) + 1),
+		Name:      name,
+		Category:  category,
+		ImageName: imageName,
+	}
+	items = append(items, newItem)
+
+	// 出力にIDが不要なためItemResponseスライスに変換
+	var responseItems []ItemResponse
+	for _, item := range items {
+		responseItem := ItemResponse{
+			Name:      item.Name,
+			Category:  item.Category,
+			ImageName: item.ImageName,
+		}
+		responseItems = append(responseItems, responseItem)
 	}
 
-	// IDを更新
-	items.MaxID += 1
-	newItem := Item{ID: strconv.Itoa(items.MaxID), Name: name, Category: category, ImageName: imageName}
-	items.Items = append(items.Items, newItem)
-
-	// Save updated items back to JSON file
-	err = saveItemsToFile(ItemsFile, items)
-	if err != nil {
-		c.Logger().Errorf("Failed to save items to file: %v", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to save items")
-	}
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"items": items.Items,
-	})
+	// ItemResponseスライスをレスポンスとして返す
+	return c.JSON(http.StatusOK, echo.Map{"items": responseItems})
 }
 
 func getItem(c echo.Context) error {
-	itemID := c.Param("id")
+	itemID := c.Param("id") // URLパラメータからitem_idを取得
 
-	items, err := loadItemsFromFile(ItemsFile)
-	if err != nil {
-		c.Logger().Errorf("Failed to load items: %v", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to load items")
-	}
-
-	for _, item := range items.Items {
+	// アイテムのリストを検索して対応するアイテムを見つける
+	for _, item := range items {
 		if item.ID == itemID {
-			return c.JSON(http.StatusOK, item)
+			response := ItemResponse{
+				Name:      item.Name,
+				Category:  item.Category,
+				ImageName: item.ImageName,
+			}
+			return c.JSON(http.StatusOK, response)
 		}
 	}
 
-	return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("Item with ID %s not found", itemID))
+	return c.JSON(http.StatusNotFound, echo.Map{"message": "Item not found"})
 }
 
 func getItems(c echo.Context) error {
-	items, err := loadItemsFromFile(ItemsFile)
-	if err != nil {
-		c.Logger().Errorf("Failed to load items: %v", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "Error reading items file")
-	}
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"items": items.Items,
-	})
+	return c.JSON(http.StatusOK, echo.Map{"items": items})
 }
 
 func getImg(c echo.Context) error {
 	// Create image path
 	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
 
-	if !strings.HasSuffix(imgPath, ImgExtension) {
+	if !strings.HasSuffix(imgPath, ".jpg") {
 		res := Response{Message: "Image path does not end with .jpg"}
 		return c.JSON(http.StatusBadRequest, res)
 	}
@@ -236,15 +158,15 @@ func getImg(c echo.Context) error {
 }
 
 func main() {
+	if _, err := os.Stat("images"); os.IsNotExist(err) {
+		os.Mkdir("images", os.ModePerm)
+	}
 	e := echo.New()
 
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Logger.SetLevel(log.INFO)
-
-	// ログレベルをDEBUGに設定
-	e.Logger.SetLevel(log.DEBUG)
 
 	frontURL := os.Getenv("FRONT_URL")
 	if frontURL == "" {
@@ -259,8 +181,8 @@ func main() {
 	e.GET("/", root)
 	e.POST("/items", addItem)
 	e.GET("/items", getItems)
-	e.GET("/items/:id", getItem)
 	e.GET("/image/:imageFilename", getImg)
+	e.GET("/items/:id", getItem)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
