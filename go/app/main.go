@@ -36,6 +36,7 @@ type Item struct {
 	Name      string `json:"name"`
 	Category  string `json:"category"`
 	ImageName string `json:"image_name"`
+	Id        int    `json:"id"`
 }
 
 func httpErrorHandler(err error, c echo.Context, code int, message string) *echo.HTTPError {
@@ -83,7 +84,8 @@ func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
 	category := c.FormValue("category")
-	c.Logger().Infof("Receive item: name=%s, category=%s", name, category)
+	id := c.FormValue("id")
+	c.Logger().Infof("Receive item: id=%s, name=%s, category=%s", id, name, category)
 
 	// Load items.json
 	items, err := loadItems()
@@ -95,6 +97,16 @@ func addItem(c echo.Context) error {
 	new_item := new(Item)
 	new_item.Name = name
 	new_item.Category = category
+
+	// Register id
+	new_item.Id, err = strconv.Atoi(id)
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusBadRequest, "id must be an integer")
+	}
+	if getItemIdxById(new_item.Id, items) != -1 {
+		err_msg := fmt.Sprintf("id already exists: %d", new_item.Id)
+		return httpErrorHandler(err, c, http.StatusBadRequest, err_msg)
+	}
 
 	// Register image
 	header, err := c.FormFile("image")
@@ -166,6 +178,16 @@ func getItems(c echo.Context) error {
 	return c.JSON(http.StatusOK, items)
 }
 
+func getItemIdxById(id int, items Items) int {
+	// return index if id exists, otherwise return -1
+	for idx, item := range items.Items {
+		if item.Id == id {
+			return idx
+		}
+	}
+	return -1
+}
+
 func getItemById(c echo.Context) error {
 	// Load items
 	items, err := loadItems()
@@ -175,12 +197,17 @@ func getItemById(c echo.Context) error {
 
 	// Convert id string to int
 	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil || id < 0 || len(items.Items) <= id {
-		err_msg := fmt.Sprintf("id not found: '%s'. id must be non-negative integer and less than %d", c.Param("id"), len(items.Items))
-		return httpErrorHandler(fmt.Errorf(err_msg), c, http.StatusBadRequest, err_msg)
+	if err != nil {
+		err_msg := fmt.Sprintf("id not found: '%s'. id must be an integer", c.Param("id"))
+		return httpErrorHandler(err, c, http.StatusBadRequest, err_msg)
 	}
-	c.Logger().Infof("item: %+v", items.Items[id])
-	return c.JSON(http.StatusOK, items.Items[id])
+	idx := getItemIdxById(id, items)
+	if idx == -1 {
+		err_msg := fmt.Sprintf("id not found: %d", id)
+		return httpErrorHandler(err, c, http.StatusNotFound, err_msg)
+	}
+	c.Logger().Infof("item: %+v", items.Items[idx])
+	return c.JSON(http.StatusOK, items.Items[idx])
 }
 
 func getImg(c echo.Context) error {
