@@ -105,7 +105,7 @@ curl -X POST \
   --url 'http://localhost:9000/items' \
   -F 'name=jacket' \
   -F 'category=fashion' \
-  -F 'image=@images/local_image.jpg'
+  -F 'image=@images/default.jpg'
 ```
 
 ```json
