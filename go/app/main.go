@@ -60,7 +60,11 @@ func loadItems() (Items, error) {
 		defer file.Close()
 		var items Items
 		decoder := json.NewDecoder(file)
-		if err := decoder.Decode(&items); err != nil {
+		if err := decoder.Decode(&items); err == io.EOF {
+			// Empty file
+			new_items := new(Items)
+			return *new_items, nil
+		} else if err != nil {
 			return Items{}, err
 		}
 		return items, nil
