@@ -6,12 +6,22 @@ from fastapi import FastAPI, Form, HTTPException,File,UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
+
 '''
 環境変数
 '''
+print("debuging")
+print(os.path.curdir)
 json_path = "sample.json"
-db_path = "/Users/horiguchitakahiro/Desktop/mercari2/mercari-build-training/db/main.sqlite3"
-category_db_path = "/Users/horiguchitakahiro/Desktop/mercari2/mercari-build-training/db/category.sqlite3"
+# 環境変数の取得
+db_path = os.environ.get('DB_PATH')
+category_db_path = os.environ.get('CATEGORY_DB_PATH')
+
+# 環境変数が設定されていない場合のデフォルト値の指定
+db_path_local = "/Users/horiguchitakahiro/Desktop/mercari2/mercari-build-training/db/main.sqlite3"
+category_db_path_local = "/Users/horiguchitakahiro/Desktop/mercari2/mercari-build-training/db/category.sqlite3"
+db_path = os.environ.get('DB_PATH', db_path_local)
+category_db_path = os.environ.get('CATEGORY_DB_PATH', category_db_path_local)
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -120,6 +130,11 @@ curl -X POST \
     --url 'http://localhost:9000/items' \
   -F 'name=ps4' \
   -F 'category=game' \
+  -F 'image=@images/local_image.jpg'
+curl -X POST \
+     --url 'http://localhost:9000/items' \
+  -F 'name=frieren' \
+  -F 'category=book' \
   -F 'image=@images/local_image.jpg'
 '''
 '''
