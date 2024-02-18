@@ -122,6 +122,9 @@ curl -X POST \
   -F 'category=game' \
   -F 'image=@images/local_image.jpg'
 '''
+'''
+step4の要件定義として上のコマンドを順に1,2とすると1,2,1と実行してitemsとcategoryのAPI結果を参照すると動作確認ができます。
+'''
 @app.post("/items")
 async def add_item(name: str = Form(),category:str = Form(),image:UploadFile = File()):
     data = await image.read()  # アップロードされた画像をbytesに変換する処理
