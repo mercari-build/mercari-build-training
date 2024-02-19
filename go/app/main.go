@@ -34,9 +34,13 @@ func addItem(c echo.Context) error {
 	// Create objects
 	new_item := new(Item)
 	new_item.Name = name
+
 	new_item.CategoryId, err = strconv.Atoi(category_id)
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusBadRequest, "category_id must be an integer")
+	}
+	if _, err := loadCategoryById(db, new_item.CategoryId); err != nil {
+		return httpErrorHandler(err, c, http.StatusBadRequest, "category_id not found")
 	}
 
 	// Register image

@@ -87,22 +87,43 @@ func insertItem(db *sql.DB, item Item) error {
 	return nil
 }
 
-func joinItemAndCategory(db *sql.DB, item Item) (*JoinedItem, error) {
-	// Join category name to item
-	joined_item := JoinedItem{}
-	rows, err := db.Query("SELECT categories.name FROM categories WHERE categories.id = ?", item.CategoryId)
+func loadCategoryById(db *sql.DB, id int) (*Category, error) {
+	// Load category from db by id
+	rows, err := db.Query("SELECT * FROM categories WHERE categories.id = ?", id)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	if rows.Next() {
-		if err := rows.Scan(&joined_item.CategoryName); err != nil {
-			return nil, err
-		}
+	if !rows.Next() {
+		return nil, nil
 	}
-	joined_item.Id = item.Id
-	joined_item.Name = item.Name
-	joined_item.ImageName = item.ImageName
+	var category Category
+	if err := rows.Scan(&category.Id, &category.Name); err != nil {
+		return nil, err
+	}
+	return &category, nil
+}
+
+func insertCategory(db *sql.DB, category Category) error {
+	// Save new category to database
+	cmd_ins := "INSERT INTO categories(name) VALUES(?)"
+	_, err := db.Exec(cmd_ins, category.Name)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func joinItemAndCategory(db *sql.DB, item Item) (*JoinedItem, error) {
+	category, err := loadCategoryById(db, item.CategoryId)
+	if err != nil {
+		return nil, err
+	}
+	if category == nil {
+		return nil, nil
+	}
+
+	joined_item := JoinedItem{Id: item.Id, Name: item.Name, ImageName: item.ImageName, CategoryName: category.Name}
 	return &joined_item, nil
 
 }
