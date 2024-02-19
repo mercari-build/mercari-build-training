@@ -65,6 +65,7 @@ $ curl -X POST \
 
 準備されている`POST /items`のエンドポイントはnameという情報を受け取れます。 ここにcategoryの情報も受け取れるように変更を加えます。
 
+< note 開始>
 **<これはcategoryの情報も受け取るためのコードをmain.pyの@app.post("/items")に書きましょうという意味>**
 main.py
 ```
@@ -95,6 +96,7 @@ curl -X POST \
   -d '{"name": "jacket", "category": "fashion"}'
 ```
 
+< note 終了>
 
 
 
@@ -113,7 +115,7 @@ curl -X POST \
 
 GETで`/items`にアクセスしたときに、登録された商品一覧を取得できるようにエンドポイントを実装しましょう。 以下のようなレスポンスを期待しています。
 
-
+< note 開始>
 **これは録された商品一覧を取得するためのコードをmain.pyの@app.get("/items")に書きましょうという意味**
 main.py
 ```
@@ -131,7 +133,7 @@ async def get_items():
 ```
 curl -X GET 'http://127.0.0.1:9000/items'
 ```
-
+< note 終了>
 
 ```shell
 # 商品の登録
