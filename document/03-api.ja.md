@@ -175,12 +175,77 @@ curl -X POST \
 ```json
 {"items": [{"name": "jacket", "category": "fashion", "image_name": "510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg"}, ...]}
 ```
+**<note 開始>**
+
+main.pyのinportの修正
+```
+import os
+import logging
+import pathlib
+from fastapi import FastAPI, HTTPException, Body, File, UploadFile, Form
+from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional
+import json
+import hashlib
+```
+
+
+main.pyのpostの修正
+
+```
+@app.post("/items")
+async def add_item(name: str = Form(...), category: str = Form(...), image: Optional[UploadFile] = None):
+    # アイテム情報のログ出力
+    logger.info(f"Received item: {name}, Category: {category}")
+
+    # 画像ファイルがある場合は処理
+    image_name = None
+    if image:
+        # 画像の内容を読み取り
+        contents = await image.read()
+        # 画像のハッシュ値を計算してファイル名を生成
+        hash_name = hashlib.sha256(contents).hexdigest()
+        image_name = f"{hash_name}.jpg"
+        image_path = os.path.join(images_dir, image_name)
+        # 画像をファイルに保存
+        with open(image_path, "wb") as file:
+            file.write(contents)
+        logger.info(f"Image saved: {image_name}")
+
+    # アイテムをJSONファイルに保存
+    item_data = {"name": name, "category": category, "image_name": image_name}
+    try:
+        with open("items.json", "r+") as file:
+            data = json.load(file)
+            data["items"].append(item_data)
+            file.seek(0)
+            json.dump(data, file, indent=4)
+            file.truncate()
+    except FileNotFoundError:
+        with open("items.json", "w") as file:
+            json.dump({"items": [item_data]}, file, indent=4)
+
+    logger.info(f"Item added: {name}, Category: {category}, Image Name: {image_name}")
+    return {"message": f"Item received: {name}, Category: {category}, Image Name: {image_name}"}
+```
+
+ それ以外にも直接的には関わらない部分を少し変えている
+**<note 終了>**
 
 
 **:beginner: Point**
 
 * Hash化とはなにか？
 * sha256以外にどんなハッシュ関数があるか調べてみましょう
+
+**<note 開始>**
+
+Hash化とは，文字列や画像などの入力情報を別の文字列に置き換える作業．この時，同じ入力情報は同じ文字列に対応する．
+MD5、SHA1、SHA256など．
+
+**<note 終了>**
 
 ## 5. 商品の詳細を返す
 
