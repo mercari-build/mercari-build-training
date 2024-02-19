@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path"
@@ -12,6 +13,11 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
+type Item struct {
+	name     string  `json:"name"`
+	category string  `json:"category"`
+}
+
 const (
 	ImgDir = "images"
 )
@@ -20,17 +26,19 @@ type Response struct {
 	Message string `json:"message"`
 }
 
+
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
 }
 
-func addItem(c echo.Context) error {
+func addItem(c echo.Context) error {	
 	// Get form data
 	name := c.FormValue("name")
-	c.Logger().Infof("Receive item: %s", name)
+	category := c.FormValue("category")
+	c.Logger().Infof("Receive item: %s, %", name, category)
 
-	message := fmt.Sprintf("item received: %s", name)
+	message := fmt.Sprintf("item received: %s, %s", name, category)
 	res := Response{Message: message}
 
 	return c.JSON(http.StatusOK, res)
@@ -49,6 +57,21 @@ func getImg(c echo.Context) error {
 		imgPath = path.Join(ImgDir, "default.jpg")
 	}
 	return c.File(imgPath)
+}
+
+func getAllItem(c echo.Context) error {
+	jsonFile, err :=os.Open("items.json")
+	if err != nil {
+		fmt.Println("JSONファイルを開けません", err)
+		return err
+	}
+	defer jsonFile.Close()
+	jsonData, err := io.ReadAll(jsonFile)
+	if err != nil{
+		fmt.Println("JSONデータを読み込めません", err)
+		return nil, err
+	}
+	return jsonData, nil
 }
 
 func main() {
