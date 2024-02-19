@@ -15,6 +15,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	_ "github.com/mattn/go-sqlite3" // SQLite3 driver
 )
 
 const (
@@ -81,8 +82,8 @@ func addItem(db *sql.DB) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 
-		// 新しいデータをDBに追加
-		stmt, err := db.Prepare("INSERT INTO items(name, category, image_name) VALUES(?, ?, ?)")
+		// 新しいアイテムをDBに追加
+		stmt, err := db.Prepare("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)")
 		if err != nil {
 			res := Response{Message: "Failed to prepare SQL statement"}
 			return c.JSON(http.StatusInternalServerError, res)
@@ -102,14 +103,27 @@ func addItem(db *sql.DB) echo.HandlerFunc {
 	}
 }
 
-func getAllItems(c echo.Context) error {
-	allItems, err := LoadItemsFromJSON()
-	if err != nil {
-		res := Response{Message: "Failed to load items.json"}
-		return c.JSON(http.StatusInternalServerError, res)
-	}
+func getAllItems(db *sql.DB) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// DBから全てのアイテムを取得
+		rows, err := db.Query("SELECT * FROM items")
+		if err != nil {
+			res := Response{Message: "Failed to get items from DB"}
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+		defer rows.Close()
 
-	return c.JSON(http.StatusOK, allItems)
+		var allItems Items
+		for rows.Next() {
+			var item Item
+			if err := rows.Scan(&item.Name, &item.Category, &item.ImageName); err != nil {
+				res := Response{Message: "Failed to scan items from DB"}
+				return c.JSON(http.StatusInternalServerError, res)
+			}
+			allItems.Items = append(allItems.Items, item)
+		}
+		return c.JSON(http.StatusOK, allItems)
+	}
 }
 
 func getItemById(c echo.Context) error {
@@ -189,7 +203,7 @@ func main() {
 	// Routes
 	e.GET("/", root)
 	e.POST("/items", addItem(db))
-	e.GET("/items", getAllItems)
+	e.GET("/items", getAllItems(db))
 	e.GET("/items/:id", getItemById)
 	e.GET("/image/:imageFilename", getImg)
 	// Start server
