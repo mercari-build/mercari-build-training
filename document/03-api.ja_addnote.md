@@ -67,7 +67,7 @@ $ curl -X POST \
 
 **< note 開始>**
 
-**<これはcategoryの情報も受け取るためのコードをmain.pyの@app.post("/items")に書きましょうという意味>**
+<これはcategoryの情報も受け取るためのコードをmain.pyの@app.post("/items")に書きましょうという意味>
 
 main.py
 ```
@@ -90,13 +90,23 @@ async def add_item(item: Item = Body(...)):
     logger.info(f"Item added: {item.name}, Category: {item.category}")
     return {"message": f"item received: {item.name}, Category: {item.category}"}
 ```
-**<ターミナルでのPOST>**
+<ターミナルでのPOST>
 ```
 curl -X POST \
   --url 'http://localhost:9000/items' \
   -H 'Content-Type: application/json' \
   -d '{"name": "jacket", "category": "fashion"}'
 ```
+*しかし，この後のコードの改変により，上記のコマンドではエラーが返ってくるようになった．
+代わりにPOSTは以下のコマンドに対応
+(なぜ??)
+```
+curl -X POST \
+ --url 'http://localhost:9000/items' \
+ -F 'name=jacket' \
+ -F 'category=fashion' \
+```
+
 
 **< note 終了>**
 
@@ -264,6 +274,167 @@ MD5、SHA1、SHA256など．
 $ curl -X GET 'http://127.0.0.1:9000/items/1'
 {"name": "jacket", "category": "fashion", "image_name": "..."}
 ```
+
+**<note 開始>**
+
+ver1 uuid4を使用したとき >　IDが長いのであとで変更
+main.py 
+
+```
+from uuid import uuid4
+```
+
+
+main.py　POSTで追加したアイテムにIDを割り当て
+```
+# 新しいアイテムに一意のIDを割り当て
+    item_id = str(uuid4())
+    item_data = {"item_id": item_id, "name": name, "category": category, "image_name": image_name}
+```
+
+main.pyに新しいend point
+```
+@app.get("/items/{item_id}")
+async def get_item(item_id: str):
+    try:
+        with open("items.json", "r") as file:
+            data = json.load(file)
+            # item_idに一致する商品を検索
+            item = next((item for item in data["items"] if item.get("item_id") == item_id), None)
+            if item:
+                return item
+            else:
+                raise HTTPException(status_code=404, detail="Item not found")
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Items file not found")
+```
+
+ターミナル上で画像つきでリクエスト
+```
+curl -X POST \
+ --url 'http://localhost:9000/items' \
+ -F 'name=jacket' \
+ -F 'category=fashion' \
+ -F 'image=@images/default.jpg'
+{"message":"Item added successfully","item_id":"078e7086-4019-4d90-a75c-5bac55f99b1d"}%      
+```
+ターミナル上で画像なしでリクエスト
+```
+curl -X POST \
+ --url 'http://localhost:9000/items' \
+ -F 'name=jacket' \
+ -F 'category=fashion' \                         
+{"message":"Item added successfully","item_id":"ad51a3bd-6642-4302-a60b-5d8886886e56"}%
+```
+json file に以下のように追加されていくことが確認された
+```
+        {
+            "item_id": "078e7086-4019-4d90-a75c-5bac55f99b1d",
+            "name": "jacket",
+            "category": "fashion",
+            "image_name": "ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg"
+        },
+        {
+            "item_id": "ad51a3bd-6642-4302-a60b-5d8886886e56",
+            "name": "jacket",
+            "category": "fashion",
+            "image_name": null
+        }
+```
+
+**id を1,2, 3,..に変更**
+
+main.pyの主な変更点
+
+```
+
+# アイテム追加エンドポイント
+@app.post("/items")
+async def add_item(name: str = Form(...), category: str = Form(...), image: Optional[UploadFile] = None):
+    # アイテム情報のログ出力
+    logger.info(f"Received item: {name}, Category: {category}")
+
+    # 画像ファイルがある場合は処理
+    image_name = ""
+    if image:
+        # 画像の内容を読み取り
+        contents = await image.read()
+        # 画像のハッシュ値を計算してファイル名を生成
+        hash_name = hashlib.sha256(contents).hexdigest()
+        image_name = f"{hash_name}.jpg"
+        image_path = os.path.join(images_dir, image_name)
+        # 画像をファイルに保存
+        with open(image_path, "wb") as file:
+            file.write(contents)
+        logger.info(f"Image saved: {image_name}")
+
+    # 新しいアイテムIDの決定
+    new_item_id = 1
+    try:
+        with open("items.json", "r") as file:
+            data = json.load(file)
+            if data["items"]:
+                new_item_id = max(item["item_id"] for item in data["items"]) + 1
+    except FileNotFoundError:
+        data = {"items": []}
+
+    # アイテムデータの作成
+    item_data = {"item_id": new_item_id, "name": name, "category": category, "image_name": image_name}
+    data["items"].append(item_data)
+
+    with open("items.json", "w") as file:
+        json.dump(data, file, indent=4)
+
+    logger.info(f"Item added: {name}, Category: {category}, Image Name: {image_name}, Item ID: {new_item_id}")
+    return {"message": "Item added successfully", "item_id": new_item_id}
+```
+
+
+なぜかよくわかないけどうまくいった方法
+items.json をいかに書き換える
+```
+{
+  "items": []
+}
+```
+
+```
+curl -X POST \ --url 'http://localhost:9000/items' \
+ -F 'name=jacket' \
+ -F 'category=fashion' \
+> 
+curl: (3) URL rejected: Malformed input to a URL function
+{"message":"Item added successfully","item_id":1}%                        
+```
+
+```
+curl -X POST \ --url 'http://localhost:9000/items' \
+ -F 'name=jacket' \
+ -F 'category=fashion' \
+ -F 'image=@images/default.jpg'
+curl: (3) URL rejected: Malformed input to a URL function
+{"message":"Item added successfully","item_id":2}%
+```
+2つ実行後のjson
+```
+{
+    "items": [
+        {
+            "item_id": 1,
+            "name": "jacket",
+            "category": "fashion",
+            "image_name": ""
+        },
+        {
+            "item_id": 2,
+            "name": "jacket",
+            "category": "fashion",
+            "image_name": "ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg"
+        }
+    ]
+}
+```
+**<note 終了>**
 
 ## 6. (Optional) Loggerについて調べる
 `http://127.0.0.1:9000/image/no_image.jpg`にアクセスしてみましょう。
