@@ -1,12 +1,16 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -20,8 +24,9 @@ const (
 )
 
 type Item struct {
-	Name     string `json:"name"`
-	Category string `json:"category"`
+	Name      string `json:"name"`
+	Category  string `json:"category"`
+	ImageName string `json:"image_name"`
 }
 
 type Items struct {
@@ -74,11 +79,78 @@ func writeItemsToFile(items *Items) error {
 	return nil
 }
 
+func generateHashFromImage(image *multipart.FileHeader) (string, error) {
+	src, err := image.Open()
+	if err != nil {
+		return "", fmt.Errorf("image open failed: %w", err)
+	}
+	defer src.Close()
+
+	hash := sha256.New()
+	copiedBytes, err := io.Copy(hash, src)
+	if err != nil {
+		return "", fmt.Errorf("hash generation failed: %w", err)
+	}
+	if image.Size != copiedBytes {
+		return "", fmt.Errorf("copied bytes (%d) don't match the expected file size (%d)", copiedBytes, image.Size)
+	}
+
+	return hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+func saveImage(image *multipart.FileHeader, imagePath string) error {
+	src, err := image.Open()
+	if err != nil {
+		return fmt.Errorf("failed to open uploaded image: %w", err)
+	}
+	defer src.Close()
+
+	dst, err := os.Create(imagePath)
+	if err != nil {
+		return fmt.Errorf("failed to create uploaded image '%s': %w", imagePath, err)
+	}
+	defer dst.Close()
+
+	newOffset, err := src.Seek(0, io.SeekStart)
+	if err != nil {
+		return fmt.Errorf("failed to seek uploaded file file: %w", err)
+	}
+	if newOffset != 0 {
+		return fmt.Errorf("unexpected new offset during saving image: got %d, want 0", newOffset)
+	}
+
+	copiedBytes, err := io.Copy(dst, src)
+	if err != nil {
+		return fmt.Errorf("failed to copy uploaded file'%s': %w", imagePath, err)
+	}
+	if image.Size > 0 && copiedBytes != image.Size {
+		return fmt.Errorf("copied bytes (%d) do not match the expected file size (%d) for '%s'", copiedBytes, image.Size, imagePath)
+	}
+
+	return nil
+}
+
 func addItem(c echo.Context) error {
 	name := c.FormValue("name")
 	category := c.FormValue("category")
+	image, err := c.FormFile("image")
+	if err != nil {
+		return err
+	}
 
-	newItem := Item{Name: name, Category: category}
+	// create hash of the image
+	imageHash, err := generateHashFromImage(image)
+	if err != nil {
+		return err
+	}
+
+	// save image file
+	imagePath := filepath.Join(ImgDir, imageHash+".jpg")
+	if err := saveImage(image, imagePath); err != nil {
+		return err
+	}
+
+	newItem := Item{Name: name, Category: category, ImageName: imageHash + ".jpg"}
 
 	// Read existing items from file
 	items, err := readItemsFromFile()
@@ -99,10 +171,7 @@ func addItem(c echo.Context) error {
 
 	c.Logger().Infof("Receive item: %s", name)
 
-	message := fmt.Sprintf("Item : %s, Category: %s", newItem.Name, newItem.Category)
-	res := Response{Message: message}
-
-	return c.JSON(http.StatusOK, res)
+	return c.JSON(http.StatusOK, items)
 }
 
 func getItems(c echo.Context) error {
