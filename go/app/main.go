@@ -33,7 +33,12 @@ func addItem(c echo.Context) error {
 	message := fmt.Sprintf("item received: %s", name)
 	res := Response{Message: message}
 
-	return c.JSON(http.StatusCreated, res)
+	return c.JSON(http.StatusOK, res)
+	// http.StatusCreated(201) is also good choice.StatusOK
+  // but in that case, you need to implement and return a URL
+  //   that returns information on the posted item.
+
+
 }
 
 func getImg(c echo.Context) error {
