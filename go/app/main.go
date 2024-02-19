@@ -214,6 +214,42 @@ func getImg(c echo.Context) error {
 	return c.File(imgPath)
 }
 
+/*
+4-2 GET Search for an item
+
+ 1. open DB
+ 2. query DB based on keyword params
+ 3. add every elements that matches conditions and returns items array
+*/
+func getSearch(c echo.Context) error {
+	keyword := c.QueryParam("keyword")
+	// in sql, % keyword % will search any
+	// results that contains keyword inside the word.
+	keyword = "%" + keyword + "%"
+	path := getDatabasePath()
+	db, err := sql.Open("sqlite3", path)
+	if err != nil {
+		msg := path
+		return c.JSON(http.StatusBadRequest, msg)
+	}
+	defer db.Close()
+	rows, err := db.Query("SELECT id, name, category, image_name FROM items WHERE name LIKE ? OR category LIKE ?", keyword, keyword)
+	if err != nil {
+		msg := "error occured while querying db!"
+		return c.JSON(http.StatusBadRequest, msg)
+	}
+	var items Items
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.ItemId, &item.Name, &item.Category, &item.ImageName); err != nil {
+			msg := "error occured while copying db to variable!"
+			return c.JSON(http.StatusBadRequest, msg)
+		}
+		items.Items = append(items.Items, item)
+	}
+	return c.JSON(http.StatusBadRequest, items)
+}
+
 func main() {
 	e := echo.New()
 
@@ -237,6 +273,7 @@ func main() {
 	e.GET("/items", getItem)
 	e.GET("/items/:itemId", getItemById)
 	e.GET("/image/:imageFilename", getImg)
+	e.GET("/search", getSearch)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
