@@ -1,0 +1,17 @@
+{
+    "items": [
+        {
+            "name": "kinako",
+            "category": "neko",
+            "image": "123456fvbn.jpg"
+        },
+        {
+            "name": "jacket",
+            "category": "fashion",
+            "image": "0990e27c9831ead14f4136403d922973fdfc8cf794043267a762ae61236fac20.jpg"
+        }
+    ]
+}
+
+//これでも大丈夫らしい
+//{"items":[]}
