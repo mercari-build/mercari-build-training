@@ -126,6 +126,33 @@ func getAllItems(db *sql.DB) echo.HandlerFunc {
 	}
 }
 
+func getItemsByKeyword(db *sql.DB) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// クエリパラメータからキーワードを取得
+		keyword := c.QueryParam("keyword")
+
+		// DBから名前にキーワードを含む商品一覧を返す
+		searchKeyword := "%" + keyword + "%" // 部分一致検索
+		rows, err := db.Query("SELECT name, category, image_name FROM items WHERE name LIKE ?", searchKeyword)
+		if err != nil {
+			res := Response{Message: fmt.Sprintf("Failed to search items from DB: keyword=%s", keyword)}
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+		defer rows.Close()
+
+		var keywordItems Items
+		for rows.Next() {
+			var item Item
+			if err := rows.Scan(&item.Name, &item.Category, &item.ImageName); err != nil {
+				res := Response{Message: "Failed to scan items from DB"}
+				return c.JSON(http.StatusInternalServerError, res)
+			}
+			keywordItems.Items = append(keywordItems.Items, item)
+		}
+		return c.JSON(http.StatusOK, keywordItems)
+	}
+}
+
 func getItemById(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -204,8 +231,10 @@ func main() {
 	e.GET("/", root)
 	e.POST("/items", addItem(db))
 	e.GET("/items", getAllItems(db))
+	e.GET("/search", getItemsByKeyword(db))
 	e.GET("/items/:id", getItemById)
 	e.GET("/image/:imageFilename", getImg)
+
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
 }
