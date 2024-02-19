@@ -1,16 +1,17 @@
-name: Greetings
+name: CI
 
-on: [pull_request_target, push]
+on: [push]
 
 jobs:
-  greeting:
+  build:
+
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      pull-requests: write
+
     steps:
-    - uses: actions/first-interaction@v1
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        issue-message: "Message that will be displayed on users' first issue"
-        pr-message: "Message that will be displayed on users' first pull request"
+    - uses: actions/checkout@v1
+    - name: Run a one-line script
+      run: echo Hello, world!
+    - name: Run a multi-line script
+      run: |
+        echo Add other actions to build,
+        echo test, and deploy your project.
