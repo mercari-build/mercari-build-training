@@ -34,20 +34,19 @@ def add_item(name: str = Form(...),category: str = Form(...),image: UploadFile =
     logger.info(f"Receive item: {category}")
     logger.info(f"Receive item: {image}")
 
-    save_items_to_file(name,category,image)
+    image_name = image.filename
+    hashed_image_name = get_hash_by_sha256(image_name) #hash.jpg 作成
+
+    save_items_to_file(name,category,hashed_image_name) #items.jsonに商品を保存
+    save_image_file(image,hashed_image_name) #imagesに画像を保存
+
     return {"message": f"item received: {name}"}
 
 
 # 新しい商品をitem.jsonファイルに保存
 # {"items": [{"name": "jacket", "category": "fashion", "image_name": "xxxxx.jpg"}, ...]}
-def save_items_to_file(name,category,image):
-    image_name = image.filename
-    hashed_image_name = get_hash_by_sha256(image_name)
-
-    jpg_hashed_image_name = hashed_image_name+".jpg"
-    save_image_file(image,jpg_hashed_image_name)
-
-    new_item = {"name": name, "category": category, "image_name": jpg_hashed_image_name}
+def save_items_to_file(name,category,image_name):
+    new_item = {"name": name, "category": category, "image_name": image_name}
     if os.path.exists(items_file):
         with open(items_file,'r') as f:
             now_data = json.load(f)
@@ -62,7 +61,7 @@ def save_items_to_file(name,category,image):
         with open(items_file, 'w') as f:
             json.dump(first_item, f, indent=2)
 
-# 画像をimagesに保存
+# 画像をimagesに保存 
 def save_image_file(image,jpg_hashed_image_name):
     imagefile = image.file.read()
     image = images / jpg_hashed_image_name
@@ -71,10 +70,10 @@ def save_image_file(image,jpg_hashed_image_name):
     return
 
 
-# sha256でハッシュ化
+# sha256でハッシュ化 jpg型で返す
 def get_hash_by_sha256(image):
     hs = hashlib.sha256(image.encode()).hexdigest()
-    return hs
+    return hs+".jpg"
 
 
 # items.jsonファイルに登録された商品一覧を取得
