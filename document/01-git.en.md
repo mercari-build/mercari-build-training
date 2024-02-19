@@ -56,7 +56,7 @@ This is required to use githooks in mercari-build-training repository.
    $ git branch first-pull-request
    $ git switch first-pull-request
    ```
-3. Replace `Ok` on README.md with your Github ID.
+3. Replace `Pixie006` on README.md with your Github ID.
 4. **commit** the changes you made with the following commands.
    ```shell
    $ git status # Check your change
