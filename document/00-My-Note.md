@@ -62,6 +62,7 @@ async def get_image(image_name):
 ```
 
 編集後のAPI
+```
 import os
 import logging
 import pathlib
