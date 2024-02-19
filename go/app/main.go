@@ -30,6 +30,7 @@ type Items struct {
 }
 
 type Item struct {
+	ItemId    int64  `json:"item_id"`
 	Name      string `json:"name"`
 	Category  string `json:"category"`
 	ImageName string `json:"image_name"`
@@ -68,16 +69,16 @@ func getFileSha256(c echo.Context, fileType string) (string, error) {
 open given files and parse json items,
 return items.Items
 */
-func readItemsFromFile(filePath string) ([]Item, error) {
+func readItemsFromFile(filePath string) (Items, error) {
 	jsonFile, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, err
+		return Items{}, err
 	}
 	var items Items
 	if err := json.Unmarshal(jsonFile, &items); err != nil {
-		return nil, err
+		return Items{}, err
 	}
-	return items.Items, nil
+	return items, nil
 }
 
 /*
@@ -112,11 +113,6 @@ func addItem(c echo.Context) error {
 	}
 	image += ".jpg"
 	c.Logger().Infof("Receive item: %s", name)
-	newItem := Item{
-		Name:      name,
-		Category:  category,
-		ImageName: image,
-	}
 	message := fmt.Sprintf("item received: %s", name)
 	// Open items file
 	items, err := readItemsFromFile("items.json")
@@ -125,7 +121,15 @@ func addItem(c echo.Context) error {
 		msg := "error happend while reading elements in items.json!"
 		return c.JSON(http.StatusBadRequest, msg)
 	}
-	items = append(items, newItem)
+	//indexing items for itemId
+	itemId := len(items.Items)
+	newItem := Item{
+		ItemId:    int64(itemId),
+		Name:      name,
+		Category:  category,
+		ImageName: image,
+	}
+	items.Items = append(items.Items, newItem)
 	// marshal new items, write back to items.json
 	updatedItems, err := json.Marshal(&items)
 	if err != nil {
@@ -152,11 +156,17 @@ func getItemById(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	parsedInteger, err := strconv.ParseInt(itemId, 10, 64)
-	if err != nil || parsedInteger >= int64(len(items)) {
+	if err != nil {
 		msg := "Error occured while converting itemId to integer!"
 		return c.JSON(http.StatusBadRequest, msg)
 	}
-	return c.JSON(http.StatusOK, items[parsedInteger])
+	for _, item := range items.Items {
+		if parsedInteger == int64(item.ItemId) {
+			return c.JSON(http.StatusOK, item)
+		}
+	}
+	//else
+	return c.JSON(http.StatusBadRequest, "invalid item ID!")
 }
 
 func getImg(c echo.Context) error {
