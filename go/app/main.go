@@ -105,6 +105,14 @@ func addItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+func getItems(c echo.Context) error {
+	items, err := readItemsFromFile()
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, items)
+}
+
 func getImg(c echo.Context) error {
 	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
 
@@ -138,6 +146,7 @@ func main() {
 	// Routes
 	e.GET("/", root)
 	e.POST("/items", addItem)
+	e.GET("/items", getItems)
 	e.GET("/image/:imageFilename", getImg)
 
 	// Start server
