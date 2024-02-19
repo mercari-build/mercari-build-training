@@ -1,0 +1,18 @@
+{
+  "items": {
+    "1": {
+      "name": "jacket",
+      "category": "fashion"
+    },
+    "2": {
+      "name": "sofa",
+      "category": "furniture"
+    },
+    "3": {
+      "name": "jacket",
+      "category": "fashion",
+      "image": "c763dfccdfafb916d75975b8ac8de174083cf5061ca26be264bab6274d9cd2ff.jpg"
+    }
+  },
+  "cur_max_id": 3
+}
