@@ -1,4 +1,4 @@
-## Step3 
+# Step3 
 
 # 基本的なAPIの使い方
 1つ目のターミナルでサーバーを起動
@@ -9,7 +9,7 @@
 
 停止するときは同じコマンドでcontrl + c
 
-# APIの編集について
+## APIの編集について
 main.pyに書き込む
 元のmain.py
 ```
@@ -61,7 +61,7 @@ async def get_image(image_name):
     return FileResponse(image)
 ```
 
-編集後のAPI
+## 編集後のAPI Get や　Postに対する操作を追加する
 ```
 import os
 import logging
@@ -141,3 +141,41 @@ async def get_image(image_name: str):
         image_path = images / "default.jpg"
     return FileResponse(image_path)
 ```
+
+
+# ターミナルからのアクセス
+## ドキュメントに指定されていたコードと応答
+```
+(.venv) curl -X POST \
+  --url 'http://localhost:9000/items' \
+  -d 'name=jacket' \
+  -d 'category=fashion'
+{"detail":[{"type":"model_attributes_type","loc":["body"],"msg":"Input should be a valid dictionary or object to extract fields from","input":"name=jacket&category=fashion","url":"https://errors.pydantic.dev/2.6/v/model_attributes_type"}]}%    
+```
+## 変更した方がうまく応答した
+```
+(.venv) curl -X POST \
+  --url 'http://localhost:9000/items' \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "jacket", "category": "fashion"}'
+
+{"message":"item received: jacket, Category: fashion"}%
+```
+## Get method 
+```
+curl -X GET 'http://127.0.0.1:9000/items'
+{"items":[{"name":"jacket","category":"fashion"},{"name":"jacket","category":"fashion"}]}%    
+```
+これはmain.pyに以下の項を加えたことで可能になった
+```
+@app.get("/items")
+async def get_items():
+    try:
+        with open("items.json", "r") as file:
+            data = json.load(file)
+            return data
+    except FileNotFoundError:
+        return {"detail": "Items not found."}
+```
+
+
