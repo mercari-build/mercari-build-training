@@ -17,6 +17,7 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
+// todo: shorten the args
 func httpErrorHandler(err error, c echo.Context, code int, message string) *echo.HTTPError {
 	c.Logger().Error(err)
 	return echo.NewHTTPError(code, message)
@@ -33,11 +34,12 @@ func addItem(c echo.Context) error {
 	category_id := c.FormValue("category")
 	c.Logger().Infof("Receive item: name=%s, category_id=%s", name, category_id)
 
-	// Load items.json
-	items, err := loadItems()
+	// Load items
+	db, err := loadDb(DbPath)
 	if err != nil {
-		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load items")
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load database")
 	}
+	defer db.Close()
 
 	// Create objects
 	new_item := new(Item)
@@ -56,10 +58,9 @@ func addItem(c echo.Context) error {
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to register image")
 	}
-	items.Items = append(items.Items, *new_item)
 
 	// Insert new item to database
-	err = insertItem(*new_item)
+	err = insertItem(db, *new_item)
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to insert item")
 	}
@@ -109,7 +110,9 @@ func getAllItems(c echo.Context) error {
 	db, err := loadDb(DbPath)
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load database")
-}
+	}
+	defer db.Close()
+
 	joined_items, err := joinItemsAndCategories(db)
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to join items and categories")
@@ -119,10 +122,11 @@ func getAllItems(c echo.Context) error {
 
 func getItemById(c echo.Context) error {
 	// Load items
-	items, err := loadItems()
+	db, err := loadDb(DbPath)
 	if err != nil {
-		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load items")
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load database")
 	}
+	defer db.Close()
 
 	// Convert id string to int
 	id, err := strconv.Atoi(c.Param("id"))
@@ -130,13 +134,26 @@ func getItemById(c echo.Context) error {
 		err_msg := fmt.Sprintf("id not found: '%s'. id must be an integer", c.Param("id"))
 		return httpErrorHandler(err, c, http.StatusBadRequest, err_msg)
 	}
-	idx := getItemIdxById(id, items)
-	if idx == -1 {
+
+	rows, err := db.Query("SELECT * FROM items WHERE items.id = ?", id)
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load item")
+	}
+	defer rows.Close()
+	if !rows.Next() {
 		err_msg := fmt.Sprintf("id not found: %d", id)
 		return httpErrorHandler(err, c, http.StatusNotFound, err_msg)
 	}
-	c.Logger().Infof("item: %+v", items.Items[idx])
-	return c.JSON(http.StatusOK, items.Items[idx])
+	var item Item
+	if err := rows.Scan(&item.Id, &item.Name, &item.CategoryId, &item.ImageName); err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load item")
+	}
+	joined_item, err := joinItemAndCategory(db, item)
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to join item and category")
+
+	}
+	return c.JSON(http.StatusOK, joined_item)
 }
 
 func getImg(c echo.Context) error {
@@ -156,7 +173,13 @@ func getImg(c echo.Context) error {
 
 func searchItems(c echo.Context) error {
 	// Load items
-	items, err := loadItems()
+	db, err := loadDb(DbPath)
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load database")
+	}
+	defer db.Close()
+
+	items, err := loadItemsByQuery(db, "*", "items", "")
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load items")
 	}
