@@ -35,7 +35,7 @@ type Item struct {
 	ImageName string `json:"image_name"`
 }
 
-type AllItems struct {
+type Items struct {
 	Items []Item `json:"items"`
 }
 
@@ -139,7 +139,7 @@ func getItemById(c echo.Context) error {
 	return c.JSON(http.StatusOK, allItems.Items[id-1])
 }
 
-func LoadItemsFromJSON() (*AllItems, error) {
+func LoadItemsFromJSON() (*Items, error) {
 	jsonFile, err := os.Open("items.json")
 	if err != nil {
 		return nil, err
@@ -149,7 +149,7 @@ func LoadItemsFromJSON() (*AllItems, error) {
 	if err != nil {
 		return nil, err
 	}
-	var allItems AllItems
+	var allItems Items
 	json.Unmarshal(jsonData, &allItems)
 
 	return &allItems, nil
