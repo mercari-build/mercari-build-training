@@ -2,19 +2,23 @@ package main
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+
+	//use '_' for registering the driver with the 'database/sql'
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -42,10 +46,27 @@ func root(c echo.Context) error {
 }
 
 /*
-3-4 POST Add an image to an item
+getDatabasePath()
 
-	returns Sha256 hashed string of File
+return absolute path of mercari.sqlite3 database file
+which always will be located one up level of go directory.
 */
+func getDatabasePath() string {
+	path, err := os.Executable()
+	if err != nil {
+		msg := "error occured while getting path!"
+		return msg
+	}
+	dir := filepath.Dir(path)
+	dbPath := filepath.Join(dir, "..", "mercari.sqlite3")
+	finalPath, err := filepath.Abs(dbPath)
+	if err != nil {
+		msg := "error occured while concatnating path!"
+		return msg
+	}
+	return finalPath
+}
+
 func getFileSha256(c echo.Context, fileType string) (string, error) {
 	fileHeader, err := c.FormFile(fileType)
 	if err != nil {
@@ -66,41 +87,54 @@ func getFileSha256(c echo.Context, fileType string) (string, error) {
 }
 
 /*
-open given files and parse json items,
-return items.Items
-*/
-func readItemsFromFile(filePath string) (Items, error) {
-	jsonFile, err := os.ReadFile(filePath)
-	if err != nil {
-		return Items{}, err
-	}
-	var items Items
-	if err := json.Unmarshal(jsonFile, &items); err != nil {
-		return Items{}, err
-	}
-	return items, nil
-}
+4-1 GET write into a database
 
-/*
-3-3 GET get a list of items
+ 1. open db
+ 2. O(n^2). iterate over rows and colums
 */
 func getItem(c echo.Context) error {
-	items, err := readItemsFromFile("items.json")
-
+	path := getDatabasePath()
+	db, err := sql.Open("sqlite3", path)
 	if err != nil {
-		msg := "items.json file not exist!"
+		msg := "error occured while opening db!"
 		return c.JSON(http.StatusBadRequest, msg)
+	}
+	defer db.Close()
+	//if table not exist
+	createTableSQL := `CREATE TABLE IF NOT EXISTS items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        category TEXT NOT NULL,
+        image_name TEXT
+    );`
+	_, err = db.Exec(createTableSQL)
+	if err != nil {
+		msg := "error occured while creating new DB!"
+		return c.JSON(http.StatusBadRequest, msg)
+	}
+	var items Items
+	rows, err := db.Query("SELECT id, name, category, image_name FROM items")
+	if err != nil {
+		msg := "error occured while reading rows from db!"
+		return c.JSON(http.StatusBadRequest, msg)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.ItemId, &item.Name, &item.Category, &item.ImageName); err != nil {
+			msg := "error occured while scanning row from db!"
+			return c.JSON(http.StatusBadRequest, msg)
+		}
+		items.Items = append(items.Items, item)
 	}
 	return c.JSON(http.StatusOK, items)
 }
 
 /*
-3-2, 3-4 POST add the list of item
+4-1 POST write into a database
 
- 1. Get form data, make new <Item> newItem variable
- 2. store current items in []item array.
- 3. append newItem in items array, marshal item to valid Json
- 4. write items.json with updated items
+ 1. open db
+ 2. insert item. id will be autoincremented
 */
 func addItem(c echo.Context) error {
 	// Get form data
@@ -115,58 +149,54 @@ func addItem(c echo.Context) error {
 	c.Logger().Infof("Receive item: %s", name)
 	message := fmt.Sprintf("item received: %s", name)
 	// Open items file
-	items, err := readItemsFromFile("items.json")
-	// append newItem in items
+	path := getDatabasePath()
+	db, err := sql.Open("sqlite3", path)
 	if err != nil {
-		msg := "error happend while reading elements in items.json!"
+		msg := "error occured while opening db!"
 		return c.JSON(http.StatusBadRequest, msg)
 	}
-	//indexing items for itemId
-	itemId := len(items.Items)
 	newItem := Item{
-		ItemId:    int64(itemId),
 		Name:      name,
 		Category:  category,
 		ImageName: image,
 	}
-	items.Items = append(items.Items, newItem)
-	// marshal new items, write back to items.json
-	updatedItems, err := json.Marshal(&items)
+	_, err = db.Exec("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)", &newItem.Name, &newItem.Category, &newItem.ImageName)
 	if err != nil {
-		msg := "error happend while converting new items to json structure!"
+		msg := "error occured while inserting new item!"
 		return c.JSON(http.StatusBadRequest, msg)
 	}
-	os.WriteFile("items.json", updatedItems, 0644)
-
 	res := Response{Message: message}
 
 	return c.JSON(http.StatusOK, res)
 }
 
 /*
-3-5 GET Return item details
+4-1 POST write into a database
 
- 1. Unmarshal current items in []items array
- 2. return items[itemId]
+ 1. open db
+ 2. query row such that matches id. id index starts from 1
 */
 func getItemById(c echo.Context) error {
-	itemId := c.Param("itemId")
-	items, err := readItemsFromFile("items.json")
+	idStr := c.Param("itemId")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
-	parsedInteger, err := strconv.ParseInt(itemId, 10, 64)
-	if err != nil {
-		msg := "Error occured while converting itemId to integer!"
+		msg := "id is not valid integer!"
 		return c.JSON(http.StatusBadRequest, msg)
 	}
-	for _, item := range items.Items {
-		if parsedInteger == int64(item.ItemId) {
-			return c.JSON(http.StatusOK, item)
-		}
+	var item Item
+	path := getDatabasePath()
+	db, err := sql.Open("sqlite3", path)
+	if err != nil {
+		msg := "error occured while reading db!"
+		return c.JSON(http.StatusBadRequest, msg)
 	}
-	//else
-	return c.JSON(http.StatusBadRequest, "invalid item ID!")
+	defer db.Close()
+	err = db.QueryRow("SELECT id, name, category, image_name FROM items WHERE id = ?", id).Scan(&item.ItemId, &item.Name, &item.Category, &item.ImageName)
+	if err != nil {
+		msg := "Invalid ID!"
+		return c.JSON(http.StatusBadRequest, msg)
+	}
+	return c.JSON(http.StatusOK, item)
 }
 
 func getImg(c echo.Context) error {
