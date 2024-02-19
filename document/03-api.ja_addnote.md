@@ -447,6 +447,8 @@ curl -X GET 'http://127.0.0.1:9000/items/2'
 {"item_id":2,"name":"jacket","category":"fashion","image_name":"ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg"}
 ```
 image_name には画像がある場合のハッシュ値が出力される
+
+
 **<note 終了>**
 
 ## 6. (Optional) Loggerについて調べる
