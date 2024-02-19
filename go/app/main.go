@@ -50,12 +50,12 @@ func addItem(db *sql.DB) echo.HandlerFunc {
 		// 画像ファイルを取得
 		imageFile, err := c.FormFile("image")
 		if err != nil {
-			res := Response{Message: "Failed to get image file"}
+			res := Response{Message: "failed to get image file in addItem"}
 			return c.JSON(http.StatusBadRequest, res)
 		}
 		src, err := imageFile.Open()
 		if err != nil {
-			res := Response{Message: "Failed to open image file"}
+			res := Response{Message: "failed to open image file in addItem"}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 		defer src.Close()
@@ -63,7 +63,7 @@ func addItem(db *sql.DB) echo.HandlerFunc {
 		// 画像ファイルをハッシュ化
 		hash := sha256.New()
 		if _, err := io.Copy(hash, src); err != nil {
-			res := Response{Message: "Failed to hash image file"}
+			res := Response{Message: "failed to hash image file in addItem"}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 		hashedImageName := fmt.Sprintf("%x.jpeg", hash.Sum(nil))
@@ -71,20 +71,20 @@ func addItem(db *sql.DB) echo.HandlerFunc {
 		// 画像ファイルを保存
 		dst, err := os.Create("images/" + hashedImageName)
 		if err != nil {
-			res := Response{Message: fmt.Sprintf("Failed to create image file: %s", hashedImageName)}
+			res := Response{Message: fmt.Sprintf("failed to create image file in addItem: image=%s", hashedImageName)}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 		defer dst.Close()
 		src.Seek(0, 0) // ファイルポインタを先頭に戻す
 		//srcからdstへ内容をコピー
 		if _, err := io.Copy(dst, src); err != nil {
-			res := Response{Message: "Failed to save image file"}
+			res := Response{Message: "failed to save image file in addItem"}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 
 		// DBへの保存
 		if err := addItemToDB(db, name, category, hashedImageName); err != nil {
-			res := Response{Message: fmt.Sprintf("Failed to add item to DB: %s", err)}
+			res := Response{Message: fmt.Sprintf("failed to add item to DB in addItem: %s", err)}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 
@@ -101,28 +101,28 @@ func addItemToDB(db *sql.DB, name, category, imageName string) error {
 	// カテゴリをcategoriesテーブルに追加
 	stmt1, err := db.Prepare("INSERT INTO categories (name) VALUES (?)")
 	if err != nil {
-		return fmt.Errorf("failed to prepare SQL statement: %w", err)
+		return fmt.Errorf("failed to prepare SQL statement1 in addItemToDB: %w", err)
 	}
 	defer stmt1.Close()
 
 	result, err := stmt1.Exec(category)
 	if err != nil {
-		return fmt.Errorf("failed to execute SQL statement: %w", err)
+		return fmt.Errorf("failed to execute SQL statement1 in addItemToDB: %w", err)
 	}
 	// 新しく挿入された行のIDを取得
 	id, err := result.LastInsertId()
 	if err != nil {
-		return fmt.Errorf("failed to get last insert ID: %w", err)
+		return fmt.Errorf("failed to get last insert ID in addItemToDB: %w", err)
 	}
 
 	// itemsテーブルに商品を追加
 	stmt2, err := db.Prepare("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)")
 	if err != nil {
-		return fmt.Errorf("failed to prepare SQL statement: %w", err)
+		return fmt.Errorf("failed to prepare SQL statement2 in addItemToDB: %w", err)
 	}
 	defer stmt2.Close()
 	if _, err := stmt2.Exec(name, id, imageName); err != nil {
-		return fmt.Errorf("failed to execute SQL statement: %w", err)
+		return fmt.Errorf("failed to execute SQL statement2 in addItemToDB: %w", err)
 	}
 
 	return nil
@@ -133,7 +133,7 @@ func getAllItems(db *sql.DB) echo.HandlerFunc {
 		// itemsテーブルとcategoriesテーブルをJOINして全てのアイテムを取得
 		rows, err := db.Query("SELECT items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.id")
 		if err != nil {
-			res := Response{Message: "Failed to get items from DB"}
+			res := Response{Message: "failed to get items from DB in getAllItems"}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 		defer rows.Close()
@@ -142,7 +142,7 @@ func getAllItems(db *sql.DB) echo.HandlerFunc {
 		for rows.Next() {
 			var item Item
 			if err := rows.Scan(&item.Name, &item.Category, &item.ImageName); err != nil {
-				res := Response{Message: "Failed to scan items from DB"}
+				res := Response{Message: "failed to scan items from DB in getAllItems"}
 				return c.JSON(http.StatusInternalServerError, res)
 			}
 			allItems.Items = append(allItems.Items, item)
@@ -163,7 +163,7 @@ func getItemsByKeyword(db *sql.DB) echo.HandlerFunc {
 			FROM items JOIN categories ON items.category_id = categories.id 
 			WHERE items.name LIKE ?`, searchKeyword)
 		if err != nil {
-			res := Response{Message: fmt.Sprintf("Failed to search items from DB: keyword=%s", keyword)}
+			res := Response{Message: fmt.Sprintf("failed to search items from DB in getItemsByKeyword: keyword=%s", keyword)}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 		defer rows.Close()
@@ -172,7 +172,7 @@ func getItemsByKeyword(db *sql.DB) echo.HandlerFunc {
 		for rows.Next() {
 			var item Item
 			if err := rows.Scan(&item.Name, &item.Category, &item.ImageName); err != nil {
-				res := Response{Message: "Failed to scan items from DB"}
+				res := Response{Message: "failed to scan items from DB in getItemsByKeyword"}
 				return c.JSON(http.StatusInternalServerError, res)
 			}
 			keywordItems.Items = append(keywordItems.Items, item)
@@ -185,7 +185,7 @@ func getItemById(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
-			res := Response{Message: "Failed to get id in getItemById"}
+			res := Response{Message: "failed to get id in getItemById"}
 			return c.JSON(http.StatusBadRequest, res)
 		}
 
@@ -201,7 +201,7 @@ func getItemById(db *sql.DB) echo.HandlerFunc {
 				res := Response{Message: fmt.Sprintf("Item not found: id=%d", id)}
 				return c.JSON(http.StatusNotFound, res)
 			} else {
-				res := Response{Message: fmt.Sprintf("Failed to scan item from DB: id=%d", id)}
+				res := Response{Message: fmt.Sprintf("failed to scan item from DB in getItemById: id=%d", id)}
 				return c.JSON(http.StatusInternalServerError, res)
 			}
 		}
