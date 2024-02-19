@@ -66,7 +66,9 @@ $ curl -X POST \
 準備されている`POST /items`のエンドポイントはnameという情報を受け取れます。 ここにcategoryの情報も受け取れるように変更を加えます。
 
 < note 開始>
+
 **<これはcategoryの情報も受け取るためのコードをmain.pyの@app.post("/items")に書きましょうという意味>**
+
 main.py
 ```
 # アイテム追加エンドポイント
