@@ -82,15 +82,9 @@ func addItem(db *sql.DB) echo.HandlerFunc {
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 
-		// 新しいアイテムをDBに追加
-		stmt, err := db.Prepare("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)")
-		if err != nil {
-			res := Response{Message: "Failed to prepare SQL statement"}
-			return c.JSON(http.StatusInternalServerError, res)
-		}
-		defer stmt.Close()
-		if _, err = stmt.Exec(name, category, hashedImageName); err != nil {
-			res := Response{Message: "Failed to execute SQL statement"}
+		// DBへの保存
+		if err := addItemToDB(db, name, category, hashedImageName); err != nil {
+			res := Response{Message: fmt.Sprintf("Failed to add item to DB: %s", err)}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
 
@@ -103,10 +97,41 @@ func addItem(db *sql.DB) echo.HandlerFunc {
 	}
 }
 
+func addItemToDB(db *sql.DB, name, category, imageName string) error {
+	// カテゴリをcategoriesテーブルに追加
+	stmt1, err := db.Prepare("INSERT INTO categories (name) VALUES (?)")
+	if err != nil {
+		return fmt.Errorf("failed to prepare SQL statement: %w", err)
+	}
+	defer stmt1.Close()
+
+	result, err := stmt1.Exec(category)
+	if err != nil {
+		return fmt.Errorf("failed to execute SQL statement: %w", err)
+	}
+	// 新しく挿入された行のIDを取得
+	id, err := result.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("failed to get last insert ID: %w", err)
+	}
+
+	// itemsテーブルに商品を追加
+	stmt2, err := db.Prepare("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)")
+	if err != nil {
+		return fmt.Errorf("failed to prepare SQL statement: %w", err)
+	}
+	defer stmt2.Close()
+	if _, err := stmt2.Exec(name, id, imageName); err != nil {
+		return fmt.Errorf("failed to execute SQL statement: %w", err)
+	}
+
+	return nil
+}
+
 func getAllItems(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// DBから全てのアイテムを取得
-		rows, err := db.Query("SELECT name, category, image_name FROM items")
+		// itemsテーブルとcategoriesテーブルをJOINして全てのアイテムを取得
+		rows, err := db.Query("SELECT items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.id")
 		if err != nil {
 			res := Response{Message: "Failed to get items from DB"}
 			return c.JSON(http.StatusInternalServerError, res)
@@ -133,7 +158,10 @@ func getItemsByKeyword(db *sql.DB) echo.HandlerFunc {
 
 		// DBから名前にキーワードを含む商品一覧を返す
 		searchKeyword := "%" + keyword + "%" // 部分一致検索
-		rows, err := db.Query("SELECT name, category, image_name FROM items WHERE name LIKE ?", searchKeyword)
+		rows, err := db.Query(`
+			SELECT items.name, categories.name, items.image_name 
+			FROM items JOIN categories ON items.category_id = categories.id 
+			WHERE name LIKE ?`, searchKeyword)
 		if err != nil {
 			res := Response{Message: fmt.Sprintf("Failed to search items from DB: keyword=%s", keyword)}
 			return c.JSON(http.StatusInternalServerError, res)
@@ -153,24 +181,32 @@ func getItemsByKeyword(db *sql.DB) echo.HandlerFunc {
 	}
 }
 
-func getItemById(c echo.Context) error {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		res := Response{Message: "Failed to get id in getItemById"}
-		return c.JSON(http.StatusBadRequest, res)
-	}
-	allItems, err := LoadItemsFromJSON()
-	if err != nil {
-		res := Response{Message: "Failed to load items.json in getItemById"}
-		return c.JSON(http.StatusInternalServerError, res)
-	}
+func getItemById(db *sql.DB) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			res := Response{Message: "Failed to get id in getItemById"}
+			return c.JSON(http.StatusBadRequest, res)
+		}
 
-	if id <= 0 || id > len(allItems.Items) {
-		res := Response{Message: "Invalid id"}
-		return c.JSON(http.StatusBadRequest, res)
-	}
+		// DBからIDに対応する商品を取得
+		row := db.QueryRow(`
+			SELECT items.name, categories.name, items.image_name 
+			FROM items JOIN categories ON items.category_id = categories.id 
+			WHERE items.id = ?`, id)
 
-	return c.JSON(http.StatusOK, allItems.Items[id-1])
+		var item Item
+		if err := row.Scan(&item.Name, &item.Category, &item.ImageName); err != nil {
+			if err == sql.ErrNoRows { // IDに対応する商品がない場合
+				res := Response{Message: fmt.Sprintf("Item not found: id=%d", id)}
+				return c.JSON(http.StatusNotFound, res)
+			} else {
+				res := Response{Message: fmt.Sprintf("Failed to scan item from DB: id=%d", id)}
+				return c.JSON(http.StatusInternalServerError, res)
+			}
+		}
+		return c.JSON(http.StatusOK, item)
+	}
 }
 
 func LoadItemsFromJSON() (*Items, error) {
@@ -232,7 +268,7 @@ func main() {
 	e.POST("/items", addItem(db))
 	e.GET("/items", getAllItems(db))
 	e.GET("/search", getItemsByKeyword(db))
-	e.GET("/items/:id", getItemById)
+	e.GET("/items/:id", getItemById(db))
 	e.GET("/image/:imageFilename", getImg)
 
 	// Start server
