@@ -166,7 +166,7 @@ async def get_image(image_name: str):
 curl -X GET 'http://127.0.0.1:9000/items'
 {"items":[{"name":"jacket","category":"fashion"},{"name":"jacket","category":"fashion"}]}%    
 ```
-これはmain.pyに以下の項を加えたことで可能になった
+これはmain.pyに以下の項を加えたことで可能になった (「APIの編集について」と重複する内容)
 ```
 @app.get("/items")
 async def get_items():
