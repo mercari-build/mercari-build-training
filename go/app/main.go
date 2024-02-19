@@ -30,9 +30,8 @@ func root(c echo.Context) error {
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
-	category := c.FormValue("category")
-	id := c.FormValue("id")
-	c.Logger().Infof("Receive item: id=%s, name=%s, category=%s", id, name, category)
+	category_id := c.FormValue("category")
+	c.Logger().Infof("Receive item: name=%s, category_id=%s", name, category_id)
 
 	// Load items.json
 	items, err := loadItems()
@@ -43,16 +42,9 @@ func addItem(c echo.Context) error {
 	// Create objects
 	new_item := new(Item)
 	new_item.Name = name
-	new_item.Category = category
-
-	// Register id
-	new_item.Id, err = strconv.Atoi(id)
+	new_item.CategoryId, err = strconv.Atoi(category_id)
 	if err != nil {
-		return httpErrorHandler(err, c, http.StatusBadRequest, "id must be an integer")
-	}
-	if getItemIdxById(new_item.Id, items) != -1 {
-		err_msg := fmt.Sprintf("id already exists: %d", new_item.Id)
-		return httpErrorHandler(err, c, http.StatusBadRequest, err_msg)
+		return httpErrorHandler(err, c, http.StatusBadRequest, "category_id must be an integer")
 	}
 
 	// Register image
