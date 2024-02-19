@@ -232,6 +232,15 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Opti
 ```
 
  それ以外にも直接的には関わらない部分を少し変えている
+
+ ターミナル ディレクトリにある画像を指定
+ ```
+curl -X POST \
+  --url 'http://localhost:9000/items' \
+  -F 'name=jacket' \
+  -F 'category=fashion' \
+  -F 'image=@images/default.jpg'
+```
 **<note 終了>**
 
 
