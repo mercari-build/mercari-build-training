@@ -4,14 +4,18 @@ import pathlib
 import hashlib
 from fastapi import FastAPI, Form, HTTPException,File,UploadFile
 from fastapi.responses import FileResponse
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
+import json
+"""
+source .venv/bin/activate
+"""
+"""
+uvicorn main:app --reload --port 9000
+"""
+print("debug")
 
-'''
-環境変数
-'''
-print("debuging")
-print(os.path.curdir)
 json_path = "sample.json"
 # 環境変数の取得
 db_path = os.environ.get('DB_PATH')
@@ -65,8 +69,7 @@ def get_category_id(category_name:str):
 
 
 '''
-curl -X GET \
-    --url 'http://localhost:9000'
+curl -X GET 'http://127.0.0.1:9000'
 '''
 @app.get("/")
 def root():
@@ -100,7 +103,19 @@ def get_items():
     sql_cur.execute('SELECT * FROM items')
 
     rev = sql_cur.fetchall()
-    return rev
+    json_data = {
+    "items": [
+        {
+            "id": item[0],
+            "name":item[1],
+            "category": item[2],
+            "image_name": item[3]
+        } 
+        for item in rev
+    ]
+    }
+
+    return JSONResponse(content=json_data)
 '''
 curl -X GET \
     --url 'http://localhost:9000/category' \
@@ -114,11 +129,33 @@ def get_category():
     rev = sql_cur.fetchall()
     return rev
 
+'''
+curl -X GET 'http://127.0.0.1:9000/items/1'
+'''
 
 @app.get("/items/{item_id}")
 def return_item_information(item_id):
-    print("receive item = {item_id}")
-    return item_id
+    sql_connect = sqlite3.connect(db_path)
+    sql_cur = sql_connect.cursor()
+    table = "items"
+    sql_command = f"""SELECT * FROM {table} WHERE id = {item_id}"""
+    sql_cur.execute(sql_command)
+
+    rev = sql_cur.fetchall()
+    print(rev)
+    if rev:
+        item = rev[0]
+        json_data = {
+            "id": item[0],
+            "category": item[1],
+            "image_name": item[2]
+        
+        }
+
+        rev_json = json.dumps(json_data)
+    else:
+        rev_json = {}
+    return rev_json 
 
 '''
 curl -X POST \
