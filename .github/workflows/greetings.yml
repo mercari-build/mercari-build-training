@@ -21,10 +21,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker Image
-        run: |
-          docker build -t build2024/app:latest -f python/dockerfile .
+        run: docker build -t ghcr.io/githoritaka/mercari-build-training:${{ github.ref_name }} -f python/dockerfile .
 
       - name: Push Docker Image to GitHub Container Registry
-        run: |
-          docker push ghcr.io/githoritaka/mercari-build-training:main
-
+        run: docker push ghcr.io/githoritaka/mercari-build-training:${{ github.ref_name }}
