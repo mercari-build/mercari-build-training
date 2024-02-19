@@ -161,7 +161,7 @@ func getItemsByKeyword(db *sql.DB) echo.HandlerFunc {
 		rows, err := db.Query(`
 			SELECT items.name, categories.name, items.image_name 
 			FROM items JOIN categories ON items.category_id = categories.id 
-			WHERE name LIKE ?`, searchKeyword)
+			WHERE items.name LIKE ?`, searchKeyword)
 		if err != nil {
 			res := Response{Message: fmt.Sprintf("Failed to search items from DB: keyword=%s", keyword)}
 			return c.JSON(http.StatusInternalServerError, res)
