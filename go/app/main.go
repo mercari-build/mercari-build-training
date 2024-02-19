@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -60,18 +61,28 @@ func getImg(c echo.Context) error {
 }
 
 func getAllItem(c echo.Context) error {
-	jsonFile, err :=os.Open("items.json")
+	// items.json ファイルを読み込みます。
+	file, err := os.Open("items.json")
 	if err != nil {
-		fmt.Println("JSONファイルを開けません", err)
+		fmt.Println("Error opening file:", err)
 		return err
 	}
-	defer jsonFile.Close()
-	jsonData, err := io.ReadAll(jsonFile)
-	if err != nil{
-		fmt.Println("JSONデータを読み込めません", err)
-		return nil, err
+	defer file.Close()
+
+	// ファイルの内容をバイト列として読み込みます。
+	data, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return err
 	}
-	return jsonData, nil
+
+	// JSON データをデコードして商品リストを取得します。
+	var items []Item
+	err = json.Unmarshal(data, &items)
+	if err != nil {
+		fmt.Println("Error decoding JSON:", err)
+		return err
+	}
 }
 
 func main() {
