@@ -68,7 +68,7 @@ func addItem(c echo.Context) error {
 	// 画像ファイルを保存
 	dst, err := os.Create("images/" + hashedImageName)
 	if err != nil {
-		res := Response{Message: "Failed to create image file: " + hashedImageName}
+		res := Response{Message: fmt.Sprintf("Failed to create image file: %s", hashedImageName)}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
 	defer dst.Close()
