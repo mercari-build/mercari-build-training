@@ -343,7 +343,7 @@ json file に以下のように追加されていくことが確認された
         }
 ```
 
-**id を1,2, 3,..に変更**
+**ver2 id を1,2, 3,..に変更 (推奨)**
 
 main.pyの主な変更点
 
@@ -399,6 +399,8 @@ items.json をいかに書き換える
 }
 ```
 
+ターミナルからPOST 
+
 ```
 curl -X POST \ --url 'http://localhost:9000/items' \
  -F 'name=jacket' \
@@ -435,6 +437,16 @@ curl: (3) URL rejected: Malformed input to a URL function
     ]
 }
 ```
+ターミナルからリクエスト
+```
+curl -X GET 'http://127.0.0.1:9000/items/1'
+{"item_id":1,"name":"jacket","category":"fashion","image_name":""}%       
+```
+```
+curl -X GET 'http://127.0.0.1:9000/items/2'
+{"item_id":2,"name":"jacket","category":"fashion","image_name":"ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg"}
+```
+image_name には画像がある場合のハッシュ値が出力される
 **<note 終了>**
 
 ## 6. (Optional) Loggerについて調べる
