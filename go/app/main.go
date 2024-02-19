@@ -145,13 +145,12 @@ func LoadItemsFromJSON() (*Items, error) {
 		return nil, err
 	}
 	defer jsonFile.Close()
-	jsonData, err := io.ReadAll(jsonFile)
-	if err != nil {
+
+	var allItems Items
+	decoder := json.NewDecoder(jsonFile)
+	if err := decoder.Decode(&allItems); err != nil {
 		return nil, err
 	}
-	var allItems Items
-	json.Unmarshal(jsonData, &allItems)
-
 	return &allItems, nil
 }
 
