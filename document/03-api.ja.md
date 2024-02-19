@@ -64,6 +64,7 @@ $ curl -X POST \
 
 
 準備されている`POST /items`のエンドポイントはnameという情報を受け取れます。 ここにcategoryの情報も受け取れるように変更を加えます。
+<span style="color: red; ">これはcategoryの情報も受け取るためのコードをmain.pyに書きましょうという意味</span>
 
 * name: 商品の名前 (string)
 * category: 商品のカテゴリ(string)
