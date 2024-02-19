@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"os"
 
-	"github.com/labstack/gommon/log"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -38,14 +37,24 @@ func createTableIfNotExists(db *sql.DB) error {
 	return nil
 }
 
-func loadItemsByQuery(db *sql.DB, field string, table string, condition string) (*Items, error) {
-	// compose query
-	query := "SELECT " + field + " FROM " + table
-	if condition != "" {
-		query += " WHERE " + condition
+func loadItemById(db *sql.DB, id int) (*Item, error) {
+	// Load item from db by id
+	rows, err := db.Query("SELECT * FROM items WHERE items.id = ?", id)
+	if err != nil {
+		return nil, err
 	}
-	log.Infof("query: %s", query)
+	defer rows.Close()
+	if !rows.Next() {
+		return nil, nil
+	}
+	var item Item
+	if err := rows.Scan(&item.Id, &item.Name, &item.CategoryId, &item.ImageName); err != nil {
+		return nil, err
+	}
+	return &item, nil
+}
 
+func loadItemsByQuery(db *sql.DB, query string) (*Items, error) {
 	// Load items from db by query
 	rows, err := db.Query(query)
 	if err != nil {
@@ -54,22 +63,16 @@ func loadItemsByQuery(db *sql.DB, field string, table string, condition string) 
 	defer rows.Close()
 
 	// Load items from rows
-	items, err := loadItemRows(rows)
-	if err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-func loadItemRows(rows *sql.Rows) (*Items, error) {
-	// Load items from rows
-	items := &Items{}
+	var items *Items
 	for rows.Next() {
 		var item Item
 		if err := rows.Scan(&item.Id, &item.Name, &item.CategoryId, &item.ImageName); err != nil {
 			return nil, err
 		}
-		(*items).Items = append((*items).Items, item)
+		items.Items = append(items.Items, item)
+	}
+	if err != nil {
+		return nil, err
 	}
 	return items, nil
 }

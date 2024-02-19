@@ -1,11 +1,7 @@
 package main
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"io"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
@@ -16,12 +12,6 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 )
-
-// todo: shorten the args
-func httpErrorHandler(err error, c echo.Context, code int, message string) *echo.HTTPError {
-	c.Logger().Error(err)
-	return echo.NewHTTPError(code, message)
-}
 
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
@@ -71,40 +61,6 @@ func addItem(c echo.Context) error {
 	return c.JSON(http.StatusCreated, res)
 }
 
-func registerImg(header *multipart.FileHeader) (string, error) {
-	// Read uploaded file
-	src, err := header.Open()
-	if err != nil {
-		return "", err
-	}
-	defer src.Close()
-
-	// Convert src to hash
-	hash := sha256.New()
-	if _, err := io.Copy(hash, src); err != nil {
-		return "", err
-	}
-	hex_hash := hex.EncodeToString(hash.Sum(nil))
-
-	// Reset the read position of the file
-	if _, err := src.Seek(0, 0); err != nil {
-		return "", err
-	}
-
-	// Save file to images/
-	filename := hex_hash + path.Ext(header.Filename)
-	file, err := os.Create(path.Join(ImgDir, filename))
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-	if _, err := io.Copy(file, src); err != nil {
-		return "", err
-	}
-
-	return filename, nil
-}
-
 func getAllItems(c echo.Context) error {
 	// Load items
 	db, err := loadDb(DbPath)
@@ -135,20 +91,19 @@ func getItemById(c echo.Context) error {
 		return httpErrorHandler(err, c, http.StatusBadRequest, err_msg)
 	}
 
-	rows, err := db.Query("SELECT * FROM items WHERE items.id = ?", id)
+	// Load item by id
+	item, err := loadItemById(db, id)
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load item")
 	}
-	defer rows.Close()
-	if !rows.Next() {
+	if item == nil {
 		err_msg := fmt.Sprintf("id not found: %d", id)
+		err = fmt.Errorf(err_msg)
 		return httpErrorHandler(err, c, http.StatusNotFound, err_msg)
 	}
-	var item Item
-	if err := rows.Scan(&item.Id, &item.Name, &item.CategoryId, &item.ImageName); err != nil {
-		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load item")
-	}
-	joined_item, err := joinItemAndCategory(db, item)
+
+	// Join item and category name
+	joined_item, err := joinItemAndCategory(db, *item)
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to join item and category")
 
@@ -179,7 +134,7 @@ func searchItems(c echo.Context) error {
 	}
 	defer db.Close()
 
-	items, err := loadItemsByQuery(db, "*", "items", "")
+	items, err := loadItemsByQuery(db, "SELECT * FROM items")
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load items")
 	}
