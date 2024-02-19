@@ -4,16 +4,25 @@ import (
 	"database/sql"
 	"os"
 
+	"github.com/labstack/gommon/log"
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func loadDb(path string) (*sql.DB, error) {
+	// Open database
+	db, err := sql.Open("sqlite3", path)
+	if err != nil {
+		return nil, err
+	}
+	if err := createTableIfNotExists(db); err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
 func createTableIfNotExists(db *sql.DB) error {
 	// Create table if not exists
-	cmd_check := "SELECT * FROM items;"
-	_, err := db.Exec(cmd_check)
-	if err != nil {
-		// Table not exists, create table
-		file, err := os.Open(ItemsSchemaPath)
+	file, err := os.Open(DbSchemaPath)
 		if err != nil {
 			return err
 		}
@@ -22,10 +31,9 @@ func createTableIfNotExists(db *sql.DB) error {
 		if _, err := file.Read([]byte(schema)); err != nil {
 			return err
 		}
-		_, err = db.Exec(schema) // CREATE TABLE items(...);
+	_, err = db.Exec(schema) // CREATE TABLE IF NOT EXIST ...;
 		if err != nil {
 			return err
-		}
 	}
 	return nil
 }
@@ -75,4 +83,23 @@ func insertItem(item Item) error {
 		return err
 	}
 	return nil
+}
+}
+
+func joinItemsAndCategories(db *sql.DB) (*JoinedItems, error) {
+	// Join category name to items
+	joined_items := JoinedItems{}
+	rows, err := db.Query("SELECT items.id, items.name, categories.name, items.image_name FROM items INNER JOIN categories ON items.category_id = categories.id")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var joined_item JoinedItem
+		if err := rows.Scan(&joined_item.Id, &joined_item.Name, &joined_item.ImageName, &joined_item.CategoryName); err != nil {
+			return nil, err
+		}
+		joined_items.Items = append(joined_items.Items, joined_item)
+	}
+	return &joined_items, nil
 }

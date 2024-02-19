@@ -104,21 +104,17 @@ func registerImg(header *multipart.FileHeader) (string, error) {
 	return filename, nil
 }
 
-func getItems(c echo.Context) error {
-	// Load items.json
-	items, _ := loadItems()
-	c.Logger().Infof("items: %+v", items)
-	return c.JSON(http.StatusOK, items)
+func getAllItems(c echo.Context) error {
+	// Load items
+	db, err := loadDb(DbPath)
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load database")
 }
-
-func getItemIdxById(id int, items Items) int {
-	// return index if id exists, otherwise return -1
-	for idx, item := range items.Items {
-		if item.Id == id {
-			return idx
-		}
+	joined_items, err := joinItemsAndCategories(db)
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to join items and categories")
 	}
-	return -1
+	return c.JSON(http.StatusOK, joined_items)
 }
 
 func getItemById(c echo.Context) error {
@@ -202,7 +198,7 @@ func main() {
 	// Routes
 	e.GET("/", root)
 	e.POST("/items", addItem)
-	e.GET("/items", getItems)
+	e.GET("/items", getAllItems)
 	e.GET("/items/:id", getItemById)
 	e.GET("/image/:imageFilename", getImg)
 	e.GET("/search", searchItems)
