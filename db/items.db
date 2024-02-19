@@ -1,0 +1,1 @@
+create table items(id integer primary key,name text,category text,image_name text);
