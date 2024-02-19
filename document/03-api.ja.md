@@ -65,7 +65,38 @@ $ curl -X POST \
 
 準備されている`POST /items`のエンドポイントはnameという情報を受け取れます。 ここにcategoryの情報も受け取れるように変更を加えます。
 
-**これはcategoryの情報も受け取るためのコードをmain.pyの@app.post("/items")に書きましょうという意味**
+**<これはcategoryの情報も受け取るためのコードをmain.pyの@app.post("/items")に書きましょうという意味>**
+main.py
+```
+# アイテム追加エンドポイント
+@app.post("/items")
+async def add_item(item: Item = Body(...)):
+    logger.info(f"Received item: {item.name}, Category: {item.category}")  # ログ出力
+    # アイテムをJSONファイルに保存
+    try:
+        with open("items.json", "r+") as file:
+            data = json.load(file)
+            data["items"].append(item.dict())
+            file.seek(0)
+            json.dump(data, file, indent=4)
+            file.truncate()
+    except FileNotFoundError:
+        with open("items.json", "w") as file:
+            json.dump({"items": [item.dict()]}, file, indent=4)
+    
+    logger.info(f"Item added: {item.name}, Category: {item.category}")
+    return {"message": f"item received: {item.name}, Category: {item.category}"}
+```
+**<ターミナルでのPOST>**
+```
+curl -X POST \
+  --url 'http://localhost:9000/items' \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "jacket", "category": "fashion"}'
+```
+
+
+
 
 * name: 商品の名前 (string)
 * category: 商品のカテゴリ(string)
@@ -81,7 +112,26 @@ $ curl -X POST \
 ## 3. 商品一覧を取得する
 
 GETで`/items`にアクセスしたときに、登録された商品一覧を取得できるようにエンドポイントを実装しましょう。 以下のようなレスポンスを期待しています。
+
+
 **これは録された商品一覧を取得するためのコードをmain.pyの@app.get("/items")に書きましょうという意味**
+main.py
+```
+# アイテムゲット
+@app.get("/items")
+async def get_items():
+    try:
+        with open("items.json", "r") as file:
+            data = json.load(file)
+            return data
+    except FileNotFoundError:
+        return {"detail": "Items not found."}
+```
+**<ターミナルでのGET>**
+```
+curl -X GET 'http://127.0.0.1:9000/items'
+```
+
 
 ```shell
 # 商品の登録
