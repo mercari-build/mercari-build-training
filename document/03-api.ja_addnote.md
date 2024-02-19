@@ -277,7 +277,8 @@ $ curl -X GET 'http://127.0.0.1:9000/items/1'
 
 **<note 開始>**
 
-ver1 uuid4を使用したとき >　IDが長いのであとで変更
+** ver1 uuid4を使用したとき >　IDが長いのであとで変更**
+
 main.py 
 
 ```
