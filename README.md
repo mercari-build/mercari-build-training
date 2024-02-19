@@ -53,6 +53,7 @@ The following icons indicate pointers for
 * Pythonは比較的簡単にかけるプログラミング言語です。Pythonを選んだほうが全体のフローの理解がしやすいかと思われます。
 
 ** docker buildについて **
-* docker build -t build2024/app:latest -f python/dockerfile .
+* local : docker build -t build2024/app:latest -f python/dockerfile .
+* pull : docker run -d -p 9000:9000 ghcr.io/githoritaka/mercari-build-training:main
 
 
