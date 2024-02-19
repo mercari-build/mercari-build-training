@@ -104,16 +104,6 @@ func loadCategoryById(db *sql.DB, id int) (*Category, error) {
 	return &category, nil
 }
 
-func insertCategory(db *sql.DB, category Category) error {
-	// Save new category to database
-	cmd_ins := "INSERT INTO categories(name) VALUES(?)"
-	_, err := db.Exec(cmd_ins, category.Name)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func joinItemAndCategory(db *sql.DB, item Item) (*JoinedItem, error) {
 	category, err := loadCategoryById(db, item.CategoryId)
 	if err != nil {
