@@ -106,7 +106,7 @@ func addItem(db *sql.DB) echo.HandlerFunc {
 func getAllItems(db *sql.DB) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// DBから全てのアイテムを取得
-		rows, err := db.Query("SELECT * FROM items")
+		rows, err := db.Query("SELECT name, category, image_name FROM items")
 		if err != nil {
 			res := Response{Message: "Failed to get items from DB"}
 			return c.JSON(http.StatusInternalServerError, res)
@@ -194,7 +194,7 @@ func main() {
 	}))
 
 	// DBへの接続
-	db, err := sql.Open("sqlite3", "./db/mercari.sqlite3")
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
 	if err != nil {
 		e.Logger.Infof("Failed to open DB: %v", err)
 	}
