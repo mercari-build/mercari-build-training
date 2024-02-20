@@ -1,9 +1,11 @@
 import os
+import json
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException
+from fastapi import FastAPI, Form, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+import hashlib
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -23,11 +25,41 @@ app.add_middleware(
 def root():
     return {"message": "Hello, world!"}
 
+@app.get("/items")
+def get_item():
+    with open('items.json', 'r') as f:
+        items_data = json.load(f)
+    return items_data
 
 @app.post("/items")
-def add_item(name: str = Form(...)):
+def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
     logger.info(f"Receive item: {name}")
-    return {"message": f"item received: {name}"}
+
+    #Hash
+    image_bytes = await image.read()
+    image_hash = hashlib.sha256(image_bytes).hexdigest()
+
+    image_name = f"{image_hash}.jpg"
+    image_dir = os.getcwd() / "images"
+    with open(image_dir / image_name, 'wb') as f:
+        f.write(image_bytes)
+
+    # Open the JSON file
+    with open('items.json', 'r') as f:
+        items_data = json.load(f)
+    
+    #Append the new item
+    items_data["items"].append({
+        'name': name,
+        'category': category
+        'image_name':image_name
+    })
+
+    #Write the updates to items.json
+    with open('items.json', 'w') as f:
+        json.dump(items_data, f)
+
+    return {"message": f"item received: {name}, Category: {category}"}
 
 
 @app.get("/image/{image_name}")
@@ -43,3 +75,5 @@ async def get_image(image_name):
         image = images / "default.jpg"
 
     return FileResponse(image)
+
+
