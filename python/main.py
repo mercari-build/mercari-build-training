@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 import pathlib
 from fastapi import FastAPI, Form, HTTPException
@@ -25,9 +26,24 @@ def root():
 
 
 @app.post("/items")
-def add_item(name: str = Form(...)):
+def add_item(name: str = Form(...), category: str = Form(...)):
     logger.info(f"Receive item: {name}")
-    return {"message": f"item received: {name}"}
+
+    # Open the JSON file
+    with open('items.json', 'r') as f:
+        items_data = json.load(f)
+    
+    #Append the new item
+    items_data["items"].append({
+        'name': name,
+        'category': category
+    })
+
+    #Write the updates to items.json
+    with open('items.json', 'w') as f:
+        json.dump(items_data, f)
+
+    return {"message": f"item received: {name}, Category: {category}"}
 
 
 @app.get("/image/{image_name}")
