@@ -48,7 +48,7 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
             with open('items.json', 'r') as f:
                 items_data = json.load(f)
         else:
-            items_data = []
+            items_data = {}
         
         #Append the new item
         items_data["items"].append({
@@ -62,7 +62,6 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
             json.dump(items_data, f)
 
         logger.info(f"Receive item: {name}, category: {category}, image: {image_name}")
-
         return {"message": f"item received: {name}, Category: {category}"}
     except Exception as error:
         logger.error(f"An unexpected error occured. Error: {error}")
