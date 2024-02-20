@@ -34,7 +34,7 @@ type Items struct {
 }
 
 type Item struct {
-	ItemId    int64  `json:"item_id"`
+	ItemId    int    `json:"item_id"`
 	Name      string `json:"name"`
 	Category  string `json:"category"`
 	ImageName string `json:"image_name"`
@@ -113,7 +113,7 @@ func getItem(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, msg)
 	}
 	var items Items
-	rows, err := db.Query("SELECT id, name, category, image_name FROM items")
+	rows, err := db.Query("SELECT id, name, category, image_name FROM items JOIN categories ON items.category_id = categories.category_id")
 	if err != nil {
 		msg := "error occured while reading rows from db!"
 		return c.JSON(http.StatusBadRequest, msg)
@@ -146,8 +146,6 @@ func addItem(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	image += ".jpg"
-	c.Logger().Infof("Receive item: %s", name)
-	message := fmt.Sprintf("item received: %s", name)
 	// Open items file
 	path := getDatabasePath()
 	db, err := sql.Open("sqlite3", path)
@@ -155,18 +153,35 @@ func addItem(c echo.Context) error {
 		msg := "error occured while opening db!"
 		return c.JSON(http.StatusBadRequest, msg)
 	}
-	newItem := Item{
-		Name:      name,
-		Category:  category,
-		ImageName: image,
+	var categoryId int
+	//first, search for the category. if exist, store the id
+	err = db.QueryRow("SELECT category_id FROM cateogories WHERE name = ?", category).Scan(&categoryId)
+	if err != nil {
+		// if category not exist, make new category
+		if err == sql.ErrNoRows {
+			result, _ := db.Exec("INSERT INTO categories (name) VALUES (?)", category)
+			//save newely inserted id
+			newCategoryId, err := result.LastInsertId()
+			if err != nil {
+				msg := "error occured while getting newely inserted category Id!"
+				return c.JSON(http.StatusBadRequest, msg)
+			}
+			categoryId = int(newCategoryId)
+		} else {
+			//general error while querying
+			msg := "error occured while querying category Id!"
+			return c.JSON(http.StatusBadRequest, msg)
+		}
 	}
-	_, err = db.Exec("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)", &newItem.Name, &newItem.Category, &newItem.ImageName)
+	_, err = db.Exec("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)", name, categoryId, image)
 	if err != nil {
 		msg := "error occured while inserting new item!"
 		return c.JSON(http.StatusBadRequest, msg)
 	}
-	res := Response{Message: message}
 
+	c.Logger().Infof("Receive item: %s", name)
+	msg := fmt.Sprintf("item received: %s", name)
+	res := Response{Message: msg}
 	return c.JSON(http.StatusOK, res)
 }
 
@@ -191,7 +206,7 @@ func getItemById(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, msg)
 	}
 	defer db.Close()
-	err = db.QueryRow("SELECT id, name, category, image_name FROM items WHERE id = ?", id).Scan(&item.ItemId, &item.Name, &item.Category, &item.ImageName)
+	err = db.QueryRow("SELECT items.id, items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.category_id WHERE id = ?", id).Scan(&item.ItemId, &item.Name, &item.Category, &item.ImageName)
 	if err != nil {
 		msg := "Invalid ID!"
 		return c.JSON(http.StatusBadRequest, msg)
@@ -233,7 +248,7 @@ func getSearch(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, msg)
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT id, name, category, image_name FROM items WHERE name LIKE ? OR category LIKE ?", keyword, keyword)
+	rows, err := db.Query("SELECT items.id, items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.category_id WHERE items.name LIKE ? OR categories.name LIKE ?", keyword, keyword)
 	if err != nil {
 		msg := "error occured while querying db!"
 		return c.JSON(http.StatusBadRequest, msg)
