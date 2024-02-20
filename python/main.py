@@ -78,7 +78,7 @@ async def get_image(image_name):
 
     if not image_name.endswith(".jpg"):
         logger.error(f"Image path does not end with .jpg")
-        raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
+        raise HTTPException(status_code=400, detail="Image path does not end with .jpg Make sure the file name is correct")
 
     elif not image_path.exists():
         logger.error(f"Image not found: {image_name}")
