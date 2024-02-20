@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -97,27 +96,38 @@ func loadCategoryById(db *sql.DB, id int) (*Category, error) {
 	return scanCategory(rows)
 }
 
-func insertItem(db *sql.DB, item Item) error {
+func insertItem(db *sql.DB, name string, category_id int, image_name string) error {
 	// Save new items to database
-	_, err := db.Exec("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)", item.Name, item.CategoryId, item.ImageName)
+	_, err := db.Exec("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)", name, category_id, image_name)
 	return err
 }
 
-func insertCategory(db *sql.DB, category Category) error {
+func insertCategory(db *sql.DB, category_name string) error {
 	// Save new category to database
-	_, err := db.Exec("INSERT INTO categories (name) VALUES (?)", category.Name)
+	_, err := db.Exec("INSERT INTO categories (name) VALUES (?)", category_name)
 	return err
 }
 
-func searchItemsByKeyword(db *sql.DB, keyword string) (*JoinedItems, error) {
+func loadJoinedItemsByKeyword(db *sql.DB, keyword string) (*JoinedItems, error) {
 	query := JoinAllQuery + " AND items.name LIKE CONCAT('%', ?, '%')"
-	fmt.Println(query)
 	rows, err := db.Query(query, keyword)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	return scanJoinedItems(rows)
+}
+
+func loadCategoryByName(db *sql.DB, category_name string) (*Category, error) {
+	rows, err := db.Query("SELECT * FROM categories WHERE categories.name = ?", category_name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		return nil, nil
+	}
+	return scanCategory(rows)
 }
 
 func joinItemAndCategory(db *sql.DB, item Item) (*JoinedItem, error) {

@@ -21,8 +21,8 @@ func root(c echo.Context) error {
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
-	category_id := c.FormValue("category")
-	c.Logger().Infof("Receive item: name=%s, category_id=%s", name, category_id)
+	category_name := c.FormValue("category")
+	c.Logger().Infof("Receive item: name=%s, category=%s", name, category_name)
 
 	// Load items
 	db, err := loadDb(DbPath)
@@ -31,16 +31,20 @@ func addItem(c echo.Context) error {
 	}
 	defer db.Close()
 
-	// Create objects
-	new_item := new(Item)
-	new_item.Name = name
-
-	new_item.CategoryId, err = strconv.Atoi(category_id)
+	// Search or insert category
+	category, err := loadCategoryByName(db, category_name)
 	if err != nil {
-		return httpErrorHandler(err, c, http.StatusBadRequest, "category_id must be an integer")
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load category")
 	}
-	if _, err := loadCategoryById(db, new_item.CategoryId); err != nil {
-		return httpErrorHandler(err, c, http.StatusBadRequest, "category_id not found")
+	if category == nil {
+		err = insertCategory(db, category_name)
+		if err != nil {
+			return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to insert category")
+		}
+		category, err = loadCategoryByName(db, category_name)
+		if err != nil {
+			return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load category")
+		}
 	}
 
 	// Register image
@@ -48,13 +52,13 @@ func addItem(c echo.Context) error {
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusBadRequest, "Image not found")
 	}
-	new_item.ImageName, err = registerImg(header)
+	image_name, err := registerImg(header)
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to register image")
 	}
 
 	// Insert new item to database
-	err = insertItem(db, *new_item)
+	err = insertItem(db, name, category.Id, image_name)
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to insert item")
 	}
@@ -142,7 +146,7 @@ func searchItems(c echo.Context) error {
 	}
 	defer db.Close()
 
-	joined_items, err := searchItemsByKeyword(db, keyword)
+	joined_items, err := loadJoinedItemsByKeyword(db, keyword)
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to search items")
 	}
@@ -163,12 +167,8 @@ func addCategory(c echo.Context) error {
 	}
 	defer db.Close()
 
-	// Create objects
-	new_category := new(Category)
-	new_category.Name = name
-
 	// Insert new category to database
-	err = insertCategory(db, *new_category)
+	err = insertCategory(db, name)
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to insert category")
 	}
