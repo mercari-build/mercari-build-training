@@ -51,19 +51,22 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
 
 
 # 新しい商品をmercari_sqlite3ファイルに保存
-# {"items": [{"id": int, "name": string, "category": string, "image_name": string}, ...]}
+# itemsテーブルに既に存在する場合は保存しない
 def save_items_to_sqlite3(name, category, image_name):
     con = sqlite3.connect(sqlite3_file)
     cur = con.cursor()
     
-    #new_item = {"name": name, "category": category, "image_name": image_name}
-    try:
-        cur.execute("INSERT OR IGNORE INTO items(name, category, image_name) VALUES (?, ?, ?)", (name, category, image_name) )
-        con.commit()
-        logger.debug(f"データを保存しました: {name}")
-    except sqlite3.Error as e:
-        con.rollback()
-        logger.error(f"エラーが発生したためロールバック: {e}")
+    cur.execute("SELECT id FROM items WHERE name = ?", (name,))
+    exist_check = cur.fetchall()
+    if not exist_check:
+        logger.debug(f"the item doesn't exist yet. ")
+        try:
+            cur.execute("INSERT OR IGNORE INTO items(name, category, image_name) VALUES (?, ?, ?)", (name, category, image_name) )
+            con.commit()
+            
+        except sqlite3.Error as e:
+            con.rollback()
+            logger.error(f"エラーが発生したためロールバック: {e}")
     con.close()
 
 
