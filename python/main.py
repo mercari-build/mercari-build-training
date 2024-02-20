@@ -15,21 +15,7 @@ logger.level = logging.DEBUG #デバッグを可能にする
 images = pathlib.Path(__file__).parent.resolve() / "images"
 items_file = pathlib.Path(__file__).parent.resolve() / "items.json"
 sqlite3_file = pathlib.Path(__file__).parent.parent.resolve() / "db" / "mercari.sqlite3"
-"""
-# 実行は1回だけ " sqlite3.OperationalError: table items already exists " と返された
-def create_table():
-    try:
-        con = sqlite3.connect(sqlite3_file)
-    except sqlite3.DatabaseError as e:
-        logger.error(f"DatabaseError: sqlite3_file")
 
-    cur = con.cursor()
-    cur.execute('CREATE TABLE items(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, category TEXT, image_name TEXT)')
-    con.commit()
-    con.close()
-create_table()
-#sqlite3_data = cur.fetchall()
-"""
 
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
@@ -73,6 +59,7 @@ def save_items_to_sqlite3(name, category, image_name):
     try:
         cur.execute("INSERT INTO items(name, category, image_name) VALUES (?, ?, ?)", (name, category, image_name))
         con.commit()
+        cur.execute("DELETE FROM items WHERE id NOT IN (SELECT min_id from (SELECT MIN(id) min_id FROM items GROUP BY name,category,image_name) tmp)")
     except sqlite3.Error as e:
         con.rollback()
         logger.error(f"エラーが発生したためロールバック: {e}")
