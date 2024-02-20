@@ -30,8 +30,13 @@ You can install the dependencies by running the following command.
 
 ```shell
 $ cd python
+
+# Create virtual environment for this application
 $ python -m venv .venv
 $ source .venv/bin/activate
+# When you use non-UNIX os, the activation method is different.
+
+# Install required library
 $ pip install -r requirements.txt
 ```
 
