@@ -73,7 +73,6 @@ func main() {
 	e.POST("/items", addItem)
 	e.GET("/image/:imageFilename", getImg)
 
-
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
 }
