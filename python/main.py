@@ -56,12 +56,27 @@ def save_items_to_sqlite3(name, category, image_name):
     con = sqlite3.connect(sqlite3_file)
     cur = con.cursor()
     
-    cur.execute("SELECT id FROM items WHERE name = ?", (name,))
-    exist_check = cur.fetchall()
-    if not exist_check:
-        logger.debug(f"the item doesn't exist yet. ")
+    cur.execute("SELECT id FROM categories WHERE name = ?", (category,))
+    category_check = cur.fetchone()
+    if not category_check:
+        logger.debug(f"The item's category doesn't exist in the categories yet. ")
         try:
-            cur.execute("INSERT OR IGNORE INTO items(name, category, image_name) VALUES (?, ?, ?)", (name, category, image_name) )
+            cur.execute("INSERT INTO categories(name) VALUES (?)", (category,) )
+            con.commit()
+            category_check = cur.lastrowid
+
+        except sqlite3.Error as e:
+            con.rollback()
+            logger.error(f"エラーが発生したためロールバック: {e}")
+    else:
+        category_id = category_check[0]
+
+    cur.execute("SELECT id FROM items WHERE name = ?", (name,))
+    exist_check = cur.fetchone()
+    if not exist_check:
+        logger.debug(f"The item doesn't exist yet. ")
+        try:
+            cur.execute("INSERT INTO items(name, category_id, image_name) VALUES (?, ?, ?)", (name, category_id, image_name) )
             con.commit()
             
         except sqlite3.Error as e:
