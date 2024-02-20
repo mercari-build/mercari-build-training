@@ -151,6 +151,34 @@ func searchItems(c echo.Context) error {
 	return c.JSON(http.StatusOK, joined_items)
 }
 
+func addCategory(c echo.Context) error {
+	// Get form data
+	name := c.FormValue("name")
+	c.Logger().Infof("Receive category: name=%s", name)
+
+	// Load items
+	db, err := loadDb(DbPath)
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load database")
+	}
+	defer db.Close()
+
+	// Create objects
+	new_category := new(Category)
+	new_category.Name = name
+
+	// Insert new category to database
+	err = insertCategory(db, *new_category)
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to insert category")
+	}
+
+	message := fmt.Sprintf("category received: %s", name)
+	res := Response{Message: message}
+
+	return c.JSON(http.StatusCreated, res)
+}
+
 func main() {
 	e := echo.New()
 
@@ -176,6 +204,7 @@ func main() {
 	e.GET("/items/:id", getItemById)
 	e.GET("/image/:imageFilename", getImg)
 	e.GET("/search", searchItems)
+	e.POST("/categories", addCategory)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))

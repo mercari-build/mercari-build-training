@@ -103,6 +103,12 @@ func insertItem(db *sql.DB, item Item) error {
 	return err
 }
 
+func insertCategory(db *sql.DB, category Category) error {
+	// Save new category to database
+	_, err := db.Exec("INSERT INTO categories (name) VALUES (?)", category.Name)
+	return err
+}
+
 func searchItemsByKeyword(db *sql.DB, keyword string) (*JoinedItems, error) {
 	query := JoinAllQuery + fmt.Sprintf(" AND items.name LIKE '%%%s%%'", keyword)
 	rows, err := db.Query(query)
