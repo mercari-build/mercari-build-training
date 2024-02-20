@@ -39,12 +39,16 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
         image_hash = hashlib.sha256(image_bytes).hexdigest()
 
         image_name = f"{image_hash}.jpg"
-        with open(images / image_name, 'wb') as f:
+        image_path = images / image_name
+        with open(image_path, 'wb') as f:
             f.write(image_bytes)
 
         # Open the JSON file
-        with open('items.json', 'r') as f:
-            items_data = json.load(f)
+        if os.path.exists("items.json"):
+            with open('items.json', 'r') as f:
+                items_data = json.load(f)
+        else:
+            items_data = []
         
         #Append the new item
         items_data["items"].append({
@@ -60,9 +64,9 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
         logger.info(f"Receive item: {name}, category: {category}, image: {image_name}")
 
         return {"message": f"item received: {name}, Category: {category}"}
-    except Exception:
-        logger.error(f"An unexpected error occured")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+    except Exception as error:
+        logger.error(f"An unexpected error occured. Error: {error}")
+        raise HTTPException(status_code=500, detail=f"Error: {error}")
 
 
 
