@@ -1,11 +1,16 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
 	"strings"
+
+	"encoding/hex"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -20,6 +25,16 @@ type Response struct {
 	Message string `json:"message"`
 }
 
+type itemResponse struct {
+	Items []Item `json:"items"`
+}
+
+type Item struct {
+	Name     string `json:"name"`
+	Category string `json:"category"`
+	Image    string `json:"image"`
+}
+
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
@@ -28,10 +43,74 @@ func root(c echo.Context) error {
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
+	category := c.FormValue("category")
+	image := c.FormValue("image")
 	c.Logger().Infof("Receive item: %s", name)
+	c.Logger().Infof("Receive category: %s", category)
+	c.Logger().Infof("Receive image: %s", image)
 
-	message := fmt.Sprintf("item received: %s", name)
+	img, err := os.Open(image)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer img.Close()
+	hash := sha256.New()
+
+	// Read the entire image file into a byte slice
+	imageBytes, err := os.ReadFile(image)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Write the image data to the hash function
+	hash.Write(imageBytes)
+
+	// Get the final hash value
+	hashValue := hash.Sum(nil)
+	// Convert the byte slice to a hex-encoded string
+	hashString := hex.EncodeToString(hashValue)
+	item := Item{name, category, string(hashString)}
+
+	message := fmt.Sprintf("item received: %s in %s category", item.Name, item.Category)
 	res := Response{Message: message}
+
+	file1, err := os.Open("item.json") //すでにあるファイルを開く
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file1.Close()
+	jsonData, err := ioutil.ReadAll(file1)
+	if err != nil {
+		fmt.Println("JSONデータを読み込めません", err)
+	}
+	var itemslice []Item
+	json.Unmarshal(jsonData, &itemslice)
+
+	itemslice = append(itemslice, item)
+	file2, err := os.Create("item.json") // fileはos.File型
+	if err != nil {
+		log.Fatal(err)
+	}
+	json.NewEncoder(file2).Encode(itemslice)
+
+	return c.JSON(http.StatusOK, res)
+}
+
+func getItem(c echo.Context) error {
+	file1, err := os.Open("item.json") //すでにあるファイルを開く
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file1.Close()
+	jsonData, err := ioutil.ReadAll(file1)
+	if err != nil {
+		fmt.Println("JSONデータを読み込めません", err)
+	}
+	var itemslice []Item
+	json.Unmarshal(jsonData, &itemslice)
+	fmt.Println(itemslice)
+
+	res := itemResponse{Items: itemslice}
 
 	return c.JSON(http.StatusOK, res)
 }
@@ -70,9 +149,9 @@ func main() {
 
 	// Routes
 	e.GET("/", root)
+	e.GET("/items", getItem)
 	e.POST("/items", addItem)
 	e.GET("/image/:imageFilename", getImg)
-
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
