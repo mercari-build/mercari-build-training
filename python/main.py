@@ -121,7 +121,6 @@ async def store_image(image):
     return image_filename
 
 # step4-1 SQLiteに情報を移項する
-# https://qiita.com/saira/items/e08c8849cea6c3b5eb0c
 def insert_items(new_item):
     conn = sqlite3.connect(db/"items.db")
     cur = conn.cursor()
@@ -154,7 +153,6 @@ def select_items():
     return item_list
 
 # step4-2 商品を検索する
-# 参考：https://www.sejuku.net/blog/73619
 def search_items(keyword):
     conn = sqlite3.connect(db/"items.db")
     cur = conn.cursor()
@@ -214,7 +212,6 @@ def split_tables():
     conn.close()
 
 # step4-3 カテゴリの情報を別のテーブルに移す
-# 参考：https://www.javadrive.jp/sqlite/join/index1.html
 def select_join_items():
     conn = sqlite3.connect(db/"items.db")
     cur = conn.cursor()
