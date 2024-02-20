@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -31,10 +32,43 @@ func createTableIfNotExists(db *sql.DB) error {
 		return err
 	}
 	_, err = db.Exec(schema) // CREATE TABLE IF NOT EXIST ...;
-	if err != nil {
-		return err
+	return err
+}
+
+func scanItem(rows *sql.Rows) (*Item, error) {
+	var item Item
+	if err := rows.Scan(&item.Id, &item.Name, &item.CategoryId, &item.ImageName); err != nil {
+		return nil, err
 	}
-	return nil
+	return &item, nil
+}
+
+func scanCategory(rows *sql.Rows) (*Category, error) {
+	var category Category
+	if err := rows.Scan(&category.Id, &category.Name); err != nil {
+		return nil, err
+	}
+	return &category, nil
+}
+
+func scanJoinedItem(rows *sql.Rows) (*JoinedItem, error) {
+	var joined_item JoinedItem
+	if err := rows.Scan(&joined_item.Id, &joined_item.Name, &joined_item.CategoryName, &joined_item.ImageName); err != nil {
+		return nil, err
+	}
+	return &joined_item, nil
+}
+
+func scanJoinedItems(rows *sql.Rows) (*JoinedItems, error) {
+	var joined_items JoinedItems
+	for rows.Next() {
+		joined_item, err := scanJoinedItem(rows)
+		if err != nil {
+			return nil, err
+		}
+		joined_items.Items = append(joined_items.Items, *joined_item)
+	}
+	return &joined_items, nil
 }
 
 func loadItemById(db *sql.DB, id int) (*Item, error) {
@@ -47,44 +81,7 @@ func loadItemById(db *sql.DB, id int) (*Item, error) {
 	if !rows.Next() {
 		return nil, nil
 	}
-	var item Item
-	if err := rows.Scan(&item.Id, &item.Name, &item.CategoryId, &item.ImageName); err != nil {
-		return nil, err
-	}
-	return &item, nil
-}
-
-func loadItemsByQuery(db *sql.DB, query string) (*Items, error) {
-	// Load items from db by query
-	rows, err := db.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	// Load items from rows
-	var items *Items
-	for rows.Next() {
-		var item Item
-		if err := rows.Scan(&item.Id, &item.Name, &item.CategoryId, &item.ImageName); err != nil {
-			return nil, err
-		}
-		items.Items = append(items.Items, item)
-	}
-	if err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-func insertItem(db *sql.DB, item Item) error {
-	// Save new items to database
-	cmd_ins := "INSERT INTO items(name, category_id, image_name) VALUES(?, ?, ?)"
-	_, err := db.Exec(cmd_ins, item.Name, item.CategoryId, item.ImageName)
-	if err != nil {
-		return err
-	}
-	return nil
+	return scanItem(rows)
 }
 
 func loadCategoryById(db *sql.DB, id int) (*Category, error) {
@@ -97,11 +94,23 @@ func loadCategoryById(db *sql.DB, id int) (*Category, error) {
 	if !rows.Next() {
 		return nil, nil
 	}
-	var category Category
-	if err := rows.Scan(&category.Id, &category.Name); err != nil {
+	return scanCategory(rows)
+}
+
+func insertItem(db *sql.DB, item Item) error {
+	// Save new items to database
+	_, err := db.Exec("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)", item.Name, item.CategoryId, item.ImageName)
+	return err
+}
+
+func searchItemsByKeyword(db *sql.DB, keyword string) (*JoinedItems, error) {
+	query := JoinAllQuery + fmt.Sprintf(" AND items.name LIKE '%%%s%%'", keyword)
+	rows, err := db.Query(query)
+	if err != nil {
 		return nil, err
 	}
-	return &category, nil
+	defer rows.Close()
+	return scanJoinedItems(rows)
 }
 
 func joinItemAndCategory(db *sql.DB, item Item) (*JoinedItem, error) {
@@ -115,23 +124,14 @@ func joinItemAndCategory(db *sql.DB, item Item) (*JoinedItem, error) {
 
 	joined_item := JoinedItem{Id: item.Id, Name: item.Name, ImageName: item.ImageName, CategoryName: category.Name}
 	return &joined_item, nil
-
 }
 
-func joinItemsAndCategories(db *sql.DB) (*JoinedItems, error) {
+func joinAll(db *sql.DB) (*JoinedItems, error) {
 	// Join category name to items
-	joined_items := JoinedItems{}
-	rows, err := db.Query("SELECT items.id, items.name, categories.name, items.image_name FROM items INNER JOIN categories ON items.category_id = categories.id")
+	rows, err := db.Query(JoinAllQuery)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	for rows.Next() {
-		var joined_item JoinedItem
-		if err := rows.Scan(&joined_item.Id, &joined_item.Name, &joined_item.ImageName, &joined_item.CategoryName); err != nil {
-			return nil, err
-		}
-		joined_items.Items = append(joined_items.Items, joined_item)
-	}
-	return &joined_items, nil
+	return scanJoinedItems(rows)
 }

@@ -73,7 +73,7 @@ func getAllItems(c echo.Context) error {
 	}
 	defer db.Close()
 
-	joined_items, err := joinItemsAndCategories(db)
+	joined_items, err := joinAll(db)
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to join items and categories")
 	}
@@ -131,6 +131,10 @@ func getImg(c echo.Context) error {
 }
 
 func searchItems(c echo.Context) error {
+	// Get keyword
+	keyword := c.QueryParam("keyword")
+	c.Logger().Infof("keyword=%s", keyword)
+
 	// Load items
 	db, err := loadDb(DbPath)
 	if err != nil {
@@ -138,25 +142,13 @@ func searchItems(c echo.Context) error {
 	}
 	defer db.Close()
 
-	items, err := loadItemsByQuery(db, "SELECT * FROM items")
+	joined_items, err := searchItemsByKeyword(db, keyword)
 	if err != nil {
-		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load items")
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to search items")
 	}
 
-	// Get keyword
-	// example: curl -X GET 'http://127.0.0.1:9000/search?keyword=jacket'
-	keyword := c.QueryParam("keyword")
-	c.Logger().Infof("keyword=%s", keyword)
-
-	// Search items
-	var res_items Items
-	for _, item := range items.Items {
-		if strings.Contains(item.Name, keyword) {
-			res_items.Items = append(res_items.Items, item)
-		}
-	}
-	c.Logger().Infof("items: %+v", res_items)
-	return c.JSON(http.StatusOK, res_items)
+	c.Logger().Infof("items: %+v", joined_items)
+	return c.JSON(http.StatusOK, joined_items)
 }
 
 func main() {

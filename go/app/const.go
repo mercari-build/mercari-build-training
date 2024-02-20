@@ -10,6 +10,7 @@ const (
 const (
 	ItemsTableName      = "items"
 	CategoriesTableName = "categories"
+	JoinAllQuery        = "SELECT items.id, items.name, categories.name, items.image_name FROM items INNER JOIN categories ON items.category_id = categories.id"
 )
 
 type Response struct {
