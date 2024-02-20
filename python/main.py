@@ -34,16 +34,18 @@ def load_items_json():
                 data = json.load(file)
                 items, cur_max_id = data['items'], data['cur_max_id']
             except:
-                items, cur_max_id = {}, 0
+                raise HTTPException(status_code=404, detail="Unable to fetch items from json.")
     else:
-        items, cur_max_id = {}, 0
-    print(items, cur_max_id)
+        raise HTTPException(status_code=404, detail="The item file does not exist.")
     return items, cur_max_id
 
 def save_items_json(items, cur_max_id):
     items_path = pathlib.Path(__file__).parent.resolve() / "items.json"
-    with open(items_path, "w") as file:
-        json.dump({'items': items, 'cur_max_id': cur_max_id},file,indent=2)
+    try:
+        with open(items_path, "w") as file:
+            json.dump({'items': items, 'cur_max_id': cur_max_id},file,indent=2)
+    except:
+        raise HTTPException(status_code=404, detail="Unable to write the item file.")
     return
 
 @app.get("/")
@@ -65,7 +67,7 @@ def get_item(item_id):
     if item_id in items:
         return items[item_id]
     else:
-        return {"message": "The id does not exist!"}
+        raise HTTPException(status_code=404, detail="This id does not exist!")
 
 # 3-4 Add a new item
 @app.post("/items")
