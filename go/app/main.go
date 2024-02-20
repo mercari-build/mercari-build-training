@@ -66,6 +66,7 @@ func readItemsFromFile() (*Items, error) {
 		return nil, err
 	}
 
+	// Create a map of items for quick access
 	itemsMap = make(map[string]Item)
 	for _, item := range items.Items {
 		itemsMap[item.ID] = item
@@ -177,7 +178,7 @@ func addItem(c echo.Context) error {
 	newID := len(items.Items) + 1
 
 	newItem := Item{
-		ID:        strconv.Itoa(newID), // 計算したIDを設定
+		ID:        strconv.Itoa(newID),
 		Name:      name,
 		Category:  category,
 		ImageName: imagePath,
@@ -231,7 +232,7 @@ func main() {
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Logger.SetLevel(log.INFO)
+	e.Logger.SetLevel(log.DEBUG)
 	frontURL := os.Getenv("FRONT_URL")
 	if frontURL == "" {
 		frontURL = "http://localhost:3000"
