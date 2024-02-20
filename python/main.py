@@ -3,6 +3,7 @@ import json
 import logging
 import pathlib
 import hashlib
+import sqlite3
 from fastapi import FastAPI, Form, HTTPException,File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,8 +11,26 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
 logger.level = logging.DEBUG #デバッグを可能にする
+
 images = pathlib.Path(__file__).parent.resolve() / "images"
 items_file = pathlib.Path(__file__).parent.resolve() / "items.json"
+sqlite3_file = pathlib.Path(__file__).parent.parent.resolve() / "db" / "mercari.sqlite3"
+"""
+# 実行は1回だけ " sqlite3.OperationalError: table items already exists " と返された
+def create_table():
+    try:
+        con = sqlite3.connect(sqlite3_file)
+    except sqlite3.DatabaseError as e:
+        logger.error(f"DatabaseError: sqlite3_file")
+
+    cur = con.cursor()
+    cur.execute('CREATE TABLE items(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, category TEXT, image_name TEXT)')
+    con.commit()
+    con.close()
+create_table()
+#sqlite3_data = cur.fetchall()
+"""
+
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
     CORSMiddleware,
@@ -29,7 +48,7 @@ def root():
 
 # 商品を登録する
 @app.post("/items")
-def add_item(name: str = Form(...),category: str = Form(...),image: UploadFile = File(...)):
+def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
     logger.info(f"Receive item: {name}")
     logger.info(f"Receive item: {category}")
     logger.info(f"Receive item: {image}")
@@ -37,15 +56,35 @@ def add_item(name: str = Form(...),category: str = Form(...),image: UploadFile =
     image_name = image.filename
     hashed_image_name = get_hash_by_sha256(image_name) #hash.jpg 作成
 
-    save_items_to_file(name,category,hashed_image_name) #items.jsonに商品を保存
-    save_image_file(image,hashed_image_name) #imagesに画像を保存
+    #save_items_to_file(name,category,hashed_image_name) #items.jsonに商品を保存
+    save_items_to_sqlite3(name, category, hashed_image_name) #mercari.sqlite3に商品を保存
+
+    save_image_file(image, hashed_image_name) #imagesに画像を保存
 
     return {"message": f"item received: {name}"}
 
 
+# 新しい商品をmercari_sqlite3ファイルに保存
+# {"items": [{"id": int, "name": string, "category": string, "image_name": string}, ...]}
+def save_items_to_sqlite3(name, category, image_name):
+    con = sqlite3.connect(sqlite3_file)
+    cur = con.cursor()
+    new_item = {"name": name, "category": category, "image_name": image_name}
+    try:
+        cur.execute("INSERT INTO items(name, category, image_name) VALUES (?, ?, ?)", (name, category, image_name))
+        con.commit()
+    except sqlite3.Error as e:
+        con.rollback()
+        logger.error(f"エラーが発生したためロールバック: {e}")
+    con.close()
+
+
+
+
+
 # 新しい商品をitem.jsonファイルに保存
 # {"items": [{"name": "jacket", "category": "fashion", "image_name": "xxxxx.jpg"}, ...]}
-def save_items_to_file(name,category,image_name):
+def save_items_to_file(name, category, image_name):
     new_item = {"name": name, "category": category, "image_name": image_name}
     if os.path.exists(items_file):
         with open(items_file,'r') as f:
@@ -62,7 +101,7 @@ def save_items_to_file(name,category,image_name):
             json.dump(first_item, f, indent=2)
 
 # 画像をimagesに保存 
-def save_image_file(image,jpg_hashed_image_name):
+def save_image_file(image, jpg_hashed_image_name):
     imagefile = image.file.read()
     image = images / jpg_hashed_image_name
     with open(image, 'wb') as f:
@@ -76,12 +115,30 @@ def get_hash_by_sha256(image):
     return hs+".jpg"
 
 
-# items.jsonファイルに登録された商品一覧を取得
+# 商品一覧を取得
 @app.get("/items")
 def get_items():
+    #items = get_items_from_json()
+    items = get_items_from_sqlite()
+    return items
+
+# items.jsonから商品一覧を取得
+def get_items_from_json():
     with open(items_file) as f:
         items = json.load(f)
     return items
+
+# mercari.sqlite3から商品一覧を取得
+def get_items_from_sqlite():
+    con = sqlite3.connect(sqlite3_file)
+    cur = con.cursor()
+    cur.execute('SELECT * FROM items')
+    items = cur.fetchall()
+    cur.close()
+    con.close()
+    return items
+
+
 
 # items.jsonファイルに登録された商品のn番目の詳細を取得
 @app.get("/items/{item_number}")
