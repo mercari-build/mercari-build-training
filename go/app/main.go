@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -20,17 +21,58 @@ type Response struct {
 	Message string `json:"message"`
 }
 
+type Item struct {
+	Name     string `json:"name"`
+	Category string `json:"category"`
+}
+
+type ItemsList struct {
+	Items []Item `json:"items"`
+}
+
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
 }
 
+func saveItemToFile(name string, category string) error {
+	currentItems, err := os.ReadFile("items.json")
+	if err != nil {
+		return err
+	}
+
+	var itemsList ItemsList
+	json.Unmarshal(currentItems, &itemsList) //JSONデータの読み込み
+
+	newItem := Item{Name: name, Category: category}
+	itemsList.Items = append(itemsList.Items, newItem)
+
+	result, err := json.Marshal(itemsList) //to JSON structure
+	if err != nil {
+		return err
+	}
+
+	erro := os.WriteFile("items.json", result, 0666)
+	if erro != nil {
+		return erro
+	}
+
+	return nil
+}
+
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
-	c.Logger().Infof("Receive item: %s", name)
+	category := c.FormValue("category")
 
-	message := fmt.Sprintf("item received: %s", name)
+	err := saveItemToFile(name, category)
+	if err != nil {
+		c.Logger().Infof("Error: %s", err)
+		return err
+	}
+
+	c.Logger().Infof("Receive item: %s; Category: %s", name, category)
+	message := fmt.Sprintf("Receive item: %s; Category: %s", name, category)
 	res := Response{Message: message}
 
 	return c.JSON(http.StatusOK, res)
@@ -72,7 +114,6 @@ func main() {
 	e.GET("/", root)
 	e.POST("/items", addItem)
 	e.GET("/image/:imageFilename", getImg)
-
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
