@@ -26,13 +26,13 @@ def root():
     return {"message": "Hello, world!"}
 
 @app.get("/items")
-def get_item():
+def get_items():
     with open('items.json', 'r') as f:
         items_data = json.load(f)
     return items_data
 
 @app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
+async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
     logger.info(f"Receive item: {name}")
 
     #Hash
@@ -76,4 +76,12 @@ async def get_image(image_name):
 
     return FileResponse(image)
 
-
+@app.get("/items/<item_id")
+def get_item(item_id: int):
+    try:
+        with open('items.json', 'r') as f:
+            items_data = json.load(f)
+        item = items_data[item_id + 1]
+        return item
+    except IndexError:
+        raise HTTPException(status_code=404, detail="Item not found")
