@@ -97,7 +97,7 @@ def get_item(item_id: int = Path(..., title="The ID of the item to get")):
     existing_items = items_data.get("items", [])
     
     # 指定されたitem_idに対応する商品を取得
-    if item_id < len(existing_items):
+    if 0 < item_id < len(existing_items):
         item = existing_items[item_id-1]
         return item
     else:
