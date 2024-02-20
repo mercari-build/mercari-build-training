@@ -55,11 +55,12 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
 def save_items_to_sqlite3(name, category, image_name):
     con = sqlite3.connect(sqlite3_file)
     cur = con.cursor()
-    new_item = {"name": name, "category": category, "image_name": image_name}
+    
+    #new_item = {"name": name, "category": category, "image_name": image_name}
     try:
-        cur.execute("INSERT INTO items(name, category, image_name) VALUES (?, ?, ?)", (name, category, image_name))
+        cur.execute("INSERT OR IGNORE INTO items(name, category, image_name) VALUES (?, ?, ?)", (name, category, image_name) )
         con.commit()
-        cur.execute("DELETE FROM items WHERE id NOT IN (SELECT min_id from (SELECT MIN(id) min_id FROM items GROUP BY name,category,image_name) tmp)")
+        logger.debug(f"データを保存しました: {name}")
     except sqlite3.Error as e:
         con.rollback()
         logger.error(f"エラーが発生したためロールバック: {e}")
@@ -102,8 +103,8 @@ def get_hash_by_sha256(image):
 # 商品一覧を取得
 @app.get("/items")
 def get_items():
-    #items = get_items_from_json()
-    items = get_items_from_sqlite()
+    #items = get_items_from_json()    # items.jsonから
+    items = get_items_from_sqlite()    # mercari.sqlite3から
     return items
 
 # items.jsonから商品一覧を取得
