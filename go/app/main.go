@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -24,6 +25,7 @@ const (
 )
 
 type Item struct {
+	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Category  string `json:"category"`
 	ImageName string `json:"image_name"`
@@ -36,6 +38,8 @@ type Items struct {
 type Response struct {
 	Message string `json:"message"`
 }
+
+var itemsMap map[string]Item
 
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
@@ -60,6 +64,11 @@ func readItemsFromFile() (*Items, error) {
 			return &Items{Items: []Item{}}, nil
 		}
 		return nil, err
+	}
+
+	itemsMap = make(map[string]Item)
+	for _, item := range items.Items {
+		itemsMap[item.ID] = item
 	}
 
 	return &items, nil
@@ -133,24 +142,28 @@ func saveImage(image *multipart.FileHeader, imagePath string) error {
 func addItem(c echo.Context) error {
 	name := c.FormValue("name")
 	category := c.FormValue("category")
-	image, err := c.FormFile("image")
-	if err != nil {
-		return err
-	}
 
-	// create hash of the image
-	imageHash, err := generateHashFromImage(image)
-	if err != nil {
-		return err
+	var imagePath string
+	contentType := c.Request().Header.Get("Content-Type")
+	// Check if the request contains a file
+	if strings.Contains(contentType, "multipart/form-data") {
+		image, err := c.FormFile("image")
+		if err == nil {
+			// image file exists
+			imageHash, err := generateHashFromImage(image)
+			if err != nil {
+				c.Logger().Errorf("Image processing error: %v", err)
+				return err
+			}
+			imagePath = filepath.Join(ImgDir, imageHash+".jpg")
+			if err := saveImage(image, imagePath); err != nil {
+				return err
+			}
+		}
+	} else {
+		// image file does not exist
+		imagePath = "default.jpg"
 	}
-
-	// save image file
-	imagePath := filepath.Join(ImgDir, imageHash+".jpg")
-	if err := saveImage(image, imagePath); err != nil {
-		return err
-	}
-
-	newItem := Item{Name: name, Category: category, ImageName: imageHash + ".jpg"}
 
 	// Read existing items from file
 	items, err := readItemsFromFile()
@@ -161,6 +174,15 @@ func addItem(c echo.Context) error {
 		items = &Items{}
 	}
 
+	newID := len(items.Items) + 1
+
+	newItem := Item{
+		ID:        strconv.Itoa(newID), // 計算したIDを設定
+		Name:      name,
+		Category:  category,
+		ImageName: imagePath,
+	}
+
 	// Add new item to items list
 	items.Items = append(items.Items, newItem)
 
@@ -169,9 +191,16 @@ func addItem(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, Response{Message: "Failed to write item to file"})
 	}
 
-	c.Logger().Infof("Receive item: %s", name)
-
 	return c.JSON(http.StatusOK, items)
+}
+
+func getItem(c echo.Context) error {
+	itemID := c.Param("itemID")
+	item, exists := itemsMap[itemID]
+	if !exists {
+		return c.JSON(http.StatusNotFound, Response{Message: "Item not found"})
+	}
+	return c.JSON(http.StatusOK, item)
 }
 
 func getItems(c echo.Context) error {
@@ -217,6 +246,7 @@ func main() {
 	e.POST("/items", addItem)
 	e.GET("/items", getItems)
 	e.GET("/image/:imageFilename", getImg)
+	e.GET("/items/:itemID", getItem)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
