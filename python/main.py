@@ -6,7 +6,6 @@ import pathlib
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import RedirectResponse
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -29,6 +28,7 @@ def root():
 def get_items():
     with open('items.json', 'r') as f:
         items_data = json.load(f)
+    logger.info(f"Receive items: {items_data}")
     return items_data
 
 @app.post("/items")
@@ -78,7 +78,7 @@ async def get_image(image_name):
 
     elif not image_path.exists():
         logger.error(f"Image not found: {image_name}")
-        return RedirectResponse(url="/image/default.jpg")
+        image_path = images / "default.jpg"
 
     return FileResponse(image_path)
 
@@ -87,8 +87,8 @@ def get_item(item_id: int):
     try:
         with open('items.json', 'r') as f:
             items_data = json.load(f)
-        if 0 <= item_id < len(items_data["items"]):
-            item = items_data["items"][item_id + 1]
+        if 1 <= item_id <= len(items_data["items"]):
+            item = items_data["items"][item_id - 0]
             logger.info(f"Access item: {item_id}")
             return item
         else:
