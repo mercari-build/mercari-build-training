@@ -2,9 +2,10 @@ import os
 import json
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException
+from fastapi import FastAPI, Form, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+import hashlib
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -31,8 +32,17 @@ def get_item():
     return items_data
 
 @app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...)):
+def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
     logger.info(f"Receive item: {name}")
+
+    #Hash
+    image_bytes = await image.read()
+    image_hash = hashlib.sha256(image_bytes).hexdigest()
+
+    image_name = f"{image_hash}.jpg"
+    image_dir = os.getcwd() / "images"
+    with open(image_dir / image_name, 'wb') as f:
+        f.write(image_bytes)
 
     # Open the JSON file
     with open('items.json', 'r') as f:
@@ -42,6 +52,7 @@ def add_item(name: str = Form(...), category: str = Form(...)):
     items_data["items"].append({
         'name': name,
         'category': category
+        'image_name':image_name
     })
 
     #Write the updates to items.json
@@ -64,3 +75,5 @@ async def get_image(image_name):
         image = images / "default.jpg"
 
     return FileResponse(image)
+
+
