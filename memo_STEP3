@@ -1,0 +1,34 @@
+STEP3のメモ
+
+
+・POINT
+    ・GETとPOST→GETは情報を取得するとき、POSTは情報を書き込んだりするときに使う
+        GETとPOSTの違いについて
+        https://qiita.com/kanataxa/items/522efb74421255f0e0a1
+
+        HTTP リクエストメソッド
+        https://developer.mozilla.org/ja/docs/Web/HTTP/Methods
+
+curlコマンドでPOSTする, 様々な形式別メモ
+https://weblabo.oscasierra.net/curl-post/
+
+
+
+ Echo(Go)のMiddlewareを理解する (Recover,CORS)
+ https://qiita.com/masafumi330/items/7ee7d2289b365e731064
+
+【Go】基本文法⑤(連想配列・ Range)
+https://qiita.com/k-penguin-sato/items/a320072fa09502bde3e9
+
+【A Tour of Go】基本編③ 〜構造体、配列、スライス、マップ〜
+https://qiita.com/BitterBamboo/items/6732a7a9fb2c904641b1
+
+Go 言語の組み込みモジュールを触ってみる-ファイルの読み込み(os.ReadFile)
+https://go.genzouw.com/2021/05/05/post-120/
+
+Golang で JSON 形式の文字列やファイルを扱う (encoding/json)
+https://maku77.github.io/p/dsbs9p5/
+
+
+
+

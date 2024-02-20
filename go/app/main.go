@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -20,6 +21,11 @@ type Response struct {
 	Message string `json:"message"`
 }
 
+type Item struct {
+	Name     string `json:"name"`
+	Category string `json:"category"`
+}
+
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
@@ -28,12 +34,62 @@ func root(c echo.Context) error {
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
-	c.Logger().Infof("Receive item: %s", name)
+	category := c.FormValue("category")
+	c.Logger().Infof("Receive item: %s, Category: %s", name, category)
+
+	err := saveItem(name, category)
+	if err != nil {
+		return err
+	}
 
 	message := fmt.Sprintf("item received: %s", name)
 	res := Response{Message: message}
 
 	return c.JSON(http.StatusOK, res)
+}
+
+func saveItem(name, category string) error {
+	item := Item{Name: name, Category: category}
+
+	data, err := os.ReadFile("items.json")
+	if err != nil {
+		return err
+	}
+
+	var items []Item
+	err = json.Unmarshal(data, &items)
+	if err != nil {
+		return err
+	}
+
+	items = append(items, item)
+
+	newData, err := json.Marshal(items)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile("items.json", newData, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getItems(c echo.Context) error {
+	data, err := os.ReadFile("items.json")
+	if err != nil {
+		return err
+	}
+
+	var items []Item
+	err = json.Unmarshal(data, &items)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, items)
 }
 
 func getImg(c echo.Context) error {
@@ -71,8 +127,8 @@ func main() {
 	// Routes
 	e.GET("/", root)
 	e.POST("/items", addItem)
+	e.GET("/items", getItems)
 	e.GET("/image/:imageFilename", getImg)
-
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
