@@ -6,6 +6,10 @@ import (
 	"os"
 	"path"
 	"strings"
+	"io"
+	"encoding/json"
+	"crypto/sha256"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -20,20 +24,107 @@ type Response struct {
 	Message string `json:"message"`
 }
 
+type ItemList struct {
+	Items []Item `json:"items"`
+}
+
+type Item struct {
+	Name string `json:"name"`
+	Category string `json:"category"`
+	Image string `json:"image_name"`
+}
+
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
 }
 
+/**
+ This function handles errors; write the error to the log and send back
+ the response with the error message.
+ **/
+func errorHandler(c echo.Context, err error, message string) error {
+	c.Logger().Errorf("Error: ", err)
+	res := Response{Message: message}
+	return c.JSON(http.StatusInternalServerError, res)
+}
+
+/**
+ This function reads the item list from "items.json". It first checks if
+ the file exists or not. If it exists, reads the data and returns the list.
+ Otherwise, it returns an empty ItemList. Any error occurred is returned with
+ the list.
+ **/
+func readFromFile(c echo.Context) (ItemList, error) {
+	var list ItemList
+	if _, err := os.Stat("items.json"); err == nil {
+		// if "items.json" exists
+		file, err := os.Open("items.json")
+		if err != nil {
+			return ItemList{}, errorHandler(c, err, "Error: opening a file")
+		}
+		decoder := json.NewDecoder(file)
+		if err := decoder.Decode(&list); err != nil && err != io.EOF {
+			fmt.Println("Error: ", err)
+			return ItemList{}, errorHandler(c, err, "Error: decoding a file")
+		}
+		file.Close()
+	} else {
+		// if not exist, nothing is read
+		list = ItemList{}
+	}
+	return list, nil
+}
+
+// Add an item to the list
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
 	c.Logger().Infof("Receive item: %s", name)
+	category := c.FormValue("category")
+	c.Logger().Infof("Receive category: %s", category)
+	image := c.FormValue("image")
 
+	// Hash image name
+	h := sha256.New()
+	h.Write([]byte(strings.Split(image, ".")[0]))
+	image = fmt.Sprintf("%x", h.Sum(nil)) + ".jpg"
+
+	new_item := Item{Name: name, Category: category, Image: image}
+
+	list, errHandler := readFromFile(c)
+	if errHandler != nil {
+		return errHandler
+	}
+	// Append the new item to the list
+	new_list := ItemList{Items: append(list.Items, new_item)}
+
+	// Open the file again to write the new list
+	file, err := os.OpenFile("items.json", os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
+	if err != nil {
+		return errorHandler(c, err, "Error: opening a file")
+	}
+	defer file.Close()
+	
+	encoder := json.NewEncoder(file)
+	if err := encoder.Encode(new_list); err != nil {
+		return errorHandler(c, err, "Error: encoding a struct")
+	}
+
+	// Response
 	message := fmt.Sprintf("item received: %s", name)
 	res := Response{Message: message}
-
 	return c.JSON(http.StatusOK, res)
+}
+
+// Show the item list in the JSON file
+func getItem(c echo.Context) error {
+	// Read the item list from the JSON file
+	list, errHandler := readFromFile(c)
+	if errHandler != nil {
+		return errHandler
+	}
+	return c.JSON(http.StatusOK, list)
 }
 
 func getImg(c echo.Context) error {
@@ -45,10 +136,25 @@ func getImg(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, res)
 	}
 	if _, err := os.Stat(imgPath); err != nil {
+		c.Logger().SetLevel(log.DEBUG)  // set the log level
 		c.Logger().Debugf("Image not found: %s", imgPath)
 		imgPath = path.Join(ImgDir, "default.jpg")
 	}
 	return c.File(imgPath)
+}
+
+// Show the item assigned to the id in the list
+func getItemById(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
+	list, errHandler := readFromFile(c)
+	if errHandler != nil {
+		return errHandler
+	}
+	// if the id is in the list
+	if len(list.Items) < id {
+		return errorHandler(c, nil, "Error: id not in the list")
+	}
+	return c.JSON(http.StatusOK, list.Items[id-1])
 }
 
 func main() {
@@ -71,8 +177,9 @@ func main() {
 	// Routes
 	e.GET("/", root)
 	e.POST("/items", addItem)
+	e.GET("/items", getItem)
 	e.GET("/image/:imageFilename", getImg)
-
+	e.GET("/items/:id", getItemById)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
