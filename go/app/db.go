@@ -110,8 +110,9 @@ func insertCategory(db *sql.DB, category Category) error {
 }
 
 func searchItemsByKeyword(db *sql.DB, keyword string) (*JoinedItems, error) {
-	query := JoinAllQuery + fmt.Sprintf(" AND items.name LIKE '%%%s%%'", keyword)
-	rows, err := db.Query(query)
+	query := JoinAllQuery + " AND items.name LIKE CONCAT('%', ?, '%')"
+	fmt.Println(query)
+	rows, err := db.Query(query, keyword)
 	if err != nil {
 		return nil, err
 	}
