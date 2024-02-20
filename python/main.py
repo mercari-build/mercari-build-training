@@ -28,8 +28,6 @@ def root():
     return {"message": "Hello, world!"}
 
 # step3-3 商品一覧を取得する
-# 参考：https://qiita.com/aKuad/items/d213dc1f7075ab2dd69a
-# 参考：https://note.nkmk.me/python-json-load-dump/#pythonjson-jsondumps
 @app.get("/items")
 def get_items():
     # ファイル読み込み 
@@ -78,7 +76,6 @@ async def get_image(image_name):
     return FileResponse(image)
 
 # step3-2 新しい商品を登録する
-# 参考：https://qiita.com/yuki_2020/questions/aa4fcbbdc0df35070997
 def add_item_to_json(new_item):
     # ファイルの読み込み 
     with open(file_path, "r") as file:
@@ -93,7 +90,6 @@ def add_item_to_json(new_item):
         json.dump({"items": items_list}, file)
 
 # step3-4 画像を登録する
-# 参考：https://www.javadrive.jp/python/file/index4.html
 async def store_image(image):
     image_bytes = await image.read()
     image_hash = hashlib.sha256(image_bytes).hexdigest()
