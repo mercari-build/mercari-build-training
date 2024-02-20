@@ -1,11 +1,16 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -22,8 +27,9 @@ type Response struct {
 }
 
 type Item struct {
-	Name     string `json:"name"`
-	Category string `json:"category"`
+	Name      string `json:"name"`
+	Category  string `json:"category"`
+	ImageName string `json:"image_name"`
 }
 
 type ItemsList struct {
@@ -35,7 +41,7 @@ func root(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
-func saveItemToFile(name string, category string) error {
+func saveItemToFile(name string, category string, imageName string) error {
 	currentItems, err := os.ReadFile("items.json")
 	if err != nil {
 		return err
@@ -44,7 +50,7 @@ func saveItemToFile(name string, category string) error {
 	var itemsList ItemsList
 	json.Unmarshal(currentItems, &itemsList) //JSONデータの読み込み
 
-	newItem := Item{Name: name, Category: category}
+	newItem := Item{Name: name, Category: category, ImageName: imageName}
 	itemsList.Items = append(itemsList.Items, newItem)
 
 	result, err := json.Marshal(itemsList) //to JSON structure
@@ -65,13 +71,51 @@ func addItem(c echo.Context) error {
 	name := c.FormValue("name")
 	category := c.FormValue("category")
 
-	err := saveItemToFile(name, category)
+	// Receive image files
+	file, err := c.FormFile("imageName")
 	if err != nil {
-		c.Logger().Infof("Error: %s", err)
+		return err
+	}
+	c.Logger().Infof("Receive item: %s", name)
+
+	// Open file
+	src, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	// Read file and calculate hash value
+	hash := sha256.New()
+	if _, err := io.Copy(hash, src); err != nil {
+		return err
+	}
+	hashInBytes := hash.Sum(nil)
+	hashString := hex.EncodeToString(hashInBytes)
+
+	// Generate file names from hash values
+	img_name := hashString + ".jpg"
+
+	// Save images in the images directory
+	dst, err := os.Create(filepath.Join(ImgDir, img_name))
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+
+	// move the file pointer back to the beginning
+	src.Seek(0, io.SeekStart)
+	if _, err := io.Copy(dst, src); err != nil {
 		return err
 	}
 
-	c.Logger().Infof("Receive item: %s; Category: %s", name, category)
+	erro := saveItemToFile(name, category, img_name)
+	if erro != nil {
+		c.Logger().Infof("Error: %s", erro)
+		return erro
+	}
+
+	c.Logger().Infof("Receive item: %s", name)
 	message := fmt.Sprintf("Receive item: %s; Category: %s", name, category)
 	res := Response{Message: message}
 
@@ -89,6 +133,20 @@ func getItems(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusOK, itemsList)
+}
+
+func getItemById(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
+	currentItems, err := os.ReadFile("items.json")
+	if err != nil {
+		return err
+	}
+	var itemsList ItemsList
+	if json.Unmarshal(currentItems, &itemsList); err != nil {
+		c.Logger().Infof("Error: %s", err)
+		return err
+	}
+	return c.JSON(http.StatusOK, itemsList.Items[id-1])
 }
 
 func getImg(c echo.Context) error {
@@ -112,7 +170,7 @@ func main() {
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Logger.SetLevel(log.INFO)
+	e.Logger.SetLevel(log.DEBUG)
 
 	frontURL := os.Getenv("FRONT_URL")
 	if frontURL == "" {
@@ -127,6 +185,7 @@ func main() {
 	e.GET("/", root)
 	e.GET("/items", getItems)
 	e.POST("/items", addItem)
+	e.GET("/items/:id", getItemById)
 	e.GET("/image/:imageFilename", getImg)
 
 	// Start server
