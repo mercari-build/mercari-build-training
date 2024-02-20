@@ -34,10 +34,10 @@ type Items struct {
 }
 
 type Item struct {
-	ItemId    int    `json:"item_id"`
-	Name      string `json:"name"`
-	Category  string `json:"category"`
-	ImageName string `json:"image_name"`
+	ItemId       int    `json:"id"`
+	Name         string `json:"name"`
+	CategoryName string `json:"category_name"`
+	ImageName    string `json:"image_name"`
 }
 
 func root(c echo.Context) error {
@@ -52,19 +52,12 @@ return absolute path of mercari.sqlite3 database file
 which always will be located one up level of go directory.
 */
 func getDatabasePath() string {
-	path, err := os.Executable()
+	absPath, err := filepath.Abs("../mercari.sqlite3") // Adjust the relative path as needed
 	if err != nil {
-		msg := "error occured while getting path!"
+		msg := "Error occured while getting filepath!"
 		return msg
 	}
-	dir := filepath.Dir(path)
-	dbPath := filepath.Join(dir, "..", "mercari.sqlite3")
-	finalPath, err := filepath.Abs(dbPath)
-	if err != nil {
-		msg := "error occured while concatnating path!"
-		return msg
-	}
-	return finalPath
+	return absPath
 }
 
 func getFileSha256(c echo.Context, fileType string) (string, error) {
@@ -100,28 +93,15 @@ func getItem(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, msg)
 	}
 	defer db.Close()
-	//if table not exist
-	createTableSQL := `CREATE TABLE IF NOT EXISTS items (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        category TEXT NOT NULL,
-        image_name TEXT
-    );`
-	_, err = db.Exec(createTableSQL)
-	if err != nil {
-		msg := "error occured while creating new DB!"
-		return c.JSON(http.StatusBadRequest, msg)
-	}
 	var items Items
-	rows, err := db.Query("SELECT id, name, category, image_name FROM items JOIN categories ON items.category_id = categories.category_id")
+	rows, err := db.Query("SELECT items.id, items.name, categories.name AS category_name, items.image_name FROM items JOIN categories ON items.category_id = categories.category_id")
 	if err != nil {
-		msg := "error occured while reading rows from db!"
-		return c.JSON(http.StatusBadRequest, msg)
+		return c.JSON(http.StatusBadRequest, "Error occured while querying row!")
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var item Item
-		if err := rows.Scan(&item.ItemId, &item.Name, &item.Category, &item.ImageName); err != nil {
+		if err := rows.Scan(&item.ItemId, &item.Name, &item.CategoryName, &item.ImageName); err != nil {
 			msg := "error occured while scanning row from db!"
 			return c.JSON(http.StatusBadRequest, msg)
 		}
@@ -155,7 +135,7 @@ func addItem(c echo.Context) error {
 	}
 	var categoryId int
 	//first, search for the category. if exist, store the id
-	err = db.QueryRow("SELECT category_id FROM cateogories WHERE name = ?", category).Scan(&categoryId)
+	err = db.QueryRow("SELECT categories.category_id FROM categories WHERE categories.name = ?", category).Scan(&categoryId)
 	if err != nil {
 		// if category not exist, make new category
 		if err == sql.ErrNoRows {
@@ -206,7 +186,7 @@ func getItemById(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, msg)
 	}
 	defer db.Close()
-	err = db.QueryRow("SELECT items.id, items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.category_id WHERE id = ?", id).Scan(&item.ItemId, &item.Name, &item.Category, &item.ImageName)
+	err = db.QueryRow("SELECT items.id, items.name, categories.name AS category_name, items.image_name FROM items JOIN categories ON items.category_id = categories.category_id WHERE id = ?", id).Scan(&item.ItemId, &item.Name, &item.CategoryName, &item.ImageName)
 	if err != nil {
 		msg := "Invalid ID!"
 		return c.JSON(http.StatusBadRequest, msg)
@@ -248,7 +228,7 @@ func getSearch(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, msg)
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT items.id, items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.category_id WHERE items.name LIKE ? OR categories.name LIKE ?", keyword, keyword)
+	rows, err := db.Query("SELECT items.id, items.name, categories.name AS category_name, items.image_name FROM items JOIN categories ON items.category_id = categories.category_id WHERE items.name LIKE ? OR categories.name LIKE ?", keyword, keyword)
 	if err != nil {
 		msg := "error occured while querying db!"
 		return c.JSON(http.StatusBadRequest, msg)
@@ -256,7 +236,7 @@ func getSearch(c echo.Context) error {
 	var items Items
 	for rows.Next() {
 		var item Item
-		if err := rows.Scan(&item.ItemId, &item.Name, &item.Category, &item.ImageName); err != nil {
+		if err := rows.Scan(&item.ItemId, &item.Name, &item.CategoryName, &item.ImageName); err != nil {
 			msg := "error occured while copying db to variable!"
 			return c.JSON(http.StatusBadRequest, msg)
 		}
