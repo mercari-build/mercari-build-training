@@ -27,7 +27,7 @@ type Item struct {
 }
 
 func root(c echo.Context) error {
-	res := Response{Message: "Hello, world!"}
+	res := Response{Message: "Hello, world!!"}
 	return c.JSON(http.StatusOK, res)
 }
 
@@ -35,6 +35,7 @@ func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
 	category := c.FormValue("category")
+
 	c.Logger().Infof("Receive item: %s, Category: %s", name, category)
 
 	err := saveItem(name, category)

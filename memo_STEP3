@@ -12,10 +12,8 @@ STEP3のメモ
 curlコマンドでPOSTする, 様々な形式別メモ
 https://weblabo.oscasierra.net/curl-post/
 
-
-
- Echo(Go)のMiddlewareを理解する (Recover,CORS)
- https://qiita.com/masafumi330/items/7ee7d2289b365e731064
+JSONとは結局なんなのか？
+https://qiita.com/momonoki1990/items/cd9a65498c2b16b0ed55
 
 【Go】基本文法⑤(連想配列・ Range)
 https://qiita.com/k-penguin-sato/items/a320072fa09502bde3e9
@@ -28,6 +26,10 @@ https://go.genzouw.com/2021/05/05/post-120/
 
 Golang で JSON 形式の文字列やファイルを扱う (encoding/json)
 https://maku77.github.io/p/dsbs9p5/
+
+Echo(Go)のMiddlewareを理解する (Recover,CORS)
+https://qiita.com/masafumi330/items/7ee7d2289b365e731064
+
 
 
 
