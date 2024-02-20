@@ -79,9 +79,6 @@ def save_items_to_sqlite3(name, category, image_name):
     con.close()
 
 
-
-
-
 # 新しい商品をitem.jsonファイルに保存
 # {"items": [{"name": "jacket", "category": "fashion", "image_name": "xxxxx.jpg"}, ...]}
 def save_items_to_file(name, category, image_name):
@@ -164,3 +161,20 @@ async def get_image(image_name):
         image = images / "default.jpg"
 
     return FileResponse(image)
+
+
+# 商品をmercari.sqlite3から検索する
+@app.get("/search")
+def search_items(keyword: str):
+    logger.debug(f"Search items name : {keyword}")
+    con = sqlite3.connect(sqlite3_file)
+    cur = con.cursor()
+    items = cur.execute("SELECT * FROM items WHERE name LIKE ?", (f"%{keyword}%",))
+    if not items:
+        logger.debug(f"Items not found: {keyword}")
+    items = cur.fetchall()
+
+    cur.close()
+    con.close()
+    return items
+
