@@ -1,0 +1,18 @@
+{
+    "items": [
+      {
+        "name": "jacket",
+        "category": "fashion"
+      },
+      {
+        "name": "sofa",
+        "category": "furniture"
+      },
+      {
+        "name": "coat",
+        "category": "fashion"
+      }
+      
+    ]
+  }
+  
