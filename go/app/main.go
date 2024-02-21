@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -236,7 +237,7 @@ func (conn Conn) getItemById() echo.HandlerFunc {
 
 		var item Item
 		if err := row.Scan(&item.Name, &item.Category, &item.ImageName); err != nil {
-			if err == sql.ErrNoRows { // IDに対応する商品がない場合
+			if errors.Is(err, sql.ErrNoRows) { // IDに対応する商品がない場合
 				res := Response{Message: fmt.Sprintf("Item not found: id=%d", id)}
 				return c.JSON(http.StatusNotFound, res)
 			} else {
