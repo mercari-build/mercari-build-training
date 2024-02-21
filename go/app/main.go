@@ -56,6 +56,7 @@ func addItem(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, res)
 	}
 	src, err := imageFile.Open()
+	print(imageFile.Filename)
 	if err != nil {
 		res := Response{Message: "Failed to open image file"}
 		return c.JSON(http.StatusInternalServerError, res)
@@ -78,7 +79,8 @@ func addItem(c echo.Context) error {
     newItem := Item {
         Name: name,
         Category: category,
-        ImageName: hash + ".jpg", // ハッシュ値を基にファイル名を生成
+		// ハッシュ値を基にファイル名を生成
+        ImageName: hash + ".jpg", 
     }
 
 	jsonFile, err := os.Open("items.json")
