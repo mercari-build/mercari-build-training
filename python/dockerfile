@@ -1,8 +1,18 @@
-FROM alpine
+# syntax=docker/dockerfile:1
 
-RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari /path/to/db
+FROM python:3.8-slim-buster
 
-USER trainee
+WORKDIR /app
 
-CMD ["python", "-V"]
+COPY requirements.txt requirements.txt
+RUN pip3 install -r requirements.txt
+
+COPY . .
+
+EXPOSE 9000
+
+# step5-5 ockerfileを変更する
+# CMD [ "python3", "-V"]
+
+# step5-6 出品APIをdocker上で動かす
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000"]
