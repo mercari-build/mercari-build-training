@@ -50,7 +50,26 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     return {"message": f"item received: {name}"}
 
 
-# 新しい商品をmercari_sqlite3ファイルに保存
+# 新しい商品をitem.jsonに保存
+# {"items": [{"name": "jacket", "category": "fashion", "image_name": "xxxxx.jpg"}, ...]}
+def save_items_to_file(name, category, image_name):
+    new_item = {"name": name, "category": category, "image_name": image_name}
+    if os.path.exists(items_file):
+        with open(items_file,'r') as f:
+            now_data = json.load(f)
+        if new_item in now_data["items"]:
+            return 
+        else:
+            now_data["items"].append(new_item)
+        with open(items_file, 'w') as f:
+            json.dump(now_data, f, indent=2)
+    else:
+        first_item = {"items": [new_item]}
+        with open(items_file, 'w') as f:
+            json.dump(first_item, f, indent=2)
+
+
+# 新しい商品をmercari_sqlite3に保存
 # itemsテーブルに既に存在する場合は保存しない
 def save_items_to_sqlite3(name, category, image_name):
     con = sqlite3.connect(sqlite3_file)
@@ -85,24 +104,6 @@ def save_items_to_sqlite3(name, category, image_name):
     con.close()
 
 
-# 新しい商品をitem.jsonファイルに保存
-# {"items": [{"name": "jacket", "category": "fashion", "image_name": "xxxxx.jpg"}, ...]}
-def save_items_to_file(name, category, image_name):
-    new_item = {"name": name, "category": category, "image_name": image_name}
-    if os.path.exists(items_file):
-        with open(items_file,'r') as f:
-            now_data = json.load(f)
-        if new_item in now_data["items"]:
-            return 
-        else:
-            now_data["items"].append(new_item)
-        with open(items_file, 'w') as f:
-            json.dump(now_data, f, indent=2)
-    else:
-        first_item = {"items": [new_item]}
-        with open(items_file, 'w') as f:
-            json.dump(first_item, f, indent=2)
-
 # 画像をimagesに保存 
 def save_image_file(image, jpg_hashed_image_name):
     imagefile = image.file.read()
@@ -116,6 +117,16 @@ def save_image_file(image, jpg_hashed_image_name):
 def get_hash_by_sha256(image):
     hs = hashlib.sha256(image.encode()).hexdigest()
     return hs+".jpg"
+
+# category_id :int から対応する category :string を返す
+def get_category_name(category_id):
+    con = sqlite3.connect(sqlite3_file)
+    cur = con.cursor()
+    cur.execute("SELECT name FROM categories WHERE id = ?", (category_id,))
+    category = cur.fetchone()
+    cur.close()
+    con.close()
+    return category[0]
 
 
 # 商品一覧を取得
@@ -137,23 +148,53 @@ def get_items_from_sqlite():
     cur = con.cursor()
     cur.execute('SELECT * FROM items')
     items = cur.fetchall()
+    items_list = {"items":[]}
+    for i in range(len(items)):
+        category_id = items[i][2]
+        category = get_category_name(category_id)
+        item = {"name":items[i][1], "category":category, "image_name":items[i][3]}
+        items_list["items"].append(item)
     cur.close()
     con.close()
-    return items
+    return items_list
 
 
 
-# items.jsonファイルに登録された商品のn番目の詳細を取得
+# items.jsonに登録された商品のn番目の詳細を取得
 @app.get("/items/{item_number}")
-def get_items_item(item_number: int):
+def get_nth_item(item_number: int):
+    #item = get_Nth_item_from_json(item_number)     # items.jsonから
+    item = get_Nth_item_from_sqlite(item_number)     # mercari.sqlite3から
+    return item
+
+
+# items.jsonに登録された商品のn番目の詳細を取得
+def get_Nth_item_from_json(item_number: int):
     with open(items_file) as f:
         items = json.load(f)
     if item_number > len(items["items"]):
         return {"message": "item not found"}
     return items["items"][item_number-1]
     
+# mercari.sqlite3に登録された商品のn番目の詳細を取得
+def get_Nth_item_from_sqlite(item_number: int):
+    con = sqlite3.connect(sqlite3_file)
+    cur = con.cursor()
+    cur.execute('SELECT * FROM items')
+    items = cur.fetchall()
 
+    if item_number > len(items):
+        return {"message": "item not found"}
+    
+    category_id = items[item_number-1][2]
+    cur.execute("SELECT name FROM categories WHERE id = ?", (category_id,))
+    category = cur.fetchone()
+    item = {"name":items[item_number-1][1], "category":category[0], "image_name":items[item_number-1][3]}
 
+    return item
+        
+
+# imageを返す
 @app.get("/image/{image_name}")
 async def get_image(image_name):
     # Create image path
@@ -176,11 +217,17 @@ def search_items(keyword: str):
     con = sqlite3.connect(sqlite3_file)
     cur = con.cursor()
     items = cur.execute("SELECT * FROM items WHERE name LIKE ?", (f"%{keyword}%",))
+    the_name_item_list={"items":[]}
     if not items:
-        logger.debug(f"Items not found: {keyword}")
+        return logger.debug(f"The name's items not found: {keyword}")
     items = cur.fetchall()
+    for i in range(len(items)):
+        category_id = items[i][2]
+        category = get_category_name(category_id)
+        the_name_item = {"name":items[i][1], "category":category, "image_name":items[i][3]}
+        the_name_item_list["items"].append(the_name_item)
 
     cur.close()
     con.close()
-    return items
+    return the_name_item_list
 
