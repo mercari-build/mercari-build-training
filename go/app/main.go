@@ -76,41 +76,56 @@ func addItem(c echo.Context) error {
 	hashValue := hash.Sum(nil)
 	// Convert the byte slice to a hex-encoded string
 	hashString := hex.EncodeToString(hashValue)
-
-	file1, err := os.Open("item.json") //すでにあるファイルを開く
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file1.Close()
-	jsonData, err := ioutil.ReadAll(file1)
-	if err != nil {
-		fmt.Println("JSONデータを読み込めません", err)
-	}
+	var res Response
 	var itemslice []Item
-	json.Unmarshal(jsonData, &itemslice)
 
-	//Get max ID
-	maxID := 0
-	for _, item := range itemslice {
-		if item.ID > maxID {
-			maxID = item.ID
+	if _, err := os.Stat("item.json"); err == nil {
+		file1, err := os.Open("item.json") //すでにあるファイルを開く
+		if err != nil {
+			log.Fatal(err)
 		}
+
+		defer file1.Close()
+		jsonData, err := ioutil.ReadAll(file1)
+		if err != nil {
+			fmt.Println("JSONデータを読み込めません", err)
+		}
+
+		json.Unmarshal(jsonData, &itemslice)
+
+		//Get max ID
+		maxID := 0
+		for _, item := range itemslice {
+			if item.ID > maxID {
+				maxID = item.ID
+			}
+		}
+
+		// Create a new item with the next ID
+		newItem := Item{
+			ID:       maxID + 1,
+			Name:     name,
+			Category: category,
+			Image:    hashString,
+		}
+
+		//Print message
+		message := fmt.Sprintf("item received: %s in %s category", newItem.Name, newItem.Category)
+		res = Response{Message: message}
+
+		// Append the new item to the slice
+		itemslice = append(itemslice, newItem)
+
+	} else {
+		newItem := Item{
+			ID:       1,
+			Name:     name,
+			Category: category,
+			Image:    hashString,
+		}
+		itemslice = append(itemslice, newItem)
+
 	}
-
-	// Create a new item with the next ID
-	newItem := Item{
-		ID:       maxID + 1,
-		Name:     name,
-		Category: category,
-		Image:    hashString,
-	}
-
-	//Print message
-	message := fmt.Sprintf("item received: %s in %s category", newItem.Name, newItem.Category)
-	res := Response{Message: message}
-
-	// Append the new item to the slice
-	itemslice = append(itemslice, newItem)
 
 	file2, err := os.Create("item.json") // fileはos.File型
 	if err != nil {
