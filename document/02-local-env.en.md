@@ -30,20 +30,10 @@ You can install the dependencies by running the following command.
 
 ```shell
 $ cd python
-$ python -m venv .venv
-$ source .venv/bin/activate
 $ pip install -r requirements.txt
 ```
 
 If you added a library, make sure you add it to `requirements.txt`.
-
-`python -m venv .venv` is a command to create a Python virtual environment.
-A virtual environment is a way to create a project-specific Python environment.
-Using a virtual environment allows you to manage necessary packages separately for each project so that you can avoid dependency conflicts between different projects.
-Once the virtual environment is created, it must be activated by the `source .venv/bin/activate` command.
-
-* [venv — Creation of virtual environments](https://docs.python.org/3/library/venv.html)
-* [Install packages in a virtual environment using pip and venv](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/)
 
 ### 4. Run the Python app
 
