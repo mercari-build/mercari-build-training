@@ -30,8 +30,13 @@ Pythonでは、`requirements.txt`というファイルに依存しているラ�
 
 ```shell
 $ cd python
+
+# 仮想環境をつくる
 $ python -m venv .venv
 $ source .venv/bin/activate
+# Unixを利用していない場合コマンドが違うことがあります
+
+# 必要なライブラリをインストールする
 $ pip install -r requirements.txt
 ```
 
