@@ -240,10 +240,10 @@ func (conn Conn) getItemById() echo.HandlerFunc {
 			if errors.Is(err, sql.ErrNoRows) { // IDに対応する商品がない場合
 				res := Response{Message: fmt.Sprintf("Item not found: id=%d", id)}
 				return c.JSON(http.StatusNotFound, res)
-			} else {
-				res := Response{Message: fmt.Sprintf("failed to scan item from DB in getItemById: id=%d", id)}
-				return c.JSON(http.StatusInternalServerError, res)
 			}
+			res := Response{Message: fmt.Sprintf("failed to scan item from DB in getItemById: id=%d", id)}
+			return c.JSON(http.StatusInternalServerError, res)
+
 		}
 		return c.JSON(http.StatusOK, item)
 	}
