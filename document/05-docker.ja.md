@@ -88,7 +88,7 @@ docker はホスト上に存在しないイメージを使う際には、自動�
 * [Dockerfile リファレンス](https://docs.docker.jp/engine/reference/builder.html)
 
 ## 5. Dockerfile を 変更する
-**STEP4-4 で Build した Image を実行し、次のようなerrorが出ることを確認しましょう。**
+**STEP5-4 で Build した Image を実行し、次のようなerrorが出ることを確認しましょう。**
 
 ```
 docker: Error response from daemon: OCI runtime create failed: container_linux.go:380: starting container process caused: exec: "python": executable file not found in $PATH: unknown.
@@ -99,7 +99,7 @@ Goの場合は、上のエラーメッセージの`"python"`の部分が`"go"`�
 
 **`Dockerfile` を変更し STEP2 でインストールしたのと同じバージョンの Python や Go が docker image で使えるようにしましょう。**
 
-変更した `Dockerfile` で build した Image を実行し、STEP2-2 と同じ結果が表示されれば成功です。
+変更した `Dockerfile` で build した Image を実行し、STEP5-2 と同じ結果が表示されれば成功です。
 
 **:book: Reference**
 
@@ -108,7 +108,7 @@ Goの場合は、上のエラーメッセージの`"python"`の部分が`"go"`�
 
 ## 6. 出品 API を docker 上で動かす
 
-STEP4-5 までで docker image の中は STEP2-2 と同じ状態になっています。
+STEP5-5 までで docker image の中は STEP5-2 と同じ状態になっています。
 
 **`Dockerfile`を変更し、必要なファイルをコピーしたり依存ライブラリをインストールしたりして, docker image 上で 出品 API が動くようにしましょう。**
 
