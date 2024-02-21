@@ -18,7 +18,7 @@ images.mkdir(parents=True, exist_ok=True)  # imagesディレクトリを作成�
 # items.json ファイルのパス
 items_file_path = pathlib.Path(__file__).parent.resolve() / "items.json"
 # mercari.sqlite3 のパス
-sqlite3_file = pathlib.Path(__file__).parent.parent.resolve() / "db" / "mercari.sqlite3"
+sqlite3_file = "mercari.sqlite3"
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
     CORSMiddleware,
@@ -67,7 +67,7 @@ def get_items():
     cursor.close()
     conn.close()
     
-    return items
+    {"items": items}
 
 
 @app.post("/items")
@@ -90,7 +90,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     # SQLiteを操作するためのカーソルを作成
     cursor = conn.cursor()
     # データの挿入
-    cursor.execute("INSERT INTO items (name, category, image_name) VALUES (%s, %s, %s)")
+    cursor.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)", (name, category, image_filename))
     # 挿入した結果を保存
     conn.commit()
     # DBとの接続を閉じる
@@ -139,3 +139,15 @@ def get_item(item_id: int = Path(..., title="The ID of the item to get")):
         return item
     else:
         raise HTTPException(status_code=404, detail="Item not found")
+    
+    
+@app.get("/search")
+def search_items(keyword: str):
+    conn = sqlite3.connect(sqlite3_file)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM items WHERE name LIKE ?", ('%' + keyword + '%',))
+    items = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    return {"items": items}
