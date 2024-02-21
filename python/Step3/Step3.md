@@ -1,4 +1,4 @@
-# Build@Mercari Training Program 
+# STEP3: Make a listing API
 
 ## 1. Call an API
 
