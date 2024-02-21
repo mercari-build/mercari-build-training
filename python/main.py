@@ -33,6 +33,7 @@ def get_items():
 
 @app.post("/items")
 async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
+    print("test")
     try:
         #Hash
         image_bytes = await image.read()
@@ -40,6 +41,7 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
 
         image_name = f"{image_hash}.jpg"
         image_path = images / image_name
+        print(image_path)
         with open(image_path, 'wb') as f:
             f.write(image_bytes)
 
