@@ -52,7 +52,7 @@ return absolute path of mercari.sqlite3 database file
 which always will be located one up level of go directory.
 */
 func getDatabasePath() string {
-	absPath, err := filepath.Abs("../mercari.sqlite3") // Adjust the relative path as needed
+	absPath, err := filepath.Abs("../db/mercari.sqlite3") // Adjust the relative path as needed
 	if err != nil {
 		msg := "Error occured while getting filepath!"
 		return msg

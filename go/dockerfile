@@ -1,19 +1,19 @@
 #Build
-FROM golang:1.22.0 as builder
+FROM golang:1.22.0-alpine as builder
 WORKDIR /app
 #download all dependencies
-COPY go.mod go.sum ./
-RUN go mod download
-COPY . .
+COPY go/go.mod go/go.sum ./
+RUN go mod tidy
+COPY go/app/ ./
+
 
 #main.go directory
-COPY app/ .
 RUN go build -o main .
 
-EXPOSE 9000
 
-#FROM alpine
-# RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari ./app
-# USER trainee
-CMD ["go", "version"]
+RUN addgroup -S mercari && adduser -S trainee -G mercari
+COPY mercari.sqlite3 ./mercari.sqlite3
+RUN chown -R trainee:mercari ./
+USER trainee
+EXPOSE 9000
+CMD ["./main"]
