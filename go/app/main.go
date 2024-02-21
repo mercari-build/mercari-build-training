@@ -2,19 +2,23 @@ package main
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+
+	//use '_' for registering the driver with the 'database/sql'
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -30,10 +34,10 @@ type Items struct {
 }
 
 type Item struct {
-	ItemId    int64  `json:"item_id"`
-	Name      string `json:"name"`
-	Category  string `json:"category"`
-	ImageName string `json:"image_name"`
+	ItemId       int    `json:"id"`
+	Name         string `json:"name"`
+	CategoryName string `json:"category_name"`
+	ImageName    string `json:"image_name"`
 }
 
 func root(c echo.Context) error {
@@ -42,10 +46,20 @@ func root(c echo.Context) error {
 }
 
 /*
-3-4 POST Add an image to an item
+getDatabasePath()
 
-	returns Sha256 hashed string of File
+return absolute path of mercari.sqlite3 database file
+which always will be located one up level of go directory.
 */
+func getDatabasePath() string {
+	absPath, err := filepath.Abs("../mercari.sqlite3") // Adjust the relative path as needed
+	if err != nil {
+		msg := "Error occured while getting filepath!"
+		return msg
+	}
+	return absPath
+}
+
 func getFileSha256(c echo.Context, fileType string) (string, error) {
 	fileHeader, err := c.FormFile(fileType)
 	if err != nil {
@@ -66,41 +80,41 @@ func getFileSha256(c echo.Context, fileType string) (string, error) {
 }
 
 /*
-open given files and parse json items,
-return items.Items
-*/
-func readItemsFromFile(filePath string) (Items, error) {
-	jsonFile, err := os.ReadFile(filePath)
-	if err != nil {
-		return Items{}, err
-	}
-	var items Items
-	if err := json.Unmarshal(jsonFile, &items); err != nil {
-		return Items{}, err
-	}
-	return items, nil
-}
+4-1 GET write into a database
 
-/*
-3-3 GET get a list of items
+ 1. open db
+ 2. O(n^2). iterate over rows and colums
 */
 func getItem(c echo.Context) error {
-	items, err := readItemsFromFile("items.json")
-
+	path := getDatabasePath()
+	db, err := sql.Open("sqlite3", path)
 	if err != nil {
-		msg := "items.json file not exist!"
+		msg := "error occured while opening db!"
 		return c.JSON(http.StatusBadRequest, msg)
+	}
+	defer db.Close()
+	var items Items
+	rows, err := db.Query("SELECT items.id, items.name, categories.name AS category_name, items.image_name FROM items JOIN categories ON items.category_id = categories.category_id")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, "Error occured while querying row!")
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.ItemId, &item.Name, &item.CategoryName, &item.ImageName); err != nil {
+			msg := "error occured while scanning row from db!"
+			return c.JSON(http.StatusBadRequest, msg)
+		}
+		items.Items = append(items.Items, item)
 	}
 	return c.JSON(http.StatusOK, items)
 }
 
 /*
-3-2, 3-4 POST add the list of item
+4-1 POST write into a database
 
- 1. Get form data, make new <Item> newItem variable
- 2. store current items in []item array.
- 3. append newItem in items array, marshal item to valid Json
- 4. write items.json with updated items
+ 1. open db
+ 2. insert item. id will be autoincremented
 */
 func addItem(c echo.Context) error {
 	// Get form data
@@ -112,61 +126,72 @@ func addItem(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	image += ".jpg"
-	c.Logger().Infof("Receive item: %s", name)
-	message := fmt.Sprintf("item received: %s", name)
 	// Open items file
-	items, err := readItemsFromFile("items.json")
-	// append newItem in items
+	path := getDatabasePath()
+	db, err := sql.Open("sqlite3", path)
 	if err != nil {
-		msg := "error happend while reading elements in items.json!"
+		msg := "error occured while opening db!"
 		return c.JSON(http.StatusBadRequest, msg)
 	}
-	//indexing items for itemId
-	itemId := len(items.Items)
-	newItem := Item{
-		ItemId:    int64(itemId),
-		Name:      name,
-		Category:  category,
-		ImageName: image,
-	}
-	items.Items = append(items.Items, newItem)
-	// marshal new items, write back to items.json
-	updatedItems, err := json.Marshal(&items)
+	var categoryId int
+	//first, search for the category. if exist, store the id
+	err = db.QueryRow("SELECT categories.category_id FROM categories WHERE categories.name = ?", category).Scan(&categoryId)
 	if err != nil {
-		msg := "error happend while converting new items to json structure!"
+		// if category not exist, make new category
+		if err == sql.ErrNoRows {
+			result, _ := db.Exec("INSERT INTO categories (name) VALUES (?)", category)
+			//save newely inserted id
+			newCategoryId, err := result.LastInsertId()
+			if err != nil {
+				msg := "error occured while getting newely inserted category Id!"
+				return c.JSON(http.StatusBadRequest, msg)
+			}
+			categoryId = int(newCategoryId)
+		} else {
+			//general error while querying
+			msg := "error occured while querying category Id!"
+			return c.JSON(http.StatusBadRequest, msg)
+		}
+	}
+	_, err = db.Exec("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)", name, categoryId, image)
+	if err != nil {
+		msg := "error occured while inserting new item!"
 		return c.JSON(http.StatusBadRequest, msg)
 	}
-	os.WriteFile("items.json", updatedItems, 0644)
 
-	res := Response{Message: message}
-
+	c.Logger().Infof("Receive item: %s", name)
+	msg := fmt.Sprintf("item received: %s", name)
+	res := Response{Message: msg}
 	return c.JSON(http.StatusOK, res)
 }
 
 /*
-3-5 GET Return item details
+4-1 POST write into a database
 
- 1. Unmarshal current items in []items array
- 2. return items[itemId]
+ 1. open db
+ 2. query row such that matches id. id index starts from 1
 */
 func getItemById(c echo.Context) error {
-	itemId := c.Param("itemId")
-	items, err := readItemsFromFile("items.json")
+	idStr := c.Param("itemId")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
-	parsedInteger, err := strconv.ParseInt(itemId, 10, 64)
-	if err != nil {
-		msg := "Error occured while converting itemId to integer!"
+		msg := "id is not valid integer!"
 		return c.JSON(http.StatusBadRequest, msg)
 	}
-	for _, item := range items.Items {
-		if parsedInteger == int64(item.ItemId) {
-			return c.JSON(http.StatusOK, item)
-		}
+	var item Item
+	path := getDatabasePath()
+	db, err := sql.Open("sqlite3", path)
+	if err != nil {
+		msg := "error occured while reading db!"
+		return c.JSON(http.StatusBadRequest, msg)
 	}
-	//else
-	return c.JSON(http.StatusBadRequest, "invalid item ID!")
+	defer db.Close()
+	err = db.QueryRow("SELECT items.id, items.name, categories.name AS category_name, items.image_name FROM items JOIN categories ON items.category_id = categories.category_id WHERE id = ?", id).Scan(&item.ItemId, &item.Name, &item.CategoryName, &item.ImageName)
+	if err != nil {
+		msg := "Invalid ID!"
+		return c.JSON(http.StatusBadRequest, msg)
+	}
+	return c.JSON(http.StatusOK, item)
 }
 
 func getImg(c echo.Context) error {
@@ -182,6 +207,42 @@ func getImg(c echo.Context) error {
 		imgPath = path.Join(ImgDir, "default.jpg")
 	}
 	return c.File(imgPath)
+}
+
+/*
+4-2 GET Search for an item
+
+ 1. open DB
+ 2. query DB based on keyword params
+ 3. add every elements that matches conditions and returns items array
+*/
+func getSearch(c echo.Context) error {
+	keyword := c.QueryParam("keyword")
+	// in sql, % keyword % will search any
+	// results that contains keyword inside the word.
+	keyword = "%" + keyword + "%"
+	path := getDatabasePath()
+	db, err := sql.Open("sqlite3", path)
+	if err != nil {
+		msg := path
+		return c.JSON(http.StatusBadRequest, msg)
+	}
+	defer db.Close()
+	rows, err := db.Query("SELECT items.id, items.name, categories.name AS category_name, items.image_name FROM items JOIN categories ON items.category_id = categories.category_id WHERE items.name LIKE ? OR categories.name LIKE ?", keyword, keyword)
+	if err != nil {
+		msg := "error occured while querying db!"
+		return c.JSON(http.StatusBadRequest, msg)
+	}
+	var items Items
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.ItemId, &item.Name, &item.CategoryName, &item.ImageName); err != nil {
+			msg := "error occured while copying db to variable!"
+			return c.JSON(http.StatusBadRequest, msg)
+		}
+		items.Items = append(items.Items, item)
+	}
+	return c.JSON(http.StatusBadRequest, items)
 }
 
 func main() {
@@ -207,6 +268,7 @@ func main() {
 	e.GET("/items", getItem)
 	e.GET("/items/:itemId", getItemById)
 	e.GET("/image/:imageFilename", getImg)
+	e.GET("/search", getSearch)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
