@@ -3,9 +3,11 @@ import logging
 import pathlib
 import json
 import hashlib
+
 from fastapi import FastAPI, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
 
@@ -99,3 +101,6 @@ def get_item(item_id: int= Path(..., title="The ID of the item to get")):
     if item_id < len(existing_items):
         item = existing_items[item_id-1]
         return item
+
+@app.get("/search")
+def search_item():
