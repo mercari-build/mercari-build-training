@@ -17,6 +17,8 @@ const (
 	ImgDir = "images"
 )
 
+const ItemsPath = "items.json"
+
 type Response struct {
 	Message string `json:"message"`
 }
@@ -38,9 +40,9 @@ func addItem(c echo.Context) error {
 
 	c.Logger().Infof("Receive item: %s, Category: %s", name, category)
 
-	err := saveItem(name, category)
-	if err != nil {
-		return err
+	if err := saveItem(name, category); err != nil {
+		errRes := Response{Message: err.Error()}
+		return c.JSON(http.StatusInternalServerError, errRes)
 	}
 
 	message := fmt.Sprintf("item received: %s", name)
@@ -52,14 +54,15 @@ func addItem(c echo.Context) error {
 func saveItem(name, category string) error {
 	item := Item{Name: name, Category: category}
 
-	data, err := os.ReadFile("items.json")
+	data, err := os.ReadFile(ItemsPath)
 	if err != nil {
+		err := fmt.Errorf("error while reading file: %w", err)
 		return err
 	}
 
 	var items []Item
-	err = json.Unmarshal(data, &items)
-	if err != nil {
+	if err = json.Unmarshal(data, &items); err != nil {
+		err := fmt.Errorf("error while unmarshaling file: %w", err)
 		return err
 	}
 
@@ -67,11 +70,12 @@ func saveItem(name, category string) error {
 
 	newData, err := json.Marshal(items)
 	if err != nil {
+		err := fmt.Errorf("error while marshaling file: %w", err)
 		return err
 	}
 
-	err = os.WriteFile("items.json", newData, 0644)
-	if err != nil {
+	if err = os.WriteFile(ItemsPath, newData, 0644); err != nil {
+		err := fmt.Errorf("error while writing file: %w", err)
 		return err
 	}
 
@@ -79,15 +83,17 @@ func saveItem(name, category string) error {
 }
 
 func getItems(c echo.Context) error {
-	data, err := os.ReadFile("items.json")
+	data, err := os.ReadFile(ItemsPath)
 	if err != nil {
-		return err
+		errRes := Response{Message: "error while reading file"}
+		return c.JSON(http.StatusInternalServerError, errRes)
 	}
 
 	var items []Item
 	err = json.Unmarshal(data, &items)
 	if err != nil {
-		return err
+		errRes := Response{Message: "error while unmarshaling file"}
+		return c.JSON(http.StatusInternalServerError, errRes)
 	}
 
 	return c.JSON(http.StatusOK, items)
