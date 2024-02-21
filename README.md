@@ -36,7 +36,7 @@ The following icons indicate pointers for
   /[EN](document/07-frontend.en.md))
 - [ ] **STEP8** (Stretch)  Run multi service ([JA](document/08-docker-compose.ja.md)
   /[EN](document/08-docker-compose.en.md))
-- [ ] **Extra1** Data structure and algorithm (TBU)
+- [ ] **Extra1** Data structure and algorithm ([JA](document/extra-01-algorithm-and-data-structure.ja.md)/[EN](document%2Fextra-01-algorithm-and-data-structure.en.md))
 - [ ] **EXTRA2** (Stretch)  Data Analysis ([Link](document/extra-02-data-analysis.md))
 
 ### Other documents
