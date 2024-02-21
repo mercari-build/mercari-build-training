@@ -1,8 +1,19 @@
-FROM alpine
+#Build
+FROM golang:1.22.0 as builder
+WORKDIR /app
+#download all dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
 
-RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari /path/to/db
+#main.go directory
+COPY app/ .
+RUN go build -o main .
 
-USER trainee
+EXPOSE 9000
 
+#FROM alpine
+# RUN addgroup -S mercari && adduser -S trainee -G mercari
+# RUN chown -R trainee:mercari ./app
+# USER trainee
 CMD ["go", "version"]
