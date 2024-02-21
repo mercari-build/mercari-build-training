@@ -79,6 +79,23 @@ func addItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+func getItems(c echo.Context) error {
+	jsonFile, err := os.Open("items.json")
+	if err != nil {
+		log.Fatal("JSONファイルを開けません", err)
+		return err
+	}
+	defer jsonFile.Close()
+	itemsData := Items{}
+	err = json.NewDecoder(jsonFile).Decode(&itemsData)
+	if err != nil {
+		log.Fatal("JSONファイルからの変換に失敗", err)
+		return err
+	}
+
+	return c.JSON(http.StatusOK, itemsData)
+}
+
 func getImg(c echo.Context) error {
 	// Create image path
 	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
@@ -114,6 +131,7 @@ func main() {
 	// Routes
 	e.GET("/", root)
 	e.POST("/items", addItem)
+	e.GET("/items", getItems)
 	e.GET("/image/:imageFilename", getImg)
 
 	// Start server
