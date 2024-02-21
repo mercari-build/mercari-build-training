@@ -54,11 +54,11 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
             with open('items.json', 'r') as f:
                 items_data = json.load(f)
         else:
-            items_data = []
+            items_data = {"items": []}
         logger.debug(items_data)
 
         #Append the new item
-        items_data.append({
+        items_data["items"].append({
             'name': name,
             'category': category,
             'image_name':image_name
