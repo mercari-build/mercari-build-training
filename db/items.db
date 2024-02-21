@@ -1,21 +1,2 @@
-# sqlite3を起動
-sqlite3 mercari.sqlite3
-
-# itemsテーブルを作成
-create table items(id integer primary key, name text, category text, image_name text);
-
-# 存在するテーブルを確認
-.tables
-
-# itemsテーブルの情報を確認
-.schema items
-
-#################################
-
-# categoriesテーブルを作成
 create table categories(id integer primary key, name text);
-
-# itemsテーブルを作成 
 create table items(id integer primary key, name text, category_id integer, image_name text, foreign key (category_id) references categories(id));
-
-
