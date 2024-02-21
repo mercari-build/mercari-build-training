@@ -62,7 +62,6 @@ func addItem(c echo.Context) error {
 	}
 	defer src.Close()
 
-
     // 画像ファイルの内容を読み込む
     imgData, err := io.ReadAll(src)
     if err != nil {
@@ -77,7 +76,6 @@ func addItem(c echo.Context) error {
 
     // newItemを定義
     newItem := Item {
-        ID: hash, // ハッシュ値をIDとして設定
         Name: name,
         Category: category,
         ImageName: hash + ".jpg", // ハッシュ値を基にファイル名を生成
