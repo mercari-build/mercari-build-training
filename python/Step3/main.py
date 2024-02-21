@@ -73,7 +73,11 @@ def get_item(item_id):
 @app.post("/items")
 def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = Form(...)):
     logger.info(f"Receive item: {name}")
-    items, cur_max_id = load_items_json()
+    try:
+        items, cur_max_id = load_items_json()
+    except:
+        logger.info("Failed to load items from json file.")       
+        raise HTTPException(status_code=404, detail="Failed to load items from json file.")  
     new_item = {"name":name, "category":category}
     
     imgBytes = image.file.read()
@@ -84,7 +88,12 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     new_item = {"name": name, "category": category, "image": hashedImgName}
     cur_max_id += 1
     items[cur_max_id] = new_item
-    save_items_json(items, cur_max_id)
+    
+    try:
+        save_items_json(items, cur_max_id)
+    except:
+        logger.info("Failed to save items to json file.")       
+        raise HTTPException(status_code=404, detail="Failed to save items to json file.")      
     return {"message": f"item received: {name}"}
 
 
