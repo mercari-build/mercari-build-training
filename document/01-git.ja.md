@@ -90,6 +90,14 @@ $ git config --local core.hooksPath .githooks/
 - pull, push
 - Pull Request
 
+  **<NOTE開始>**
+second-pull-requestというブランチをリモートからローカルに反映するとき
+```
+ git fetch origin second-pull-request
+ git merge origin/second-pull-request
+```
+**<NOTE終了>**
+
 ---
 ### Next
 
