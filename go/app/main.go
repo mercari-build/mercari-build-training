@@ -73,7 +73,7 @@ func (conn Conn) addItem() echo.HandlerFunc {
 		hashedImageName := fmt.Sprintf("%x.jpeg", hash.Sum(nil))
 
 		// 画像ファイルを保存
-		dst, err := os.Create("images/" + hashedImageName)
+		dst, err := os.Create(fmt.Sprintf("images/%s", hashedImageName))
 		if err != nil {
 			res := Response{Message: fmt.Sprintf("failed to create image file in addItem: image=%s", hashedImageName)}
 			return c.JSON(http.StatusInternalServerError, res)
