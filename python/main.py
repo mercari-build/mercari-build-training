@@ -8,13 +8,17 @@ from fastapi import Path
 from fastapi import FastAPI, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
 logger.level = logging.DEBUG  # ログレベルをDEBUGに変更
+# images ファイルへのパス
 images = pathlib.Path(__file__).parent.resolve() / "images"
 images.mkdir(parents=True, exist_ok=True)  # imagesディレクトリを作成する
+# items.json ファイルのパス
+items_file_path = pathlib.Path(__file__).parent.resolve() / "items.json"
+# mercari.sqlite3 のパス
+sqlite3_file = pathlib.Path(__file__).parent.parent.resolve() / "db" / "mercari.sqlite3"
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
     CORSMiddleware,
@@ -24,8 +28,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# items.json ファイルのパス
-items_file_path = pathlib.Path(__file__).parent.resolve() / "items.json"
 
 # items.json ファイルに保存
 def save_items_to_json(items):
@@ -54,19 +56,18 @@ def root():
 @app.get("/items")
 def get_items():
     # DBに接続する
-    dbname = 'db/items.db'
-    conn = sqlite3.connect(dbname)
+    conn = sqlite3.connect(sqlite3_file)
     # SQLiteを操作するためのカーソルを作成
-    cur = conn.cursor()
-    
-    # DBの中身を出力
-    for row in cur.execute('SELECT * FROM users ORDER BY birtyday DESC'):
-        print(row)        
-    
-    # DBとの接続を閉じる（必須）
+    cursor = conn.cursor()
+    # DBのクエリを実行
+    cursor.execute('SELECT * FROM items')   
+    # 実行したクエリの中身を全て取得
+    items = cursor.fetchall()
+    # DBとの接続を閉じる
+    cursor.close()
     conn.close()
     
-    return {row}
+    return items
 
 
 @app.post("/items")
@@ -85,17 +86,15 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     new_item = {"name": name, "category": category, "image": image_filename}
     
     # DBに接続する
-    dbname = 'db/items.db'
-    conn = sqlite3.connect(dbname)
+    conn = sqlite3.connect(sqlite3_file)
     # SQLiteを操作するためのカーソルを作成
-    cur = conn.cursor()
-    
+    cursor = conn.cursor()
     # データの挿入
-    cur.execute("items")
-    # 挿入した結果を保存（コミット）する
+    cursor.execute("INSERT INTO items (name, category, image_name) VALUES (%s, %s, %s)")
+    # 挿入した結果を保存
     conn.commit()
-    
-    # DBとの接続を閉じる（必須）
+    # DBとの接続を閉じる
+    cursor.close()
     conn.close()
     
     
@@ -128,13 +127,15 @@ async def get_image(image_name):
 
 @app.get("/items/{item_id}")
 def get_item(item_id: int = Path(..., title="The ID of the item to get")):
-    # 既存の商品リストを取得
-    items_data = load_items_from_json()
-    existing_items = items_data.get("items", [])
+    conn = sqlite3.connect(sqlite3_file)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM items WHERE id = ?", (item_id,))
+    item = cursor.fetchone()
+    cursor.close()
+    conn.close()
     
     # 指定されたitem_idに対応する商品を取得
-    if 0 < item_id < len(existing_items):
-        item = existing_items[item_id-1]
+    if item:
         return item
     else:
         raise HTTPException(status_code=404, detail="Item not found")
