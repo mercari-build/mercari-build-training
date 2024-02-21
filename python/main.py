@@ -1,4 +1,5 @@
 import sqlite3
+from sqlite3 import Connection
 import os
 import logging
 import pathlib
@@ -8,7 +9,7 @@ from fastapi import FastAPI, Form, HTTPException, UploadFile, Query
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-# os.chdir('/Users/xiaotongye/Programs/mercari-build-training/python')
+os.chdir('/Users/xiaotongye/Programs/mercari-build-training/python')
 path = pathlib.Path(__file__).parent.resolve()
 
 app = FastAPI()
@@ -23,16 +24,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-sql_file = path / "db/mercari.sqlite3"
+# sql_file = path / "db" / "mercari.sqlite3"
+
+sql_file = "../db/mercari.sqlite3"
+# print('sql_file=====', sql_file)
+
 images = path / "images"
 logging.basicConfig(level=logging.DEBUG)
 
+
 # 4-1 Create items table
 def create_table():
-
     # create a database
     try:
-        sql_connect = sqlite3.connect(sql_file)
+        sql_connect = sqlite3.connect(sql_file, check_same_thread=False)
     except sqlite3.Error as e:
         logger.info("Failed to open the table.")       
         raise HTTPException(status_code=500, detail=str(e))  
@@ -53,14 +58,46 @@ def create_table():
         )
     ''')
     sql_connect.commit()
-    sql_connect.close()
 
     # 这里不需要执行任何操作，因为我们只是需要创建文件
 
     # 关闭连接
 
-create_table()
+sql_connect: Connection
 
+async def start_connection():
+    
+    try:
+        global sql_connect
+        sql_connect = sqlite3.connect(sql_file, check_same_thread=False)
+    except sqlite3.Error as e:
+        logger.info("Failed to open the table.")       
+        raise HTTPException(status_code=500, detail=str(e))  
+    sql_cur = sql_connect.cursor()
+    sql_cur.execute('''
+        CREATE TABLE IF NOT EXISTS categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
+        )
+    ''')    
+    sql_cur.execute('''
+        CREATE TABLE IF NOT EXISTS items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category_id INTEGER,
+            image_name TEXT,
+            FOREIGN KEY (category_id) REFERENCES categories(id)
+        )
+    ''')
+    sql_connect.commit()
+    print('666')
+
+async def close_connection():
+    if sql_connect:
+        sql_connect.close()
+
+app.add_event_handler("startup", start_connection)
+app.add_event_handler("shutdown", close_connection)
 
 @app.get("/")
 def root():
@@ -69,11 +106,6 @@ def root():
 # 4-1 Return item list from items table
 @app.get("/items")
 def get_items():
-    try:
-        sql_connect = sqlite3.connect(sql_file)
-    except sqlite3.Error as e:
-        logger.info("Failed to open the table.")  
-        raise HTTPException(status_code=500, detail=str(e))  
     sql_cur = sql_connect.cursor()
 
     try:
@@ -86,8 +118,8 @@ def get_items():
     except sqlite3.Error as e:
         logger.info("Failed to fetch data from the table.")  
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        sql_connect.close()
+    # finally:
+    #     sql_connect.close()
 
     items_list = [
         {"id": item[0], "name": item[1], "category": item[2], "image_name": item[3]}
@@ -101,11 +133,7 @@ def get_items():
 def get_item(item_id: int):
     logger.info(f"Searching for the item with id: {item_id}")
     
-    try:
-        sql_connect = sqlite3.connect(sql_file)
-    except sqlite3.Error as e:
-        logger.info("Failed to open the table.")  
-        raise HTTPException(status_code=500, detail=str(e))        
+    print(sql_connect)       
     sql_cur = sql_connect.cursor()
 
     try:
@@ -119,8 +147,8 @@ def get_item(item_id: int):
     except sqlite3.Error as e:
         logger.info("Failed to fetch data from the table.")  
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        sql_connect.close()
+    # finally:
+    #     sql_connect.close()
 
     if item_data:
         item_dict = {
@@ -159,12 +187,6 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
         logger.info("Failed to load the image.") 
         raise HTTPException(status_code=500, detail='Failed to load the image.')
     
-    # database
-    try:
-        sql_connect = sqlite3.connect(sql_file)
-    except sqlite3.Error as e:
-        logger.info("Failed to open the table.") 
-        raise HTTPException(status_code=500, detail=str(e))  
     sql_cur = sql_connect.cursor()
 
     try:
@@ -175,9 +197,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     except sqlite3.Error as e:
         sql_connect.rollback()
         logger.info("Failed to add the item to the table.") 
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        sql_connect.close()    
+        raise HTTPException(status_code=500, detail=str(e))  
 
     logger.info(f"The item {name} is received successfully!")
     return {"message": f"item received: {name}"}
@@ -224,8 +244,8 @@ def search_items(keyword: str = Query(None, min_length=1)):
         sql_connect.rollback()
         logger.info("Failed to fetch data from the table.") 
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        sql_connect.close()
+    # finally:
+    #     sql_connect.close()
 
     items_list = [
         {"id": item[0], "name": item[1], "image_name": item[2], "category": item[3]}
