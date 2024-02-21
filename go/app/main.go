@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -20,6 +22,15 @@ type Response struct {
 	Message string `json:"message"`
 }
 
+type Items struct {
+	Items []Item `json:"items"`
+}
+
+type Item struct {
+	Name     string `json:"name"`
+	Category string `json:"category"`
+}
+
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
@@ -28,10 +39,42 @@ func root(c echo.Context) error {
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
+	category := c.FormValue("category")
 	c.Logger().Infof("Receive item: %s", name)
+	c.Logger().Infof("Receive item: %s", category)
 
 	message := fmt.Sprintf("item received: %s", name)
 	res := Response{Message: message}
+
+	// open json file & data
+	jsonFile, err := os.Open("items.json")
+	if err != nil {
+		log.Fatal("JSONファイルを開けません", err)
+		return err
+	}
+	defer jsonFile.Close()
+
+	jsonData, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		log.Fatal("JSONデータを読み込めません", err)
+		return err
+	}
+	// convert json into go format
+	var items Items
+	json.Unmarshal(jsonData, &items)
+	fmt.Println(items)
+	// add new item
+	newItem := Item{Name: name, Category: category}
+	items.Items = append(items.Items, newItem)
+
+	// convert go format into json
+	updatedJson, err := json.Marshal(&items)
+	if err != nil {
+		log.Fatal("JSONデータ変換に失敗", err)
+		return err
+	}
+	// output as json file
+	_ = ioutil.WriteFile("items.json", updatedJson, 0644)
 
 	return c.JSON(http.StatusOK, res)
 }
