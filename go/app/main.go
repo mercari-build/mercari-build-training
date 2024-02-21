@@ -25,16 +25,11 @@ type Response struct {
 	Message string `json:"message"`
 }
 
-type itemResponse struct {
-	Items []Item `json:"items"`
-}
-
-type itemsResponse struct {
-	Item Item `json:"item"`
+type ItemsData struct {
+	Item []Item `json:"items"`
 }
 
 type Item struct {
-	ID       int    `json:"id"`
 	Name     string `json:"name"`
 	Category string `json:"category"`
 	Image    string `json:"image"`
@@ -55,32 +50,27 @@ func addItem(c echo.Context) error {
 	c.Logger().Infof("Receive category: %s", category)
 	c.Logger().Infof("Receive image: %s", image)
 
-	//image
-	img, err := os.Open(image)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer img.Close()
 	hash := sha256.New()
-
-	// Read the entire image file into a byte slice
-	imageBytes, err := os.ReadFile(image)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	// Write the image data to the hash function
-	hash.Write(imageBytes)
+	hash.Write([]byte(strings.Split(image, ".")[0]))
 
 	// Get the final hash value
 	hashValue := hash.Sum(nil)
 	// Convert the byte slice to a hex-encoded string
 	hashString := hex.EncodeToString(hashValue)
+	image = hashString + ".jpg"
+
 	var res Response
 	var itemslice []Item
+	// Create a new item with the next ID
+	newItem := Item{
+		Name:     name,
+		Category: category,
+		Image:    image,
+	}
 
-	if _, err := os.Stat("item.json"); err == nil {
-		file1, err := os.Open("item.json") //すでにあるファイルを開く
+	if _, err := os.Stat("items.json"); err == nil {
+		file1, err := os.Open("items.json") //すでにあるファイルを開く
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -93,22 +83,6 @@ func addItem(c echo.Context) error {
 
 		json.Unmarshal(jsonData, &itemslice)
 
-		//Get max ID
-		maxID := 0
-		for _, item := range itemslice {
-			if item.ID > maxID {
-				maxID = item.ID
-			}
-		}
-
-		// Create a new item with the next ID
-		newItem := Item{
-			ID:       maxID + 1,
-			Name:     name,
-			Category: category,
-			Image:    hashString,
-		}
-
 		//Print message
 		message := fmt.Sprintf("item received: %s in %s category", newItem.Name, newItem.Category)
 		res = Response{Message: message}
@@ -117,17 +91,11 @@ func addItem(c echo.Context) error {
 		itemslice = append(itemslice, newItem)
 
 	} else {
-		newItem := Item{
-			ID:       1,
-			Name:     name,
-			Category: category,
-			Image:    hashString,
-		}
 		itemslice = append(itemslice, newItem)
 
 	}
 
-	file2, err := os.Create("item.json") // fileはos.File型
+	file2, err := os.Create("items.json") // fileはos.File型
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -136,8 +104,8 @@ func addItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
-func getItem(c echo.Context) error {
-	file1, err := os.Open("item.json") //すでにあるファイルを開く
+func getItems(c echo.Context) error {
+	file1, err := os.Open("items.json") //すでにあるファイルを開く
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -150,12 +118,10 @@ func getItem(c echo.Context) error {
 	json.Unmarshal(jsonData, &itemslice)
 	fmt.Println(itemslice)
 
-	res := itemResponse{Items: itemslice}
-
-	return c.JSON(http.StatusOK, res)
+	return c.JSON(http.StatusOK, itemslice)
 }
 
-func getItems(c echo.Context) error {
+func getItem(c echo.Context) error {
 	itemIDStr := c.Param("item_id")
 
 	itemID, err := strconv.Atoi(itemIDStr)
@@ -166,7 +132,7 @@ func getItems(c echo.Context) error {
 
 	fmt.Println(itemID)
 
-	file1, err := os.Open("item.json") //すでにあるファイルを開く
+	file1, err := os.Open("items.json") //すでにあるファイルを開く
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -175,25 +141,13 @@ func getItems(c echo.Context) error {
 	if err != nil {
 		fmt.Println("JSONデータを読み込めません", err)
 	}
-	var itemslice []Item
-	json.Unmarshal(jsonData, &itemslice)
-	fmt.Println(itemslice)
+	// var itemslice []ItemsData
+	itemsData := ItemsData{}
+	json.Unmarshal(jsonData, &itemsData)
+	fmt.Println(itemsData)
 
-	var foundItem *Item
-	for _, item := range itemslice {
-		if item.ID == itemID {
-			foundItem = &item
-			break
-		}
-	}
-
-	if foundItem == nil {
-		// 該当する商品が見つからなかった場合の処理
-		return c.JSON(http.StatusNotFound, Response{Message: "Item not found"})
-	}
-
-	res := itemsResponse{Item: *foundItem}
-	return c.JSON(http.StatusOK, res)
+	// res := itemsResponse{Item: itemslice[itemID-1]}
+	return c.JSON(http.StatusOK, itemsData.Item[itemID-1])
 }
 
 func getImg(c echo.Context) error {
@@ -230,10 +184,10 @@ func main() {
 
 	// Routes
 	e.GET("/", root)
-	e.GET("/items", getItem)
+	e.GET("/items", getItems)
 	e.POST("/items", addItem)
 	e.GET("/image/:imageFilename", getImg)
-	e.GET("/items/:item_id", getItems)
+	e.GET("/items/:item_id", getItem)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
