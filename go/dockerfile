@@ -1,19 +1,16 @@
 #Build
-FROM golang:1.22.0-alpine as builder
+FROM golang:1.22.0-alpine
 WORKDIR /app
 #download all dependencies
+#Copy DB doesn't work?
+COPY db ./db
 COPY go/go.mod go/go.sum ./
+COPY go/app ./
 RUN go mod tidy
-COPY go/app/ ./
 
-
-#main.go directory
 RUN go build -o main .
-
-
 RUN addgroup -S mercari && adduser -S trainee -G mercari
-COPY mercari.sqlite3 ./mercari.sqlite3
-RUN chown -R trainee:mercari ./
+RUN chown -R trainee:mercari /app/db
 USER trainee
 EXPOSE 9000
 CMD ["./main"]
