@@ -8,7 +8,6 @@ import (
 	"strings"
 	"encoding/json"
 	"io/ioutil"
-	"crypto/sha256"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -18,7 +17,6 @@ import (
 type Item struct {
 	Name 		string `json:"name"`
 	Category 	string `json:"category"`
-	Image		string `json:"image"`
 }
 
 type Items struct {
@@ -63,7 +61,6 @@ func getItems(c echo.Context) error {
 	}
 	
 	return c.JSON(http.StatusOK, Items{Items:items})
-
 }
 
 func addItem(c echo.Context) error {
@@ -110,11 +107,6 @@ func addItemtoJson(name string, category string) error {
 	}
 
 	return nil
-
-}
-
-func hashImg() error {
-	
 }
 
 func getImg(c echo.Context) error {
@@ -154,7 +146,6 @@ func main() {
 	e.POST("/items", addItem)
 	e.GET("/items", getItems)
 	e.GET("/image/:imageFilename", getImg)
-
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
