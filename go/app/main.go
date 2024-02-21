@@ -1,13 +1,7 @@
 package main
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
@@ -19,93 +13,38 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-const (
-	ImgDir    = "images"
-	ItemsJson = "items.json"
-)
-
-type Response struct {
-	Message string `json:"message"`
-}
-
-type Items struct {
-	Items []Item `json:"items"`
-}
-
-type Item struct {
-	Name      string `json:"name"`
-	Category  string `json:"category"`
-	ImageName string `json:"image_name"`
-	Id        int    `json:"id"`
-}
-
-func httpErrorHandler(err error, c echo.Context, code int, message string) *echo.HTTPError {
-	c.Logger().Error(err)
-	return echo.NewHTTPError(code, message)
-}
-
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
 }
 
-func loadItems() (Items, error) {
-	// Load items.json
-	_, err := os.Stat(ItemsJson)
-	if err == nil {
-		// ItemsJson exists
-		file, err := os.Open(ItemsJson)
-		if err != nil {
-			return Items{}, err
-		}
-		defer file.Close()
-		var items Items
-		decoder := json.NewDecoder(file)
-		if err := decoder.Decode(&items); err == io.EOF {
-			// Empty file
-			new_items := new(Items)
-			return *new_items, nil
-		} else if err != nil {
-			return Items{}, err
-		}
-		return items, nil
-
-	} else if errors.Is(err, os.ErrNotExist) {
-		// ItemsJson does not exist
-		new_items := new(Items)
-		return *new_items, nil
-
-	}
-	// Other errors
-	return Items{}, err
-}
-
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
-	category := c.FormValue("category")
-	id := c.FormValue("id")
-	c.Logger().Infof("Receive item: id=%s, name=%s, category=%s", id, name, category)
+	category_name := c.FormValue("category")
+	c.Logger().Infof("Receive item: name=%s, category=%s", name, category_name)
 
-	// Load items.json
-	items, err := loadItems()
+	// Load items
+	db, err := loadDb(DbPath)
 	if err != nil {
-		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load items")
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load database")
 	}
+	defer db.Close()
 
-	// Create objects
-	new_item := new(Item)
-	new_item.Name = name
-	new_item.Category = category
-
-	// Register id
-	new_item.Id, err = strconv.Atoi(id)
+	// Search or insert category
+	category, err := loadCategoryByName(db, category_name)
 	if err != nil {
-		return httpErrorHandler(err, c, http.StatusBadRequest, "id must be an integer")
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load category")
 	}
-	if getItemIdxById(new_item.Id, items) != -1 {
-		err_msg := fmt.Sprintf("id already exists: %d", new_item.Id)
-		return httpErrorHandler(err, c, http.StatusBadRequest, err_msg)
+	if category == nil {
+		err = insertCategory(db, category_name)
+		if err != nil {
+			return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to insert category")
+		}
+		category, err = loadCategoryByName(db, category_name)
+		if err != nil {
+			return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load category")
+		}
 	}
 
 	// Register image
@@ -113,22 +52,15 @@ func addItem(c echo.Context) error {
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusBadRequest, "Image not found")
 	}
-	new_item.ImageName, err = registerImg(header)
+	image_name, err := registerImg(header)
 	if err != nil {
 		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to register image")
 	}
-	items.Items = append(items.Items, *new_item)
 
-	// Convert item_obj to json
-	file, err := os.Create(ItemsJson)
+	// Insert new item to database
+	err = insertItem(db, name, category.Id, image_name)
 	if err != nil {
-		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to create json")
-	}
-	defer file.Close()
-	// Write updated items to the file
-	encoder := json.NewEncoder(file)
-	if err := encoder.Encode(items); err != nil {
-		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to write json")
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to insert item")
 	}
 
 	message := fmt.Sprintf("item received: %s", name)
@@ -137,63 +69,28 @@ func addItem(c echo.Context) error {
 	return c.JSON(http.StatusCreated, res)
 }
 
-func registerImg(header *multipart.FileHeader) (string, error) {
-	// Read uploaded file
-	src, err := header.Open()
+func getAllItems(c echo.Context) error {
+	// Load items
+	db, err := loadDb(DbPath)
 	if err != nil {
-		return "", err
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load database")
 	}
-	defer src.Close()
+	defer db.Close()
 
-	// Convert src to hash
-	hash := sha256.New()
-	if _, err := io.Copy(hash, src); err != nil {
-		return "", err
-	}
-	hex_hash := hex.EncodeToString(hash.Sum(nil))
-
-	// Reset the read position of the file
-	if _, err := src.Seek(0, 0); err != nil {
-		return "", err
-	}
-
-	// Save file to images/
-	filename := hex_hash + path.Ext(header.Filename)
-	file, err := os.Create(path.Join(ImgDir, filename))
+	joined_items, err := joinAll(db)
 	if err != nil {
-		return "", err
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to join items and categories")
 	}
-	defer file.Close()
-	if _, err := io.Copy(file, src); err != nil {
-		return "", err
-	}
-
-	return filename, nil
-}
-
-func getItems(c echo.Context) error {
-	// Load items.json
-	items, _ := loadItems()
-	c.Logger().Infof("items: %+v", items)
-	return c.JSON(http.StatusOK, items)
-}
-
-func getItemIdxById(id int, items Items) int {
-	// return index if id exists, otherwise return -1
-	for idx, item := range items.Items {
-		if item.Id == id {
-			return idx
-		}
-	}
-	return -1
+	return c.JSON(http.StatusOK, joined_items)
 }
 
 func getItemById(c echo.Context) error {
 	// Load items
-	items, err := loadItems()
+	db, err := loadDb(DbPath)
 	if err != nil {
-		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load items")
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load database")
 	}
+	defer db.Close()
 
 	// Convert id string to int
 	id, err := strconv.Atoi(c.Param("id"))
@@ -201,13 +98,25 @@ func getItemById(c echo.Context) error {
 		err_msg := fmt.Sprintf("id not found: '%s'. id must be an integer", c.Param("id"))
 		return httpErrorHandler(err, c, http.StatusBadRequest, err_msg)
 	}
-	idx := getItemIdxById(id, items)
-	if idx == -1 {
+
+	// Load item by id
+	item, err := loadItemById(db, id)
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load item")
+	}
+	if item == nil {
 		err_msg := fmt.Sprintf("id not found: %d", id)
+		err = fmt.Errorf(err_msg)
 		return httpErrorHandler(err, c, http.StatusNotFound, err_msg)
 	}
-	c.Logger().Infof("item: %+v", items.Items[idx])
-	return c.JSON(http.StatusOK, items.Items[idx])
+
+	// Join item and category name
+	joined_item, err := joinItemAndCategory(db, *item)
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to join item and category")
+
+	}
+	return c.JSON(http.StatusOK, joined_item)
 }
 
 func getImg(c echo.Context) error {
@@ -223,6 +132,51 @@ func getImg(c echo.Context) error {
 		imgPath = path.Join(ImgDir, "default.jpg")
 	}
 	return c.File(imgPath)
+}
+
+func searchItems(c echo.Context) error {
+	// Get keyword
+	keyword := c.QueryParam("keyword")
+	c.Logger().Infof("keyword=%s", keyword)
+
+	// Load items
+	db, err := loadDb(DbPath)
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load database")
+	}
+	defer db.Close()
+
+	joined_items, err := loadJoinedItemsByKeyword(db, keyword)
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to search items")
+	}
+
+	c.Logger().Infof("items: %+v", joined_items)
+	return c.JSON(http.StatusOK, joined_items)
+}
+
+func addCategory(c echo.Context) error {
+	// Get form data
+	name := c.FormValue("name")
+	c.Logger().Infof("Receive category: name=%s", name)
+
+	// Load items
+	db, err := loadDb(DbPath)
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to load database")
+	}
+	defer db.Close()
+
+	// Insert new category to database
+	err = insertCategory(db, name)
+	if err != nil {
+		return httpErrorHandler(err, c, http.StatusInternalServerError, "Failed to insert category")
+	}
+
+	message := fmt.Sprintf("category received: %s", name)
+	res := Response{Message: message}
+
+	return c.JSON(http.StatusCreated, res)
 }
 
 func main() {
@@ -246,9 +200,11 @@ func main() {
 	// Routes
 	e.GET("/", root)
 	e.POST("/items", addItem)
-	e.GET("/items", getItems)
+	e.GET("/items", getAllItems)
 	e.GET("/items/:id", getItemById)
 	e.GET("/image/:imageFilename", getImg)
+	e.GET("/search", searchItems)
+	e.POST("/categories", addCategory)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))

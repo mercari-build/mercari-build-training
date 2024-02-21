@@ -1,0 +1,2 @@
+CREATE TABLE IF NOT EXISTS "items"(id integer PRIMARY KEY, name text, category_id integer, image_name string);
+CREATE TABLE IF NOT EXISTS "categories"(id integer PRIMARY KEY, name text UNIQUE);
