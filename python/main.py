@@ -27,6 +27,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# カスタムエラークラスの定義
+class ErrorL107(Exception):
+    def __init__(self, message="Error L107: File not found"):
+        self.message = message
+        super().__init__(self.message)
+
 # ルートエンドポイント
 @app.get("/")
 def root():
@@ -51,12 +57,6 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Opti
         with open(image_path, "wb") as file:
             file.write(contents)
         logger.info(f"Image saved: {image_name}")
-
-    # カスタムエラークラスの定義
-    class ErrorL107(Exception):
-        def __init__(self, message="Error L107: File not found"):
-            self.message = message
-            super().__init__(self.message)
 
     # 新しいアイテムIDの決定
     new_item_id = 1
@@ -89,7 +89,8 @@ async def get_items():
             data = json.load(file)
             return data
     except FileNotFoundError:
-        return {"detail": "Items not found."}
+        # return {"detail": "Items not found."}
+        raise ErrorL107()
 
 # 画像取得エンドポイント
 @app.get("/image/{image_name}")
