@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -26,7 +25,6 @@ const (
 )
 
 type Item struct {
-	SeqID     string `json:"seq_id"`
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Category  string `json:"category"`
@@ -43,16 +41,9 @@ type Response struct {
 
 var itemsMap map[string]Item
 
-func GenerateUUID() string {
-	return uuid.New().String()
-}
-
-func mapToItemsSlice() []Item {
-	items := make([]Item, 0, len(itemsMap))
-	for _, item := range itemsMap {
-		items = append(items, item)
-	}
-	return items
+func root(c echo.Context) error {
+	res := Response{Message: "Hello, world!"}
+	return c.JSON(http.StatusOK, res)
 }
 
 func readItemsFromFile() (*Items, error) {
@@ -84,17 +75,15 @@ func readItemsFromFile() (*Items, error) {
 	return &items, nil
 }
 
-func writeItemsToFile() error {
-	items := mapToItemsSlice()
-
+func writeItemsToFile(items *Items) error {
 	file, err := os.Create(ItemsFile)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-
+	// Items to JSON
 	encoder := json.NewEncoder(file)
-	if err := encoder.Encode(Items{Items: items}); err != nil {
+	if err := encoder.Encode(items); err != nil {
 		return err
 	}
 	return nil
@@ -151,11 +140,6 @@ func saveImage(image *multipart.FileHeader, imagePath string) error {
 	return nil
 }
 
-func root(c echo.Context) error {
-	res := Response{Message: "Hello, world!"}
-	return c.JSON(http.StatusOK, res)
-}
-
 func addItem(c echo.Context) error {
 	name := c.FormValue("name")
 	category := c.FormValue("category")
@@ -182,26 +166,33 @@ func addItem(c echo.Context) error {
 		imagePath = "default.jpg"
 	}
 
-	uuid := GenerateUUID()
-	seqID := strconv.Itoa(len(itemsMap) + 1)
+	// Read existing items from file
+	items, err := readItemsFromFile()
+	if err != nil && !os.IsNotExist(err) {
+		return c.JSON(http.StatusInternalServerError, Response{Message: "Failed to read items from file"})
+	}
+	if items == nil {
+		items = &Items{}
+	}
+
+	newID := len(items.Items) + 1
 
 	newItem := Item{
-		SeqID:     seqID,
-		ID:        uuid,
+		ID:        strconv.Itoa(newID),
 		Name:      name,
 		Category:  category,
 		ImageName: imagePath,
 	}
 
-	// Add new item to the map
-	itemsMap[uuid] = newItem
+	// Add new item to items list
+	items.Items = append(items.Items, newItem)
 
 	// Write updated items back to file
-	if err := writeItemsToFile(); err != nil {
+	if err := writeItemsToFile(items); err != nil {
 		return c.JSON(http.StatusInternalServerError, Response{Message: "Failed to write item to file"})
 	}
 
-	return c.JSON(http.StatusOK, newItem)
+	return c.JSON(http.StatusOK, items)
 }
 
 func getItem(c echo.Context) error {
@@ -214,8 +205,11 @@ func getItem(c echo.Context) error {
 }
 
 func getItems(c echo.Context) error {
-	items := mapToItemsSlice()
-	return c.JSON(http.StatusOK, Items{Items: items})
+	items, err := readItemsFromFile()
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, items)
 }
 
 func getImg(c echo.Context) error {
@@ -247,15 +241,6 @@ func main() {
 		AllowOrigins: []string{frontURL},
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
-
-	// Read existing items from file at startup
-	items, err := readItemsFromFile()
-	if err != nil && !os.IsNotExist(err) {
-		e.Logger.Fatal("Failed to read items from file:", err)
-	}
-	if items == nil {
-		items = &Items{}
-	}
 
 	// Routes
 	e.GET("/", root)
