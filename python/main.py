@@ -65,6 +65,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     # 新しい商品情報を作成
     new_item = {"name": name, "category": category, "image": image_filename}
     
+
     # DBに接続する
     conn = sqlite3.connect(sqlite3_file)
     # SQLiteを操作するためのカーソルを作成
@@ -77,6 +78,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     cursor.close()
     conn.close()
         
+
     return {"message": f"item received: {name}, category: {category}, image: {image_filename}"}
 
 @app.get("/image/{image_name}")
@@ -120,3 +122,4 @@ def search_items(keyword: str):
     conn.close()
     
     return {"items": items}
+
