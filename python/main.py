@@ -9,8 +9,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
-logger.level = logging.INFO
+logger.level = logging.DEBUG
 images = pathlib.Path(__file__).parent.resolve() / "images"
+items_file = pathlib.Path(__file__).parent.resolve() / "items.json"
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
     CORSMiddleware,
@@ -22,43 +23,47 @@ app.add_middleware(
 
 @app.get("/")
 def root():
+    logger.info("Hello world")
     return {"message": "Hello, world!"}
 
 @app.get("/items")
 def get_items():
-    with open('items.json', 'r') as f:
-        items_data = json.load(f)
-    logger.info(f"Receive items: {items_data}")
-    return items_data
+    items_json_path = pathlib.Path(__file__).parent.resolve() / "items.json"
+    if os.path.exists(items_file):
+        with open(items_json_path, 'r') as f:
+            items_data = json.load(f)
+        logger.info(f"Receive items: {items_data}")
+        return items_data
+    else:
+        logger.error("items.json not found")
+        raise HTTPException(status_code=404, detail="Items not found")
 
 @app.post("/items")
 async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
-    print("test")
     try:
         #Hash
         image_bytes = await image.read()
         image_hash = hashlib.sha256(image_bytes).hexdigest()
-
         image_name = f"{image_hash}.jpg"
         image_path = images / image_name
-        print(image_path)
         with open(image_path, 'wb') as f:
             f.write(image_bytes)
 
         # Open the JSON file
-        if os.path.exists("items.json"):
+        if os.path.exists(items_file):
             with open('items.json', 'r') as f:
                 items_data = json.load(f)
         else:
-            items_data = {}
-        
+            items_data = []
+        logger.debug(items_data)
+
         #Append the new item
-        items_data["items"].append({
+        items_data.append({
             'name': name,
             'category': category,
             'image_name':image_name
         })
-
+        logger.debug(items_data)
         #Write the updates to items.json
         with open('items.json', 'w') as f:
             json.dump(items_data, f)
@@ -93,7 +98,7 @@ def get_item(item_id: int):
         with open('items.json', 'r') as f:
             items_data = json.load(f)
         if 1 <= item_id <= len(items_data["items"]):
-            item = items_data["items"][item_id - 0]
+            item = items_data["items"][item_id - 1]
             logger.info(f"Access item: {item_id}")
             return item
         else:
