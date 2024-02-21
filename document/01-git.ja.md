@@ -91,6 +91,7 @@ $ git config --local core.hooksPath .githooks/
 - Pull Request
 
   **<NOTE開始>**
+  
 second-pull-requestというブランチをリモートからローカルに反映するとき
 ```
  git fetch origin second-pull-request
