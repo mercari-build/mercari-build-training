@@ -6,14 +6,26 @@ import (
 	"os"
 	"path"
 	"strings"
+	"encoding/json"
+	"io/ioutil"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 )
 
+type Item struct {
+	Name 		string `json:"name"`
+	Category 	string `json:"category"`
+}
+
+type Items struct {
+	Items []Item `json:"items"`
+}
+
 const (
 	ImgDir = "images"
+	ItemsJson = "app/items.json"
 )
 
 type Response struct {
@@ -25,15 +37,78 @@ func root(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+func readItemsFromFile() ([]Item, error) {
+	data, err := ioutil.ReadFile(ItemsJson)
+	if err != nil {
+		return nil, err
+	}
+	
+	var items Items
+
+	err = json.Unmarshal(data, &items)
+	if err != nil {
+		return nil, err
+	}
+
+	return items.Items, nil
+}
+
+func getItems(c echo.Context) error {
+	items, err := readItemsFromFile()
+
+	if err != nil {
+		return err
+	}
+	
+	return c.JSON(http.StatusOK, Items{Items:items})
+
+}
+
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
-	c.Logger().Infof("Receive item: %s", name)
+	category := c.FormValue("category")
+	c.Logger().Infof("Receive item: %s. Category: %s", name, category)
 
-	message := fmt.Sprintf("item received: %s", name)
+	err := addItemtoJson(name, category)
+	if err != nil {
+		return err
+	}
+
+	message := fmt.Sprintf("item received: %s, %s", name, category)
 	res := Response{Message: message}
 
 	return c.JSON(http.StatusOK, res)
+}
+
+func addItemtoJson(name string, category string) error {
+	file, err := os.OpenFile(ItemsJson, os.O_RDWR, 0755)
+	if err != nil {
+		return err
+	}
+	defer file.Close() 
+
+	//currentItems := Items
+	// err = json.NewDecoder(file).Decode(&currentItems)
+	currentItems, err2 := readItemsFromFile()
+	if err2 != nil {
+		return err2
+	}
+
+	newItem := Item{Name: name, Category: category}
+
+	currentItems = append(currentItems, newItem)
+
+	file.Truncate(0)
+	file.Seek(0, 0)
+
+	err = json.NewEncoder(file).Encode(Items{Items:currentItems})
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }
 
 func getImg(c echo.Context) error {
@@ -71,6 +146,7 @@ func main() {
 	// Routes
 	e.GET("/", root)
 	e.POST("/items", addItem)
+	e.GET("/items", getItems)
 	e.GET("/image/:imageFilename", getImg)
 
 
