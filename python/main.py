@@ -27,12 +27,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# カスタムエラークラスの定義
-# class ErrorL107(Exception):
-#     def __init__(self, message="Error L107: File not found"):
-#         self.message = message
-#         super().__init__(self.message)
-
 # ルートエンドポイント
 @app.get("/")
 def root():
