@@ -8,6 +8,7 @@ import (
 	"strings"
 	"encoding/json"
 	"io/ioutil"
+	"crypto/sha256"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -17,6 +18,7 @@ import (
 type Item struct {
 	Name 		string `json:"name"`
 	Category 	string `json:"category"`
+	Image		string `json:"image"`
 }
 
 type Items struct {
@@ -109,6 +111,10 @@ func addItemtoJson(name string, category string) error {
 
 	return nil
 
+}
+
+func hashImg() error {
+	
 }
 
 func getImg(c echo.Context) error {
