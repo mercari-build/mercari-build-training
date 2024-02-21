@@ -12,11 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
 logger.level = logging.DEBUG  # ログレベルをDEBUGに変更
-# images ファイルへのパス
 images = pathlib.Path(__file__).parent.resolve() / "images"
 images.mkdir(parents=True, exist_ok=True)  # imagesディレクトリを作成する
-# items.json ファイルのパス
-items_file_path = pathlib.Path(__file__).parent.resolve() / "items.json"
 # mercari.sqlite3 のパス
 sqlite3_file = "mercari.sqlite3"
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
@@ -28,27 +25,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# items.json ファイルに保存
-def save_items_to_json(items):
-    with open(items_file_path, "w") as f:
-        json.dump(items, f, indent=4)
-
-def load_items_from_json():
-    if items_file_path.exists():
-        with open(items_file_path, "r") as f:
-            return json.load(f)
-    return {"items": []}
-
 def save_image(file, filename):
     with open(images / filename, "wb") as image:
         image.write(file)
-
-# dbに保存
-def save_items_to_db(items):
-    with open(items_file_path, "w") as f:
-        json.dump(items, f, indent=4)
-
+        
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
@@ -96,19 +76,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     # DBとの接続を閉じる
     cursor.close()
     conn.close()
-    
-    
-    # 既存の商品リストを取得
-    items_data = load_items_from_json()
-    existing_items = items_data.get("items", [])
-    
-    # 新しい商品を追加
-    existing_items.append(new_item)
-    items_data["items"] = existing_items
-    
-    # 商品情報を JSON ファイルに保存
-    save_items_to_json(items_data)
-    
+        
     return {"message": f"item received: {name}, category: {category}, image: {image_filename}"}
 
 @app.get("/image/{image_name}")
@@ -145,7 +113,8 @@ def get_item(item_id: int = Path(..., title="The ID of the item to get")):
 def search_items(keyword: str):
     conn = sqlite3.connect(sqlite3_file)
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM items WHERE name LIKE ?", ('%' + keyword + '%',))
+    # itemsテーブルと categoriesテーブルをjoin
+    cursor.execute("SELECT items.id, items.name, categories.name AS category, items.image_name FROM items JOIN categories ON items.category_id = categories.id WHERE items.name LIKE ?", ('%' + keyword + '%',))
     items = cursor.fetchall()
     cursor.close()
     conn.close()
