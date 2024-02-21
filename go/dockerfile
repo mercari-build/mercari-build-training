@@ -13,7 +13,7 @@ COPY go/go.sum ./go/
 
 WORKDIR /app/go
 
-RUN go mod download
+RUN go mod tidy
 RUN CGO_ENABLED=1 go build -o ./mercari-build-training ./app/*.go
 
 RUN addgroup -S mercari && adduser -S trainee -G mercari
