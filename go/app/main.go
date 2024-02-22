@@ -10,14 +10,17 @@ import (
 	"encoding/json"
 	"crypto/sha256"
 	"strconv"
+	"database/sql"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
 	ImgDir = "images"
+	DbPath = "../db/mercari.sqlite3"
 )
 
 type Response struct {
@@ -49,6 +52,8 @@ func errorHandler(c echo.Context, err error, message string) error {
 	return c.JSON(http.StatusInternalServerError, res)
 }
 
+// **************************************************************************
+// In Step 3, save the data in a JSON file 
 /**
  This function reads the item list from "items.json". It first checks if
  the file exists or not. If it exists, reads the data and returns the list.
@@ -156,6 +161,139 @@ func getItemById(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, list.Items[id-1])
 }
+// **************************************************************************
+
+// From here are functions working with the SQLite database
+
+/*
+ * Given rows of a table, extract the data and store it in the ItemList struct
+ */
+func storeInItemStruct(c echo.Context, rows *sql.Rows) (ItemList, error) {
+	list := ItemList{}
+	for rows.Next() {
+		var item Item
+        err := rows.Scan(&item.Name, &item.Category, &item.Image)
+        if err != nil {
+            return ItemList{}, errorHandler(c, err, "Error: rows.Scan")
+        }
+		list.Items = append(list.Items, item)
+    }
+	return list, nil
+}
+
+/*
+ * Insert a new item on the two tables in the database
+ * items: (id, name, category_id, image_name)
+ * categories: (id, name)
+ */
+func addItemDatabase(c echo.Context) error {
+	// Get form data
+	name := c.FormValue("name")
+	c.Logger().Infof("Receive item: %s", name)
+	category := c.FormValue("category")
+	c.Logger().Infof("Receive category: %s", category)
+	image := c.FormValue("image")
+
+	// Hash image name
+	h := sha256.New()
+	h.Write([]byte(strings.Split(image, ".")[0]))
+	image = fmt.Sprintf("%x", h.Sum(nil)) + ".jpg"
+
+	// Connect to the database
+	db, err := sql.Open("sqlite3", DbPath)
+	if err != nil {
+		return errorHandler(c, err, "Error: sql.Open")
+	}
+	defer db.Close()
+
+	// Get the category id; create one if not exists
+	var category_id int
+	row := db.QueryRow("SELECT id FROM categories WHERE name=?", category)
+	err = row.Scan(&category_id)
+    if err == sql.ErrNoRows {
+		cmd := "INSERT INTO categories (name) VALUES (?)"
+		res, err := db.Exec(cmd, category)
+		if err != nil {
+			return errorHandler(c, err, "Error: db.Exec")
+		}
+		id, err := res.LastInsertId()
+		if err != nil {
+            return errorHandler(c, err, "Error: LastInsertId")
+        }
+		category_id = int(id)
+    } else if err != nil {
+        return errorHandler(c, err, "Error: row.Scan")
+    }
+
+	// Insert the new item to the database
+	cmd := "INSERT INTO items (name, category_id, image_name) VALUES ($1, $2, $3)"
+	_, err = db.Exec(cmd, name, category_id, image)
+	if err != nil {
+		return errorHandler(c, err, "Error: db.Exec")
+	}
+
+	// Response
+	message := fmt.Sprintf("item received: %s", name)
+	res := Response{Message: message}
+	return c.JSON(http.StatusOK, res)
+}
+
+/*
+ * Combine the two tables in the database and show the item list 
+ */
+func getItemDatabase(c echo.Context) error {
+	// Connect to the database
+	db, err := sql.Open("sqlite3", DbPath)
+	if err != nil {
+		return errorHandler(c, err, "Error: sql.Open")
+	}
+	defer db.Close()
+
+	// Get the item list
+	rows, err := db.Query("SELECT i.name, c.name, i.image_name FROM items AS i INNER JOIN categories AS c ON i.category_id=c.id")
+    defer rows.Close()
+    if err != nil {
+		return errorHandler(c, err, "Error: Database Query")
+    }
+
+	// Store in the ItemList struct
+	list, errHandler := storeInItemStruct(c, rows) 
+	if (err != nil) {
+		return errHandler
+	}
+	return c.JSON(http.StatusOK, list)
+}
+
+/*
+ * Search items that match the keyword given
+ */
+func search(c echo.Context) error {
+	keyword := c.QueryParam("keyword")
+
+	// Connect to the database
+	db, err := sql.Open("sqlite3", DbPath)
+	if err != nil {
+		return errorHandler(c, err, "Error: sql.Open")
+	}
+	defer db.Close()
+
+	// Get the item list based on the keyword
+	cmd := "SELECT i.name, c.name, i.image_name FROM items AS i INNER JOIN categories AS c ON i.category_id=c.id WHERE i.name LIKE $1 OR c.name LIKE $1"
+	rows, err := db.Query(cmd, "%" + keyword + "%")
+    defer rows.Close()
+    if err != nil {
+		return errorHandler(c, err, "Error: Database Query")
+    }
+
+	// Store in the ItemList struct
+	list, errHandler := storeInItemStruct(c, rows) 
+	if (err != nil) {
+		return errHandler
+	}
+	return c.JSON(http.StatusOK, list)
+}
+
+// **************************************************************************
 
 func main() {
 	e := echo.New()
@@ -176,10 +314,13 @@ func main() {
 
 	// Routes
 	e.GET("/", root)
-	e.POST("/items", addItem)
-	e.GET("/items", getItem)
+	// e.POST("/items", addItem)
+	// e.GET("/items", getItem)
+	e.POST("/items", addItemDatabase)
+	e.GET("/items", getItemDatabase)
 	e.GET("/image/:imageFilename", getImg)
 	e.GET("/items/:id", getItemById)
+	e.GET("/search", search)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
