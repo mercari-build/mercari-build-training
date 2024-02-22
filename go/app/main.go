@@ -1,8 +1,11 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
@@ -24,8 +27,9 @@ type Response struct {
 }
 
 type Item struct {
-	Name     string `json:"name"`
-	Category string `json:"category"`
+	Name      string `json:"name"`
+	Category  string `json:"category"`
+	ImageName string `json:"image_name"`
 }
 
 type Items struct {
@@ -41,10 +45,19 @@ func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
 	category := c.FormValue("category")
+	image, err := c.FormFile("image")
+	if err != nil {
+		return err
+	}
 
 	c.Logger().Infof("Receive item: %s, Category: %s", name, category)
 
 	if err := saveItem(name, category); err != nil {
+		res := Response{Message: err.Error()}
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+
+	if err := saveImage(image); err != nil {
 		res := Response{Message: err.Error()}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
@@ -74,6 +87,34 @@ func saveItem(name, category string) error {
 
 	if err = os.WriteFile(ItemsPath, newData, 0644); err != nil {
 		err := fmt.Errorf("error while writing file: %w", err)
+		return err
+	}
+
+	return nil
+}
+
+func saveImage(image *multipart.FileHeader) error {
+	img, err := image.Open()
+	if err != nil {
+		return err
+	}
+	source, err := io.ReadAll(img)
+	if err != nil {
+		return err
+	}
+
+	hash := sha256.Sum256(source)
+
+	err = os.MkdirAll("./images", 0777)
+	if err != nil {
+		return err
+	}
+
+	fileName := fmt.Sprintf("%v", hash) + ".jpg"
+	imagePath := "./images/" + fileName
+
+	_, err = os.Create(imagePath)
+	if err != nil {
 		return err
 	}
 
