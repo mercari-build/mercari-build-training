@@ -77,8 +77,11 @@ func addItem(c echo.Context) error {
 		return err
 	}
 	// output as json file
-	_ = ioutil.WriteFile("items.json", updatedJson, 0644)
-
+	err = ioutil.WriteFile("items.json", updatedJson, 0644)
+	if err != nil {
+		log.Print("JSONファイル出力に失敗", err)
+		return err
+	}
 	return c.JSON(http.StatusOK, res)
 }
 
