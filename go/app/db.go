@@ -25,15 +25,10 @@ func openDb() (*sql.DB, error) {
 }
 
 func createTableIfNotExists(db *sql.DB) error {
-	file, err := os.Open(dbSchemaPath)
+	sch, err := os.ReadFile(dbSchemaPath)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	var sch string
-	if _, err := file.Read([]byte(sch)); err != nil {
-		return err
-	}
-	_, err = db.Exec(sch)
+	_, err = db.Exec(string(sch))
 	return err
 }
