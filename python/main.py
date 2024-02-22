@@ -22,12 +22,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# con = sqlite3.connect(db / "mercari.sqlite3") #create connection object
+# cur = con.cursor() #create cursor
+# cur.execute('''DELETE FROM items''')
+# cur.execute('''DELETE FROM categories''')
+# con.commit()
+# con.close()
+
+
 # Function: Create table if it doesn't exist yet
-def create_table():
+def create_tables():
     con = sqlite3.connect(db / "mercari.sqlite3") #create connection object
     cur = con.cursor() #create cursor
+    # cur.execute('''DROP TABLE IF EXISTS items''')
+    # cur.execute('''DROP TABLE IF EXISTS categories''')
     cur.execute('''CREATE TABLE IF NOT EXISTS items 
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, category TEXT, image_name TEXT)''')
+             (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, category_id INTEGER, image_name TEXT)''')
+
+    cur.execute('''CREATE TABLE IF NOT EXISTS categories 
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)''')
     con.commit()
     con.close()
 
@@ -44,7 +57,8 @@ def get_items():
         cur.execute("SELECT * FROM items")
         items_data = []
         for row in cur.fetchall():
-            items_data += [{"id": row[0], "name": row[1], "category": row[2], "image_name": row[3]}]
+            logger.debug(row)
+            items_data += [{"id": row[0], "name": row[1], "category_id": row[2], "image_name": row[3]}]
         con.close()
         logger.info(f"Receive items: {items_data}")
         return items_data
@@ -62,16 +76,29 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
         image_path = images / image_name
         with open(image_path, 'wb') as f:
             f.write(image_bytes)
-        
-        create_table() #create table if it deosn't exist
+        create_tables() #create table if it deosn't exist
         con = sqlite3.connect(db / "mercari.sqlite3")
         cur = con.cursor()
-        cur.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)", (name, category, image_name))
+        cur.execute("SELECT id FROM categories WHERE name = ?", (category,))
+        category_row = cur.fetchone()
+        logger.debug(category_row)
+
+        if category_row == None:
+            cur.execute("INSERT INTO categories (name) VALUES (?)", (category,))
+            con.commit()
+            category_id = cur.lastrowid
+        else:
+            category_id = category_row[0]
+
+        cur.execute("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)", (name, category_id, image_name))
         con.commit()
         con.close()
 
-        logger.info(f"Receive item: {name}, category: {category}, image: {image_name}")
+        logger.info(f"Receive item: {name}, category_id: {category_id}, category: {category}, image: {image_name}")
         return {"message": f"item received: {name}, Category: {category}"}
+    except sqlite3.Error as sqlerror:
+        logger.error(f"SQLite error occurred: {sqlerror}")
+        raise HTTPException(status_code=500, detail=f"SQL Error: {sqlerror}")
     except Exception as error:
         logger.error(f"An unexpected error occured. Error: {error}")
         raise HTTPException(status_code=500, detail=f"Error: {error}")
@@ -110,18 +137,22 @@ def get_item(item_id: int):
         logger.error(f"File not found")
         raise HTTPException(status_code=500, detail="Internal Server Error")
     
+#STEP 4.2
 @app.get("/search")
 def get_items(keyword: str):
     try:
         con = sqlite3.connect(db / "mercari.sqlite3")
         cur = con.cursor()
-        cur.execute("SELECT name, category FROM items WHERE name LIKE ?", ('%' + keyword + '%',))
+        cur.execute("SELECT name, category_id FROM items WHERE name LIKE ?", ('%' + keyword + '%',))
         items_data = {"items": []}
         for row in cur.fetchall():
             items_data["items"].append({"name": row[0], "category": row[1]})
         con.close()
         logger.info(f"Items under the name {keyword}: {items_data}")
         return items_data
+    except sqlite3.Error as sqlerror:
+        logger.error(f"SQLite error occurred: {sqlerror}")
+        raise HTTPException(status_code=500, detail=f"SQL Error: {sqlerror}")
     except Exception as error:
         logger.error(f"Error occured: {error}")
         raise HTTPException(status_code=500, detail=f"Error: {error}")
