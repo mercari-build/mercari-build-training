@@ -118,6 +118,11 @@ func saveImage(image *multipart.FileHeader) error {
 		return err
 	}
 
+	err = os.WriteFile(imagePath, source, 0777)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
