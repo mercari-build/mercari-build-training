@@ -4,10 +4,8 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -48,24 +46,6 @@ func errMessage(c echo.Context, err error, status int, message string) error {
 	errorMessage := fmt.Sprintf("%s:%s", message, err)
 	return c.JSON(status, Response{Message: errorMessage})
 
-}
-
-func readFile(c echo.Context, filePath string) (ItemsData, error) {
-	var items ItemsData
-	file, err := os.Open(filePath)
-	if err != nil {
-		return items, errMessage(c, err, http.StatusBadRequest, "Unable to open the file")
-	}
-	defer file.Close()
-	jsonData, err := ioutil.ReadAll(file)
-	if err != nil {
-		return items, errMessage(c, err, http.StatusBadRequest, "Unable to read json data")
-	}
-	err = json.Unmarshal(jsonData, &items)
-	if err != nil {
-		return items, errMessage(c, err, http.StatusBadRequest, "Unable to unmarshal")
-	}
-	return items, nil
 }
 
 func addItem(c echo.Context) error {
@@ -198,7 +178,7 @@ func getItems(c echo.Context) error {
 	}
 	defer db.Close()
 
-	stmt, err := db.Prepare("SELECT * FROM items")
+	stmt, err := db.Prepare("SELECT items.id,items.name,categories.name,items.image_name FROM items LEFT JOIN categories ON items.category=categories.id")
 	if err != nil {
 		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
 	}
@@ -276,6 +256,33 @@ func searchItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, itemsData)
 }
 
+func addCategory(c echo.Context) error {
+	// Get form data
+	name := c.FormValue("name")
+	//Print message
+	message := fmt.Sprintf("category received: %s", name)
+	res := Response{Message: message}
+
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("INSERT INTO categories(name) VALUES (?)")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(name)
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to execute sql command")
+	}
+
+	return c.JSON(http.StatusOK, res)
+
+}
+
 func main() {
 	e := echo.New()
 
@@ -300,6 +307,7 @@ func main() {
 	e.GET("/image/:imageFilename", getImg)
 	e.GET("/items/:item_id", getItem)
 	e.GET("/search", searchItem)
+	e.POST("/categories", addCategory)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
