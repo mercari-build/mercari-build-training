@@ -197,11 +197,10 @@ func (s ServerImpl) getItemsByKeyword() echo.HandlerFunc {
 		keyword := c.QueryParam("keyword")
 
 		// DBから名前にキーワードを含む商品一覧を返す
-		searchKeyword := "%" + keyword + "%" // 部分一致検索
 		rows, err := s.db.Query(`
 			SELECT items.name, categories.name, items.image_name 
 			FROM items JOIN categories ON items.category_id = categories.id 
-			WHERE items.name LIKE ?`, searchKeyword)
+			WHERE items.name LIKE '%' || ? || '%'`, keyword)
 		if err != nil {
 			res := Response{Message: fmt.Sprintf("failed to search items from DB in getItemsByKeyword: keyword=%s", keyword)}
 			return c.JSON(http.StatusInternalServerError, res)
