@@ -93,6 +93,26 @@ func addItem(c echo.Context) error {
 	message := fmt.Sprintf("item received: %s in %s category", newItem.Name, newItem.Category)
 	res = Response{Message: message}
 
+	// Save image file to ImgDir
+	imageFile, err := image.Open()
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open the image")
+	}
+	defer imageFile.Close()
+
+	// Create the file in ImgDir with the hashed name
+	savedImagePath := path.Join(ImgDir, imageName)
+	savedImageFile, err := os.Create(savedImagePath)
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to create the image file")
+	}
+	defer savedImageFile.Close()
+
+	// Copy the image data to the saved file
+	if _, err := io.Copy(savedImageFile, imageFile); err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to save the image file")
+	}
+
 	if _, err := os.Stat("items.json"); err == nil {
 		//Open the exist file and get itemsdata
 		itemsData, err = readFile(c, "items.json")
