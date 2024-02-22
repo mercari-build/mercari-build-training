@@ -108,55 +108,32 @@ func (s ServerImpl) addItemToDB(name, category, imageName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction in addItemToDB: %w", err)
 	}
+	defer tx.Rollback()
+
 	// カテゴリをcategoriesテーブルに追加
 	stmt1, err := tx.Prepare("INSERT INTO categories (name) VALUES (?)")
 	if err != nil {
-		// ロールバック
-		errRollback := tx.Rollback()
-		if errRollback != nil {
-			return fmt.Errorf("failed to rollback :stmt1 prepare: %w", errRollback)
-		}
 		return fmt.Errorf("failed to prepare SQL statement1 in addItemToDB: %w", err)
 	}
 	defer stmt1.Close()
 
 	result, err := stmt1.Exec(category)
 	if err != nil {
-		// ロールバック
-		errRollback := tx.Rollback()
-		if errRollback != nil {
-			return fmt.Errorf("failed to rollback :stmt1 exec: %w", errRollback)
-		}
 		return fmt.Errorf("failed to execute SQL statement1 in addItemToDB: %w", err)
 	}
 	// 新しく挿入された行のIDを取得
 	id, err := result.LastInsertId()
 	if err != nil {
-		// ロールバック
-		errRollback := tx.Rollback()
-		if errRollback != nil {
-			return fmt.Errorf("failed to rollback :get last insert ID: %w", errRollback)
-		}
 		return fmt.Errorf("failed to get last insert ID in addItemToDB: %w", err)
 	}
 
 	// itemsテーブルに商品を追加
 	stmt2, err := tx.Prepare("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)")
 	if err != nil {
-		// ロールバック
-		errRollback := tx.Rollback()
-		if errRollback != nil {
-			return fmt.Errorf("failed to rollback :stmt2 prepare: %w", errRollback)
-		}
 		return fmt.Errorf("failed to prepare SQL statement2 in addItemToDB: %w", err)
 	}
 	defer stmt2.Close()
 	if _, err := stmt2.Exec(name, id, imageName); err != nil {
-		// ロールバック
-		errRollback := tx.Rollback()
-		if errRollback != nil {
-			return fmt.Errorf("failed to rollback :stmt2 exec: %w", errRollback)
-		}
 		return fmt.Errorf("failed to execute SQL statement2 in addItemToDB: %w", err)
 	}
 
