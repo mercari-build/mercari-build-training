@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
@@ -18,16 +19,14 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
-const (
-	ImgDir = "images"
-)
+const ImgDir = "images"
 
 type Response struct {
 	Message string `json:"message"`
 }
 
 type ItemsData struct {
-	Item []Item `json:"items"`
+	Items []Item `json:"items"`
 }
 
 type Item struct {
@@ -41,136 +40,131 @@ func root(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+func errMessage(c echo.Context, err error, status int, message string) error {
+	errorMessage := fmt.Sprintf("%s:%s", message, err)
+	return c.JSON(status, Response{Message: errorMessage})
+
+}
+
+func readFile(c echo.Context, filePath string) (ItemsData, error) {
+	var items ItemsData
+	file, err := os.Open(filePath)
+	if err != nil {
+		return items, errMessage(c, err, http.StatusBadRequest, "Unable to open the file")
+	}
+	defer file.Close()
+	jsonData, err := ioutil.ReadAll(file)
+	if err != nil {
+		return items, errMessage(c, err, http.StatusBadRequest, "Unable to read json data")
+	}
+	err = json.Unmarshal(jsonData, &items)
+	if err != nil {
+		return items, errMessage(c, err, http.StatusBadRequest, "Unable to unmarshal")
+	}
+	return items, nil
+}
+
 func addItem(c echo.Context) error {
+	var res Response
+	var items []Item
+	var itemsData ItemsData
+
 	// Get form data
 	name := c.FormValue("name")
 	category := c.FormValue("category")
 	image, err := c.FormFile("image")
 	if err != nil {
-		// エラー処理
-		errorMessage := fmt.Sprintf("imageを取得できません: %s", err)
-		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
+		errMessage(c, err, http.StatusBadRequest, "Unable to get image")
 	}
 
-	hash := sha256.New()
-	// Open the image file
-	imagefile, err := image.Open()
+	imageName, err := hashFile(c, image)
 	if err != nil {
-		// エラーが発生した場合の処理
-		errorMessage := fmt.Sprintf("imageを開けません: %s", err)
-		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
+		errMessage(c, err, http.StatusBadRequest, "Fail to convert image to hash string")
 	}
-	defer imagefile.Close()
 
-	// Read the file data and write it to the hash function
-	if _, err := io.Copy(hash, imagefile); err != nil {
-		errorMessage := fmt.Sprintf("imageをハッシュにコピーできません: %s", err)
-		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
-	}
-	// Get the final hash value
-	hashValue := hash.Sum(nil)
-	// Convert the byte slice to a hex-encoded string
-	hashString := hex.EncodeToString(hashValue)
-	imageName := hashString + ".jpg"
-
-	var res Response
-	var itemslice []Item
-	// Create a new item with the next ID
+	//Create new item
 	newItem := Item{
 		Name:     name,
 		Category: category,
 		Image:    imageName,
 	}
 
-	//items.jsonファイルがある確認し、なければ新しく作る
+	//Print message
+	message := fmt.Sprintf("item received: %s in %s category", newItem.Name, newItem.Category)
+	res = Response{Message: message}
+
 	if _, err := os.Stat("items.json"); err == nil {
-		file1, err := os.Open("items.json") //すでにあるファイルを開く
+		//Open the exist file and get itemsdata
+		itemsData, err = readFile(c, "items.json")
 		if err != nil {
-			fmt.Println("items.jsonを開けません", err)
+			errMessage(c, err, http.StatusBadRequest, "Fail to read items.json")
 		}
-
-		defer file1.Close()
-		jsonData, err := ioutil.ReadAll(file1)
-		if err != nil {
-			fmt.Println("JSONデータを読み込めません", err)
-		}
-
-		json.Unmarshal(jsonData, &itemslice)
-		if err != nil {
-			log.Printf(err.Error())
-		}
-
-		//Print message
-		message := fmt.Sprintf("item received: %s in %s category", newItem.Name, newItem.Category)
-		res = Response{Message: message}
-
-		// Append the new item to the slice
-		itemslice = append(itemslice, newItem)
+		items = itemsData.Items
+		items = append(items, newItem)
 
 	} else {
-		itemslice = append(itemslice, newItem)
-	}
-	res2 := ItemsData{Item: itemslice}
+		if os.IsNotExist(err) {
+			items = append(items, newItem)
+		} else {
+			errMessage(c, err, http.StatusBadRequest, "Somthing went wrong")
+		}
 
-	file2, err := os.Create("items.json") // fileはos.File型
+	}
+
+	itemFile, err := os.Create("items.json")
 	if err != nil {
-		errorMessage := fmt.Sprintf("items.jsonファイルを作れません: %s", err)
-		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
+		errMessage(c, err, http.StatusBadRequest, "Fail to create items.json")
 	}
-	json.NewEncoder(file2).Encode(res2)
-
+	json.NewEncoder(itemFile).Encode(ItemsData{Items: items})
 	return c.JSON(http.StatusOK, res)
+
 }
 
-func getItems(c echo.Context) error {
-	itemsfile, err := os.Open("items.json") //すでにあるファイルを開く
-	if err != nil {
-		errorMessage := fmt.Sprintf("items.jsonを開けません: %s", err)
-		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
-	}
-	defer itemsfile.Close()
-	jsonData, err := ioutil.ReadAll(itemsfile)
-	if err != nil {
-		errorMessage := fmt.Sprintf("jsonデータを読み込めません: %s", err)
-		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
-	}
-	var itemslice []Item
-	json.Unmarshal(jsonData, &itemslice)
+func hashFile(c echo.Context, image *multipart.FileHeader) (string, error) {
+	//Create hash
+	hash := sha256.New()
 
-	fmt.Println(itemslice)
+	//Open the image file
+	imageFile, err := image.Open()
+	if err != nil {
+		errMessage(c, err, http.StatusBadRequest, "Unable to open the image")
+	}
+	defer imageFile.Close()
 
-	return c.JSON(http.StatusOK, itemslice)
+	// Read the file data and write it to the hash function
+	if _, err := io.Copy(hash, imageFile); err != nil {
+		errMessage(c, err, http.StatusBadRequest, "Unable to copy imagefile to hash")
+	}
+
+	// Get the final hash value
+	hashValue := hash.Sum(nil)
+	// Convert the byte slice to a hex-encoded string
+	hashString := hex.EncodeToString(hashValue)
+	imageName := hashString + ".jpg"
+
+	return imageName, err
 }
 
 func getItem(c echo.Context) error {
 	itemIDStr := c.Param("item_id")
-
 	itemID, err := strconv.Atoi(itemIDStr)
 	if err != nil {
-		errorMessage := fmt.Sprintf("item_idを整数に変換できません: %s", err)
-		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
+		errMessage(c, err, http.StatusBadRequest, "Unable to conveert item_id to int")
+	}
+	itemsData, err := readFile(c, "items.json")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open items.json")
+	}
+	return c.JSON(http.StatusOK, itemsData.Items[itemID-1])
+}
+
+func getItems(c echo.Context) error {
+	itemsData, err := readFile(c, "items.json")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open items.json")
 	}
 
-	fmt.Println(itemID)
-
-	file1, err := os.Open("items.json") //すでにあるファイルを開く
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file1.Close()
-	jsonData, err := ioutil.ReadAll(file1)
-	if err != nil {
-		errorMessage := fmt.Sprintf("jsonデータを読み込めません: %s", err)
-		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
-	}
-	// var itemslice []ItemsData
-	itemsData := ItemsData{}
-	json.Unmarshal(jsonData, &itemsData)
-	if err != nil {
-		log.Printf(err.Error())
-	}
-
-	return c.JSON(http.StatusOK, itemsData.Item[itemID-1])
+	return c.JSON(http.StatusOK, itemsData)
 }
 
 func getImg(c echo.Context) error {
