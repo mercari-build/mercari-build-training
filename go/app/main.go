@@ -42,11 +42,11 @@ type Items struct {
 	Items []Item `json:"items"`
 }
 
-type Conn struct {
+type ServerImpl struct {
 	db *sql.DB
 }
 
-func (conn Conn) addItem() echo.HandlerFunc {
+func (s ServerImpl) addItem() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// リクエストボディからデータを取得
 		name := c.FormValue("name")
@@ -88,7 +88,7 @@ func (conn Conn) addItem() echo.HandlerFunc {
 		}
 
 		// DBへの保存
-		if err := conn.addItemToDB(name, category, hashedImageName); err != nil {
+		if err := s.addItemToDB(name, category, hashedImageName); err != nil {
 			res := Response{Message: fmt.Sprintf("failed to add item to DB in addItem: %s", err)}
 			return c.JSON(http.StatusInternalServerError, res)
 		}
@@ -102,9 +102,9 @@ func (conn Conn) addItem() echo.HandlerFunc {
 	}
 }
 
-func (conn Conn) addItemToDB(name, category, imageName string) error {
+func (s ServerImpl) addItemToDB(name, category, imageName string) error {
 	// トランザクションを開始
-	tx, err := conn.db.Begin()
+	tx, err := s.db.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction in addItemToDB: %w", err)
 	}
@@ -168,10 +168,10 @@ func (conn Conn) addItemToDB(name, category, imageName string) error {
 	return nil
 }
 
-func (conn Conn) getAllItems() echo.HandlerFunc {
+func (s ServerImpl) getAllItems() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// itemsテーブルとcategoriesテーブルをJOINして全てのアイテムを取得
-		rows, err := conn.db.Query("SELECT items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.id")
+		rows, err := s.db.Query("SELECT items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.id")
 		if err != nil {
 			res := Response{Message: "failed to get items from DB in getAllItems"}
 			return c.JSON(http.StatusInternalServerError, res)
@@ -191,14 +191,14 @@ func (conn Conn) getAllItems() echo.HandlerFunc {
 	}
 }
 
-func (conn Conn) getItemsByKeyword() echo.HandlerFunc {
+func (s ServerImpl) getItemsByKeyword() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// クエリパラメータからキーワードを取得
 		keyword := c.QueryParam("keyword")
 
 		// DBから名前にキーワードを含む商品一覧を返す
 		searchKeyword := "%" + keyword + "%" // 部分一致検索
-		rows, err := conn.db.Query(`
+		rows, err := s.db.Query(`
 			SELECT items.name, categories.name, items.image_name 
 			FROM items JOIN categories ON items.category_id = categories.id 
 			WHERE items.name LIKE ?`, searchKeyword)
@@ -221,7 +221,7 @@ func (conn Conn) getItemsByKeyword() echo.HandlerFunc {
 	}
 }
 
-func (conn Conn) getItemById() echo.HandlerFunc {
+func (s ServerImpl) getItemById() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		id, err := strconv.Atoi(c.Param("id"))
 		if err != nil {
@@ -230,7 +230,7 @@ func (conn Conn) getItemById() echo.HandlerFunc {
 		}
 
 		// DBからIDに対応する商品を取得
-		row := conn.db.QueryRow(`
+		row := s.db.QueryRow(`
 			SELECT items.name, categories.name, items.image_name 
 			FROM items JOIN categories ON items.category_id = categories.id 
 			WHERE items.id = ?`, id)
@@ -303,14 +303,14 @@ func main() {
 	}
 	defer db.Close()
 
-	conn := Conn{db: db}
+	serverImpl := ServerImpl{db: db}
 
 	// Routes
 	e.GET("/", root)
-	e.POST("/items", conn.addItem())
-	e.GET("/items", conn.getAllItems())
-	e.GET("/search", conn.getItemsByKeyword())
-	e.GET("/items/:id", conn.getItemById())
+	e.POST("/items", serverImpl.addItem())
+	e.GET("/items", serverImpl.getAllItems())
+	e.GET("/search", serverImpl.getItemsByKeyword())
+	e.GET("/items/:id", serverImpl.getItemById())
 	e.GET("/image/:imageFilename", getImg)
 
 	// Start server
