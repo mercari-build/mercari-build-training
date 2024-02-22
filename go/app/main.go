@@ -63,6 +63,16 @@ func addItem(c echo.Context) error {
 		errMessage(c, err, http.StatusBadRequest, "Fail to convert image to hash string")
 	}
 
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	//Get categoryID
+	var categoryID int
+	if err := db.QueryRow("SELECT id FROM categories WHERE name==?", category).Scan(&categoryID); err != nil {
+		errMessage(c, err, http.StatusBadRequest, "Unable to get categoryID from categoryName")
+	}
+
 	//Print message
 	message := fmt.Sprintf("item received: %s in %s category", name, category)
 	res = Response{Message: message}
@@ -87,10 +97,6 @@ func addItem(c echo.Context) error {
 		return errMessage(c, err, http.StatusBadRequest, "Unable to save the image file")
 	}
 
-	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
-	if err != nil {
-		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
-	}
 	defer db.Close()
 
 	stmt, err := db.Prepare("INSERT INTO items(name,category,image_name) VALUES (?,?,?)")
@@ -98,7 +104,7 @@ func addItem(c echo.Context) error {
 		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(name, category, imageName)
+	_, err = stmt.Exec(name, categoryID, imageName)
 	if err != nil {
 		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
 	}
