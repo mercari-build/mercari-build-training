@@ -16,7 +16,7 @@
 ### GET request
 
 In step2, you ran a service on your local server where you accessed the endpoint from `http://127.0.0.1:9000` using your browser.
-Use the following `curl` command to access this endpoint. Install `curl` if necessary.
+Use the following `curl` command to access this endpoint. Please open a new terminal and enter the following command. Install `curl` if necessary.
 
 ```shell
 curl -X GET 'http://127.0.0.1:9000'
