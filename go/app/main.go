@@ -146,8 +146,8 @@ func getItem(c echo.Context) error {
 
 	itemID, err := strconv.Atoi(itemIDStr)
 	if err != nil {
-		// エラーが発生した場合の処理
-		fmt.Println("item_idを整数に変換できません:", err)
+		errorMessage := fmt.Sprintf("item_idを整数に変換できません: %s", err)
+		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
 	}
 
 	fmt.Println(itemID)
@@ -159,7 +159,8 @@ func getItem(c echo.Context) error {
 	defer file1.Close()
 	jsonData, err := ioutil.ReadAll(file1)
 	if err != nil {
-		fmt.Println("JSONデータを読み込めません", err)
+		errorMessage := fmt.Sprintf("jsonデータを読み込めません: %s", err)
+		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
 	}
 	// var itemslice []ItemsData
 	itemsData := ItemsData{}
