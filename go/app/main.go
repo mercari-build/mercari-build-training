@@ -33,7 +33,7 @@ type ItemsData struct {
 }
 
 type Item struct {
-	ID       string `json:"id"`
+	ID       int    `json:"id"`
 	Name     string `json:"name"`
 	Category string `json:"category"`
 	Image    string `json:"image"`
@@ -70,9 +70,6 @@ func readFile(c echo.Context, filePath string) (ItemsData, error) {
 
 func addItem(c echo.Context) error {
 	var res Response
-	// var items []Item
-	// var itemsData ItemsData
-
 	// Get form data
 	name := c.FormValue("name")
 	category := c.FormValue("category")
@@ -86,15 +83,8 @@ func addItem(c echo.Context) error {
 		errMessage(c, err, http.StatusBadRequest, "Fail to convert image to hash string")
 	}
 
-	//Create new item
-	newItem := Item{
-		Name:     name,
-		Category: category,
-		Image:    imageName,
-	}
-
 	//Print message
-	message := fmt.Sprintf("item received: %s in %s category", newItem.Name, newItem.Category)
+	message := fmt.Sprintf("item received: %s in %s category", name, category)
 	res = Response{Message: message}
 
 	// Save image file to ImgDir
@@ -128,10 +118,11 @@ func addItem(c echo.Context) error {
 		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(newItem.Name, newItem.Category, newItem.Image)
+	_, err = stmt.Exec(name, category, imageName)
 	if err != nil {
 		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
 	}
+
 	return c.JSON(http.StatusOK, res)
 
 }
@@ -175,11 +166,36 @@ func getItem(c echo.Context) error {
 }
 
 func getItems(c echo.Context) error {
-	itemsData, err := readFile(c, "items.json")
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
 	if err != nil {
-		return errMessage(c, err, http.StatusBadRequest, "Unable to open items.json")
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("SELECT * FROM items")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query()
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to execute SQL statement")
+	}
+	defer rows.Close()
+
+	var itemsData ItemsData
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image)
+		if err != nil {
+			return errMessage(c, err, http.StatusInternalServerError, "Unable to scan rows")
+		}
+		itemsData.Items = append(itemsData.Items, item)
 	}
 
+	if err := rows.Err(); err != nil {
+		return errMessage(c, err, http.StatusInternalServerError, "Error iterating over rows")
+	}
 	return c.JSON(http.StatusOK, itemsData)
 }
 
