@@ -2,8 +2,8 @@ package main
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -17,11 +17,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
-	ImgDir    = "images"
-	ItemsFile = "items.json"
+	ImgDir = "images"
+	dbPath = "../db/mercari.sqlite3"
 )
 
 type Item struct {
@@ -32,7 +33,7 @@ type Item struct {
 }
 
 type Items struct {
-	Items []Item `json:"items"`
+	Items []*Item `json:"items"`
 }
 
 type Response struct {
@@ -40,53 +41,6 @@ type Response struct {
 }
 
 var itemsMap map[string]Item
-
-func mapToItemsSlice() []Item {
-	items := make([]Item, 0, len(itemsMap))
-	for _, item := range itemsMap {
-		items = append(items, item)
-	}
-	return items
-}
-
-func readItemsFromFile() (*Items, error) {
-	file, err := os.Open(ItemsFile)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return &Items{Items: []Item{}}, nil
-		}
-		return nil, err
-	}
-	defer file.Close()
-
-	var items Items
-	// JSON to Items
-	decoder := json.NewDecoder(file)
-	if err := decoder.Decode(&items); err != nil {
-		if err == io.EOF {
-			return &Items{Items: []Item{}}, nil
-		}
-		return nil, err
-	}
-
-	return &items, nil
-}
-
-func writeItemsToFile() error {
-	items := mapToItemsSlice()
-
-	file, err := os.Create(ItemsFile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	encoder := json.NewEncoder(file)
-	if err := encoder.Encode(Items{Items: items}); err != nil {
-		return err
-	}
-	return nil
-}
 
 func generateHashFromImage(image *multipart.FileHeader) (string, error) {
 	src, err := image.Open()
@@ -147,45 +101,53 @@ func root(c echo.Context) error {
 func addItem(c echo.Context) error {
 	name := c.FormValue("name")
 	category := c.FormValue("category")
-
+	image, err := c.FormFile("image")
 	var imagePath string
-	contentType := c.Request().Header.Get("Content-Type")
-	// Check if the request contains a file
-	if strings.Contains(contentType, "multipart/form-data") {
-		image, err := c.FormFile("image")
-		if err == nil {
-			// image file exists
-			imageHash, err := generateHashFromImage(image)
-			if err != nil {
-				c.Logger().Errorf("Image processing error: %v", err)
-				return err
-			}
-			imagePath = filepath.Join(ImgDir, imageHash+".jpg")
-			if err := saveImage(image, imagePath); err != nil {
-				return err
-			}
-		}
-	} else {
-		// image file does not exist
+	if err != nil {
 		imagePath = "default.jpg"
+	} else {
+		imageHash, err := generateHashFromImage(image)
+		if err != nil {
+			c.Logger().Errorf("Image processing error: %v", err)
+			return err
+		}
+		imagePath = filepath.Join(ImgDir, imageHash+".jpg")
+		if err := saveImage(image, imagePath); err != nil {
+			return err
+		}
 	}
 
-	newID := strconv.Itoa(len(itemsMap) + 1)
+	// get a connection to the SQLite3 database
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	defer db.Close()
+
+	// invoke SQL to collect all of items
+	stmt, err := db.Prepare("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	defer stmt.Close()
+	result, err := stmt.Exec(name, category, imagePath)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	newID, err := result.LastInsertId()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to retrieve new item ID")
+	}
 
 	newItem := Item{
-		ID:        newID,
+		ID:        strconv.Itoa(int(newID)),
 		Name:      name,
 		Category:  category,
 		ImageName: imagePath,
 	}
 
-	// Add new item to the map
-	itemsMap[newID] = newItem
-
-	// Write updated items back to file
-	if err := writeItemsToFile(); err != nil {
-		return c.JSON(http.StatusInternalServerError, Response{Message: "Failed to write item to file"})
-	}
+	itemsMap[strconv.Itoa(int(newID))] = newItem
 
 	return c.JSON(http.StatusOK, newItem)
 }
@@ -200,8 +162,33 @@ func getItem(c echo.Context) error {
 }
 
 func getItems(c echo.Context) error {
-	items := mapToItemsSlice()
-	return c.JSON(http.StatusOK, Items{Items: items})
+	// get a connection to the SQLite3 database
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	defer db.Close()
+
+	// invoke SQL to collect all of items
+	rows, err := db.Query("SELECT id, name, category, image_name FROM items")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	defer rows.Close()
+
+	// map the items to returned variable
+	items := Items{Items: []*Item{}}
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.ImageName)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+		items.Items = append(items.Items, &item)
+	}
+
+	// return them as JSON
+	return c.JSON(http.StatusOK, Items{Items: items.Items})
 }
 
 func getImg(c echo.Context) error {
@@ -234,20 +221,8 @@ func main() {
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 
-	// Read existing items from file at startup
-	items, err := readItemsFromFile()
-	if err != nil && !os.IsNotExist(err) {
-		e.Logger.Fatal("Failed to read items from file:", err)
-	}
-	if items == nil {
-		items = &Items{}
-	}
-
 	// Create a map of items for quick access
 	itemsMap = make(map[string]Item)
-	for _, item := range items.Items {
-		itemsMap[item.ID] = item
-	}
 
 	// Routes
 	e.GET("/", root)
