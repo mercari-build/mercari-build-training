@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -17,6 +18,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const ImgDir = "images"
@@ -30,6 +33,7 @@ type ItemsData struct {
 }
 
 type Item struct {
+	ID       string `json:"id"`
 	Name     string `json:"name"`
 	Category string `json:"category"`
 	Image    string `json:"image"`
@@ -66,8 +70,8 @@ func readFile(c echo.Context, filePath string) (ItemsData, error) {
 
 func addItem(c echo.Context) error {
 	var res Response
-	var items []Item
-	var itemsData ItemsData
+	// var items []Item
+	// var itemsData ItemsData
 
 	// Get form data
 	name := c.FormValue("name")
@@ -113,29 +117,21 @@ func addItem(c echo.Context) error {
 		return errMessage(c, err, http.StatusBadRequest, "Unable to save the image file")
 	}
 
-	if _, err := os.Stat("items.json"); err == nil {
-		//Open the exist file and get itemsdata
-		itemsData, err = readFile(c, "items.json")
-		if err != nil {
-			errMessage(c, err, http.StatusBadRequest, "Fail to read items.json")
-		}
-		items = itemsData.Items
-		items = append(items, newItem)
-
-	} else {
-		if os.IsNotExist(err) {
-			items = append(items, newItem)
-		} else {
-			errMessage(c, err, http.StatusBadRequest, "Somthing went wrong")
-		}
-
-	}
-
-	itemFile, err := os.Create("items.json")
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
 	if err != nil {
-		errMessage(c, err, http.StatusBadRequest, "Fail to create items.json")
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
 	}
-	json.NewEncoder(itemFile).Encode(ItemsData{Items: items})
+	defer db.Close()
+
+	stmt, err := db.Prepare("INSERT INTO items(name,category,image_name) VALUES (?,?,?)")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(newItem.Name, newItem.Category, newItem.Image)
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
 	return c.JSON(http.StatusOK, res)
 
 }
