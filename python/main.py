@@ -3,14 +3,16 @@ import hashlib
 import json
 import logging
 import pathlib
+import sqlite3
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
-logger.level = logging.INFO
+logger.level = logging.DEBUG
 images = pathlib.Path(__file__).parent.resolve() / "images"
+db = pathlib.Path(__file__).parent.parent.resolve() / "db"
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
     CORSMiddleware,
@@ -20,16 +22,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Function: Create table if it doesn't exist yet
+def create_table():
+    con = sqlite3.connect(db / "mercari.sqlite3") #create connection object
+    cur = con.cursor() #create cursor
+    cur.execute('''CREATE TABLE IF NOT EXISTS items 
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, category TEXT, image_name TEXT)''')
+    con.commit()
+    con.close()
+
 @app.get("/")
 def root():
+    logger.info("Saying hello to the world")
     return {"message": "Hello, world!"}
 
 @app.get("/items")
 def get_items():
-    with open('items.json', 'r') as f:
-        items_data = json.load(f)
-    logger.info(f"Receive items: {items_data}")
-    return items_data
+    try:
+        con = sqlite3.connect(db / "mercari.sqlite3")
+        cur = con.cursor()
+        cur.execute("SELECT * FROM items")
+        items_data = []
+        for row in cur.fetchall():
+            items_data += [{"id": row[0], "name": row[1], "category": row[2], "image_name": row[3]}]
+        con.close()
+        logger.info(f"Receive items: {items_data}")
+        return items_data
+    except sqlite3.Error as error:
+        logger.error(f"Error occured: {error}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @app.post("/items")
 async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
@@ -37,29 +58,17 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
         #Hash
         image_bytes = await image.read()
         image_hash = hashlib.sha256(image_bytes).hexdigest()
-
         image_name = f"{image_hash}.jpg"
         image_path = images / image_name
         with open(image_path, 'wb') as f:
             f.write(image_bytes)
-
-        # Open the JSON file
-        if os.path.exists("items.json"):
-            with open('items.json', 'r') as f:
-                items_data = json.load(f)
-        else:
-            items_data = {}
         
-        #Append the new item
-        items_data["items"].append({
-            'name': name,
-            'category': category,
-            'image_name':image_name
-        })
-
-        #Write the updates to items.json
-        with open('items.json', 'w') as f:
-            json.dump(items_data, f)
+        create_table() #create table if it deosn't exist
+        con = sqlite3.connect(db / "mercari.sqlite3")
+        cur = con.cursor()
+        cur.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)", (name, category, image_name))
+        con.commit()
+        con.close()
 
         logger.info(f"Receive item: {name}, category: {category}, image: {image_name}")
         return {"message": f"item received: {name}, Category: {category}"}
@@ -91,7 +100,7 @@ def get_item(item_id: int):
         with open('items.json', 'r') as f:
             items_data = json.load(f)
         if 1 <= item_id <= len(items_data["items"]):
-            item = items_data["items"][item_id - 0]
+            item = items_data["items"][item_id - 1]
             logger.info(f"Access item: {item_id}")
             return item
         else:
