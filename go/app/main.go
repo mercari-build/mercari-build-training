@@ -61,8 +61,11 @@ func addItem(c echo.Context) error {
 	}
 	// convert json into go format
 	var items Items
-	json.Unmarshal(jsonData, &items)
-	fmt.Println(items)
+	err = json.Unmarshal(jsonData, &items)
+	if err != nil {
+		log.Print("GOへの変換に失敗", err)
+		return err
+	}
 	// add new item
 	newItem := Item{Name: name, Category: category}
 	items.Items = append(items.Items, newItem)
