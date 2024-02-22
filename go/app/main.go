@@ -28,6 +28,10 @@ type Item struct {
 	Category string `json:"category"`
 }
 
+type Items struct {
+	Items []Item `json:"items"`
+}
+
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!!"}
 	return c.JSON(http.StatusOK, res)
@@ -54,19 +58,13 @@ func addItem(c echo.Context) error {
 func saveItem(name, category string) error {
 	item := Item{Name: name, Category: category}
 
-	data, err := os.ReadFile(ItemsPath)
+	items, err := readItems(ItemsPath)
 	if err != nil {
-		err := fmt.Errorf("error while reading file: %w", err)
+		err := fmt.Errorf("error while reading or unmarshaling file: %w", err)
 		return err
 	}
 
-	var items []Item
-	if err = json.Unmarshal(data, &items); err != nil {
-		err := fmt.Errorf("error while unmarshaling file: %w", err)
-		return err
-	}
-
-	items = append(items, item)
+	items.Items = append(items.Items, item)
 
 	newData, err := json.Marshal(items)
 	if err != nil {
@@ -83,20 +81,30 @@ func saveItem(name, category string) error {
 }
 
 func getItems(c echo.Context) error {
-	data, err := os.ReadFile(ItemsPath)
+	items, err := readItems(ItemsPath)
 	if err != nil {
-		errRes := Response{Message: "error while reading file"}
-		return c.JSON(http.StatusInternalServerError, errRes)
-	}
-
-	var items []Item
-	err = json.Unmarshal(data, &items)
-	if err != nil {
-		errRes := Response{Message: "error while unmarshaling file"}
-		return c.JSON(http.StatusInternalServerError, errRes)
+		err := fmt.Errorf("error while reading or unmarshaling file: %w", err)
+		return err
 	}
 
 	return c.JSON(http.StatusOK, items)
+}
+
+func readItems(filepath string) (Items, error) {
+	var items Items
+
+	data, err := os.ReadFile(filepath)
+	if err != nil {
+		err := fmt.Errorf("error while reading file: %w", err)
+		return Items{}, err
+	}
+
+	if err = json.Unmarshal(data, &items); err != nil {
+		err := fmt.Errorf("error while unmarshaling file: %w", err)
+		return Items{}, err
+	}
+
+	return items, nil
 }
 
 func getImg(c echo.Context) error {
