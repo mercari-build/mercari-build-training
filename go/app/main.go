@@ -158,9 +158,35 @@ func getItem(c echo.Context) error {
 	if err != nil {
 		errMessage(c, err, http.StatusBadRequest, "Unable to conveert item_id to int")
 	}
-	itemsData, err := readFile(c, "items.json")
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
 	if err != nil {
-		return errMessage(c, err, http.StatusBadRequest, "Unable to open items.json")
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("SELECT * FROM items")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query()
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to execute SQL statement")
+	}
+	defer rows.Close()
+
+	var itemsData ItemsData
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image)
+		if err != nil {
+			return errMessage(c, err, http.StatusInternalServerError, "Unable to scan rows")
+		}
+		itemsData.Items = append(itemsData.Items, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return errMessage(c, err, http.StatusInternalServerError, "Error iterating over rows")
 	}
 	return c.JSON(http.StatusOK, itemsData.Items[itemID-1])
 }
