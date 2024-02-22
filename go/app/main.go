@@ -45,8 +45,8 @@ func addItem(c echo.Context) error {
 	c.Logger().Infof("Receive item: %s, Category: %s", name, category)
 
 	if err := saveItem(name, category); err != nil {
-		errRes := Response{Message: err.Error()}
-		return c.JSON(http.StatusInternalServerError, errRes)
+		res := Response{Message: err.Error()}
+		return c.JSON(http.StatusInternalServerError, res)
 	}
 
 	message := fmt.Sprintf("item received: %s", name)
@@ -83,8 +83,8 @@ func saveItem(name, category string) error {
 func getItems(c echo.Context) error {
 	items, err := readItems(ItemsPath)
 	if err != nil {
-		err := fmt.Errorf("error while reading or unmarshaling file: %w", err)
-		return err
+		res := Response{Message: err.Error()}
+		return c.JSON(http.StatusInternalServerError, res)
 	}
 
 	return c.JSON(http.StatusOK, items)
