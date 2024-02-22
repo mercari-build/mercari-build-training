@@ -109,3 +109,19 @@ def get_item(item_id: int):
     except FileNotFoundError: #if items.json is not found
         logger.error(f"File not found")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+    
+@app.get("/search")
+def get_items(keyword: str):
+    try:
+        con = sqlite3.connect(db / "mercari.sqlite3")
+        cur = con.cursor()
+        cur.execute("SELECT name, category FROM items WHERE name LIKE ?", ('%' + keyword + '%',))
+        items_data = {"items": []}
+        for row in cur.fetchall():
+            items_data["items"].append({"name": row[0], "category": row[1]})
+        con.close()
+        logger.info(f"Items under the name {keyword}: {items_data}")
+        return items_data
+    except Exception as error:
+        logger.error(f"Error occured: {error}")
+        raise HTTPException(status_code=500, detail=f"Error: {error}")
