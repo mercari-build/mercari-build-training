@@ -52,12 +52,13 @@ func addItem(c echo.Context) error {
 
 	c.Logger().Infof("Receive item: %s, Category: %s", name, category)
 
-	if err := saveItem(name, category); err != nil {
+	fileName, err := saveImage(image)
+	if err != nil {
 		res := Response{Message: err.Error()}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
 
-	if err := saveImage(image); err != nil {
+	if err := saveItem(name, category, fileName); err != nil {
 		res := Response{Message: err.Error()}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
@@ -68,8 +69,8 @@ func addItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
-func saveItem(name, category string) error {
-	item := Item{Name: name, Category: category}
+func saveItem(name, category, fileName string) error {
+	item := Item{Name: name, Category: category, ImageName: fileName}
 
 	items, err := readItems(ItemsPath)
 	if err != nil {
@@ -93,37 +94,37 @@ func saveItem(name, category string) error {
 	return nil
 }
 
-func saveImage(image *multipart.FileHeader) error {
+func saveImage(image *multipart.FileHeader) (string, error) {
 	img, err := image.Open()
 	if err != nil {
-		return err
+		return "", err
 	}
 	source, err := io.ReadAll(img)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	hash := sha256.Sum256(source)
 
 	err = os.MkdirAll("./images", 0777)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	fileName := fmt.Sprintf("%v", hash) + ".jpg"
+	fileName := fmt.Sprintf("%x", hash) + ".jpg"
 	imagePath := "./images/" + fileName
 
 	_, err = os.Create(imagePath)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = os.WriteFile(imagePath, source, 0777)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return fileName, err
 }
 
 func getItems(c echo.Context) error {
