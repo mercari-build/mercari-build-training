@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -44,21 +45,33 @@ func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
 	category := c.FormValue("category")
-	image := c.FormValue("image")
-
-	c.Logger().Infof("Receive item: %s", name)
-	c.Logger().Infof("Receive category: %s", category)
-	c.Logger().Infof("Receive image: %s", image)
+	image, err := c.FormFile("image")
+	if err != nil {
+		// エラー処理
+		errorMessage := fmt.Sprintf("imageを取得できません: %s", err)
+		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
+	}
 
 	hash := sha256.New()
-	// Write the image data to the hash function
-	hash.Write([]byte(strings.Split(image, ".")[0]))
+	// Open the image file
+	imagefile, err := image.Open()
+	if err != nil {
+		// エラーが発生した場合の処理
+		errorMessage := fmt.Sprintf("imageを開けません: %s", err)
+		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
+	}
+	defer imagefile.Close()
 
+	// Read the file data and write it to the hash function
+	if _, err := io.Copy(hash, imagefile); err != nil {
+		errorMessage := fmt.Sprintf("imageをハッシュにコピーできません: %s", err)
+		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
+	}
 	// Get the final hash value
 	hashValue := hash.Sum(nil)
 	// Convert the byte slice to a hex-encoded string
 	hashString := hex.EncodeToString(hashValue)
-	image = hashString + ".jpg"
+	imageName := hashString + ".jpg"
 
 	var res Response
 	var itemslice []Item
@@ -66,13 +79,14 @@ func addItem(c echo.Context) error {
 	newItem := Item{
 		Name:     name,
 		Category: category,
-		Image:    image,
+		Image:    imageName,
 	}
 
+	//items.jsonファイルがある確認し、なければ新しく作る
 	if _, err := os.Stat("items.json"); err == nil {
 		file1, err := os.Open("items.json") //すでにあるファイルを開く
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println("items.jsonを開けません", err)
 		}
 
 		defer file1.Close()
@@ -82,6 +96,9 @@ func addItem(c echo.Context) error {
 		}
 
 		json.Unmarshal(jsonData, &itemslice)
+		if err != nil {
+			log.Printf(err.Error())
+		}
 
 		//Print message
 		message := fmt.Sprintf("item received: %s in %s category", newItem.Name, newItem.Category)
@@ -92,30 +109,33 @@ func addItem(c echo.Context) error {
 
 	} else {
 		itemslice = append(itemslice, newItem)
-
 	}
+	res2 := ItemsData{Item: itemslice}
 
 	file2, err := os.Create("items.json") // fileはos.File型
 	if err != nil {
 		log.Fatal(err)
 	}
-	json.NewEncoder(file2).Encode(itemslice)
+	json.NewEncoder(file2).Encode(res2)
 
 	return c.JSON(http.StatusOK, res)
 }
 
 func getItems(c echo.Context) error {
-	file1, err := os.Open("items.json") //すでにあるファイルを開く
+	itemsfile, err := os.Open("items.json") //すでにあるファイルを開く
 	if err != nil {
-		log.Fatal(err)
+		errorMessage := fmt.Sprintf("items.jsonを開けません: %s", err)
+		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
 	}
-	defer file1.Close()
-	jsonData, err := ioutil.ReadAll(file1)
+	defer itemsfile.Close()
+	jsonData, err := ioutil.ReadAll(itemsfile)
 	if err != nil {
-		fmt.Println("JSONデータを読み込めません", err)
+		errorMessage := fmt.Sprintf("jsonデータを読み込めません: %s", err)
+		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
 	}
 	var itemslice []Item
 	json.Unmarshal(jsonData, &itemslice)
+
 	fmt.Println(itemslice)
 
 	return c.JSON(http.StatusOK, itemslice)
@@ -144,9 +164,10 @@ func getItem(c echo.Context) error {
 	// var itemslice []ItemsData
 	itemsData := ItemsData{}
 	json.Unmarshal(jsonData, &itemsData)
-	fmt.Println(itemsData)
+	if err != nil {
+		log.Printf(err.Error())
+	}
 
-	// res := itemsResponse{Item: itemslice[itemID-1]}
 	return c.JSON(http.StatusOK, itemsData.Item[itemID-1])
 }
 
