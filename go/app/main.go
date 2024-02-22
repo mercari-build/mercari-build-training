@@ -114,7 +114,8 @@ func addItem(c echo.Context) error {
 
 	file2, err := os.Create("items.json") // fileはos.File型
 	if err != nil {
-		log.Fatal(err)
+		errorMessage := fmt.Sprintf("items.jsonファイルを作れません: %s", err)
+		return c.JSON(http.StatusBadRequest, Response{Message: errorMessage})
 	}
 	json.NewEncoder(file2).Encode(res2)
 
