@@ -56,7 +56,6 @@ func addItem(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, res)
 	}
 	src, err := imageFile.Open()
-	print(imageFile.Filename)
 	if err != nil {
 		res := Response{Message: "Failed to open image file"}
 		return c.JSON(http.StatusInternalServerError, res)
