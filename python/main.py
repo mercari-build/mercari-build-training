@@ -9,7 +9,7 @@ from fastapi import FastAPI, Form, HTTPException, UploadFile, Query
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-os.chdir('/Users/xiaotongye/Programs/mercari-build-training/python')
+# os.chdir('/Users/xiaotongye/Programs/mercari-build-training/python')
 path = pathlib.Path(__file__).parent.resolve()
 
 app = FastAPI()
@@ -24,12 +24,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# sql_file = path / "db" / "mercari.sqlite3"
+# sql_file = path / "mercari.sqlite3"
 
-sql_file = "../db/mercari.sqlite3"
-# print('sql_file=====', sql_file)
+sql_file = path / "db" / "mercari.sqlite3"
+# sql_file = path / ".." / "db" / "mercari.sqlite3"
+print('sql_file=====', sql_file)
 
-images = path / "images"
+images_dir = path / "images"
+# images_dir = path / ".." / "images"
+print('images===', images_dir)
 logging.basicConfig(level=logging.DEBUG)
 
 
@@ -124,7 +127,8 @@ def get_items():
     items_list = [
         {"id": item[0], "name": item[1], "category": item[2], "image_name": item[3]}
         for item in item_data
-    ]    
+    ]
+    logger.info("Get all items successfully!") 
     return {"items": items_list}
 
 
@@ -180,8 +184,10 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     # preprocess the image file
     try:
         img_bytes = image.file.read()
+        print(img_bytes)
         img_name = hashlib.sha256(img_bytes).hexdigest() + os.path.splitext(image.filename)[1]
-        img_path = images / img_name
+        img_path = images_dir / img_name
+        # Here, the img path must be pathlib.Path instead of a str!!
         img_path.write_bytes(img_bytes)
     except:
         logger.info("Failed to load the image.") 
@@ -206,7 +212,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
 @app.get("/image/{image_name}")
 async def get_image(image_name):
     # Create image path
-    image = images / image_name
+    image = images_dir / image_name
 
     if not image_name.endswith(".jpg"):
         logger.info("Failed to find the image.") 
@@ -214,7 +220,7 @@ async def get_image(image_name):
 
     if not image.exists():
         logger.debug(f"Image not found: {image}")
-        image = images / "default.jpg"
+        image = images_dir / "default.jpg"
 
     return FileResponse(image)
 

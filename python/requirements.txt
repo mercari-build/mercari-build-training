@@ -1,2 +1,4 @@
 fastapi[all]>=0.75
 uvicorn[standard]>=0.15
+SQLAlchemy==2.0.27
+python-multipart==0.0.9

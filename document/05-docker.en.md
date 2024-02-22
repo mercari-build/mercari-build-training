@@ -87,8 +87,8 @@ Check that you can now see `build2024/app` in the list of images.
 
 * [Dockerfile reference](https://docs.docker.com/engine/reference/builder/)
 
-## 5. Modity Dockerfile
-**Run the docker image you built in STEP4-4, and check if the following error shows up.**
+## 5. Modify Dockerfile
+**Run the docker image you built in STEP5-4, and check if the following error shows up.**
 
 ```
 docker: Error response from daemon: OCI runtime create failed: container_linux.go:380: starting container process caused: exec: "python": executable file not found in $PATH: unknown.
@@ -98,9 +98,9 @@ ERRO[0000] error waiting for container: context canceled
 `"python"` part will be replaced with `"go"` if you're using Go.
 
 
-**Modify the `Dockerfile` so that you can use the same version of Python/Go as STEP2 in your docker image.**
+**Modify the `Dockerfile` so that you can use the same version of Python/Go as STEP5-2 in your docker image.**
 
-Run the image with the modified `Dockerfile`, check if the same message is displayed as STEP2-2.
+Run the image with the modified `Dockerfile`, check if the same message is displayed as STEP5-2.
 
 **:book: Reference**
 
