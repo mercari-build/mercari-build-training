@@ -1,7 +1,13 @@
-FROM alpine
+FROM FROM python:3.9-slim
+
+WORKDIR /python
 
 RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari /path/to/db
+RUN python -m venv .venv
+RUN source .venv/bin/activate
+RUN pip install -r requirements.txt
+
+EXPOSE 9006
 
 USER trainee
 
