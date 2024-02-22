@@ -1,1 +1,1 @@
-CREATE TABLE categories(id PRIMARY KEY,name TEXT);
+CREATE TABLE categories(id INTEGER PRIMARY KEY,name TEXT);
