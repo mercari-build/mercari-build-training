@@ -3,13 +3,13 @@ services:
   app:
     # dockerfile path
     build: . 
-    image: build2024/app:latest 
+    image: build2024/app:latest
     ports:
     # the host's port 9000 will be mapped to the container's port 9000
-      - "9000:9000" 
+      - "9000:9000"
     environment:
     # environment variable
       - SQLITE_PATH=./db/mercari.sqlite3
-    volumes:
-    # the file on the host will be mapped to the container's
-      - "../db/mercari.sqlite3:/app/data/mercari.sqlite3:z"
+    # volumes:
+    # # the file on the host will be mapped to the container's
+    #   - "../db/mercari.sqlite3:/app/data/mercari.sqlite3:z"

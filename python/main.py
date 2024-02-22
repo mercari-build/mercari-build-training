@@ -10,7 +10,9 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 # os.chdir('/Users/xiaotongye/Programs/mercari-build-training/python')
-path = pathlib.Path(__file__).parent.resolve()
+path = pathlib.Path(__file__).parent.parent.resolve()
+# path = pathlib.Path(__file__).parent.resolve()
+print(path)
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -61,10 +63,6 @@ def create_table():
         )
     ''')
     sql_connect.commit()
-
-    # 这里不需要执行任何操作，因为我们只是需要创建文件
-
-    # 关闭连接
 
 sql_connect: Connection
 
