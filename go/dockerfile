@@ -1,8 +1,24 @@
-FROM alpine
+# syntax=docker/dockerfile:1
+
+FROM golang:1.21.7-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache gcc musl-dev
+
+COPY db/ ./db/
+COPY go/ ./go/
+
+WORKDIR /app/go
+
+RUN go mod tidy
+RUN go build -o ./mercari-build-training ./app/*.go
 
 RUN addgroup -S mercari && adduser -S trainee -G mercari
 # RUN chown -R trainee:mercari /path/to/db
 
 USER trainee
 
-CMD ["go", "version"]
+EXPOSE 9000
+
+CMD [ "/app/go/mercari-build-training" ]
