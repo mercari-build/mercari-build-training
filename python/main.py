@@ -22,14 +22,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# con = sqlite3.connect(db / "mercari.sqlite3") #create connection object
-# cur = con.cursor() #create cursor
-# cur.execute('''DELETE FROM items''')
-# cur.execute('''DELETE FROM categories''')
-# con.commit()
-# con.close()
-
-
 # Function: Create table if it doesn't exist yet
 def create_tables():
     con = sqlite3.connect(db / "mercari.sqlite3") #create connection object
@@ -54,11 +46,10 @@ def get_items():
     try:
         con = sqlite3.connect(db / "mercari.sqlite3")
         cur = con.cursor()
-        cur.execute("SELECT * FROM items")
+        cur.execute("SELECT items.id, items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.id")
         items_data = []
         for row in cur.fetchall():
-            logger.debug(row)
-            items_data += [{"id": row[0], "name": row[1], "category_id": row[2], "image_name": row[3]}]
+            items_data += [{"id": row[0], "name": row[1], "category": row[2], "image_name": row[3]}]
         con.close()
         logger.info(f"Receive items: {items_data}")
         return items_data
@@ -81,7 +72,6 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
         cur = con.cursor()
         cur.execute("SELECT id FROM categories WHERE name = ?", (category,))
         category_row = cur.fetchone()
-        logger.debug(category_row)
 
         if category_row == None:
             cur.execute("INSERT INTO categories (name) VALUES (?)", (category,))
