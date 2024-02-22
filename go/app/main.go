@@ -49,14 +49,14 @@ func addItem(c echo.Context) error {
 	// open json file & data
 	jsonFile, err := os.Open("items.json")
 	if err != nil {
-		log.Fatal("JSONファイルを開けません", err)
+		log.Print("JSONファイルを開けません", err)
 		return err
 	}
 	defer jsonFile.Close()
 
 	jsonData, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
-		log.Fatal("JSONデータを読み込めません", err)
+		log.Print("JSONデータを読み込めません", err)
 		return err
 	}
 	// convert json into go format
@@ -70,7 +70,7 @@ func addItem(c echo.Context) error {
 	// convert go format into json
 	updatedJson, err := json.Marshal(&items)
 	if err != nil {
-		log.Fatal("JSONデータ変換に失敗", err)
+		log.Print("JSONデータ変換に失敗", err)
 		return err
 	}
 	// output as json file
@@ -82,14 +82,14 @@ func addItem(c echo.Context) error {
 func getItems(c echo.Context) error {
 	jsonFile, err := os.Open("items.json")
 	if err != nil {
-		log.Fatal("JSONファイルを開けません", err)
+		log.Print("JSONファイルを開けません", err)
 		return err
 	}
 	defer jsonFile.Close()
 	itemsData := Items{}
 	err = json.NewDecoder(jsonFile).Decode(&itemsData)
 	if err != nil {
-		log.Fatal("JSONファイルからの変換に失敗", err)
+		log.Print("JSONファイルからの変換に失敗", err)
 		return err
 	}
 
