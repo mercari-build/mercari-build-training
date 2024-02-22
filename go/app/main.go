@@ -3,6 +3,8 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -18,12 +20,9 @@ import (
 )
 
 const (
-	ImgDir = "images"
+	ImgDir    = "images"
+	ItemsFile = "items.json"
 )
-
-type Response struct {
-	Message string `json:"message"`
-}
 
 type Item struct {
 	ID        string `json:"id"`
@@ -32,118 +31,180 @@ type Item struct {
 	ImageName string `json:"image_name"`
 }
 
-type ItemResponse struct {
-	Name      string `json:"name"`
-	Category  string `json:"category"`
-	ImageName string `json:"image_name"`
+type Items struct {
+	Items []Item `json:"items"`
 }
 
-var items []Item
+type Response struct {
+	Message string `json:"message"`
+}
+
+var itemsMap map[string]Item
+
+func mapToItemsSlice() []Item {
+	items := make([]Item, 0, len(itemsMap))
+	for _, item := range itemsMap {
+		items = append(items, item)
+	}
+	return items
+}
+
+func readItemsFromFile() (*Items, error) {
+	file, err := os.Open(ItemsFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return &Items{Items: []Item{}}, nil
+		}
+		return nil, err
+	}
+	defer file.Close()
+
+	var items Items
+	// JSON to Items
+	decoder := json.NewDecoder(file)
+	if err := decoder.Decode(&items); err != nil {
+		if err == io.EOF {
+			return &Items{Items: []Item{}}, nil
+		}
+		return nil, err
+	}
+
+	return &items, nil
+}
+
+func writeItemsToFile() error {
+	items := mapToItemsSlice()
+
+	file, err := os.Create(ItemsFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	if err := encoder.Encode(Items{Items: items}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func generateHashFromImage(image *multipart.FileHeader) (string, error) {
+	src, err := image.Open()
+	if err != nil {
+		return "", fmt.Errorf("image open failed: %w", err)
+	}
+	defer src.Close()
+
+	hash := sha256.New()
+	copiedBytes, err := io.Copy(hash, src)
+	if err != nil {
+		return "", fmt.Errorf("hash generation failed: %w", err)
+	}
+	if image.Size != copiedBytes {
+		return "", fmt.Errorf("copied bytes (%d) don't match the expected file size (%d)", copiedBytes, image.Size)
+	}
+
+	return hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+func saveImage(image *multipart.FileHeader, imagePath string) error {
+	src, err := image.Open()
+	if err != nil {
+		return fmt.Errorf("failed to open uploaded image: %w", err)
+	}
+	defer src.Close()
+
+	dst, err := os.Create(imagePath)
+	if err != nil {
+		return fmt.Errorf("failed to create uploaded image '%s': %w", imagePath, err)
+	}
+	defer dst.Close()
+
+	newOffset, err := src.Seek(0, io.SeekStart)
+	if err != nil {
+		return fmt.Errorf("failed to seek uploaded file file: %w", err)
+	}
+	if newOffset != 0 {
+		return fmt.Errorf("unexpected new offset during saving image: got %d, want 0", newOffset)
+	}
+
+	copiedBytes, err := io.Copy(dst, src)
+	if err != nil {
+		return fmt.Errorf("failed to copy uploaded file'%s': %w", imagePath, err)
+	}
+	if image.Size > 0 && copiedBytes != image.Size {
+		return fmt.Errorf("copied bytes (%d) do not match the expected file size (%d) for '%s'", copiedBytes, image.Size, imagePath)
+	}
+
+	return nil
+}
 
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
 }
 
-func saveImage(fileHeader *multipart.FileHeader) (string, error) {
-	src, err := fileHeader.Open()
-	if err != nil {
-		return "", err
-	}
-	defer src.Close()
-
-	// SHA-256 ハッシュを計算
-	hash := sha256.New()
-	if _, err := io.Copy(hash, src); err != nil {
-		return "", err
-	}
-	hashInBytes := hash.Sum(nil)
-	hashedFileName := hex.EncodeToString(hashInBytes) + ".jpg"
-
-	// ファイルポインタをリセット
-	_, err = src.Seek(0, io.SeekStart)
-	if err != nil {
-		return "", err
-	}
-
-	// 画像ファイルを保存
-	dst, err := os.Create(filepath.Join("images", hashedFileName))
-	if err != nil {
-		return "", err
-	}
-	defer dst.Close()
-
-	if _, err := io.Copy(dst, src); err != nil {
-		return "", err
-	}
-
-	return hashedFileName, nil
-}
-
 func addItem(c echo.Context) error {
-	// Get form data
 	name := c.FormValue("name")
 	category := c.FormValue("category")
-	c.Logger().Infof("Received item: %s, Category: %s", name, category)
 
-	fileHeader, err := c.FormFile("image")
-	var imageName string
-	if err == nil {
-		imageName, err = saveImage(fileHeader)
-		if err != nil {
-			return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
+	var imagePath string
+	contentType := c.Request().Header.Get("Content-Type")
+	// Check if the request contains a file
+	if strings.Contains(contentType, "multipart/form-data") {
+		image, err := c.FormFile("image")
+		if err == nil {
+			// image file exists
+			imageHash, err := generateHashFromImage(image)
+			if err != nil {
+				c.Logger().Errorf("Image processing error: %v", err)
+				return err
+			}
+			imagePath = filepath.Join(ImgDir, imageHash+".jpg")
+			if err := saveImage(image, imagePath); err != nil {
+				return err
+			}
 		}
 	} else {
-		imageName = "default.jpg"
+		// image file does not exist
+		imagePath = "default.jpg"
 	}
+
+	newID := strconv.Itoa(len(itemsMap) + 1)
 
 	newItem := Item{
-		ID:        strconv.Itoa(len(items) + 1),
+		ID:        newID,
 		Name:      name,
 		Category:  category,
-		ImageName: imageName,
-	}
-	items = append(items, newItem)
-
-	// 出力にIDが不要なためItemResponseスライスに変換
-	var responseItems []ItemResponse
-	for _, item := range items {
-		responseItem := ItemResponse{
-			Name:      item.Name,
-			Category:  item.Category,
-			ImageName: item.ImageName,
-		}
-		responseItems = append(responseItems, responseItem)
+		ImageName: imagePath,
 	}
 
-	// ItemResponseスライスをレスポンスとして返す
-	return c.JSON(http.StatusOK, echo.Map{"items": responseItems})
+	// Add new item to the map
+	itemsMap[newID] = newItem
+
+	// Write updated items back to file
+	if err := writeItemsToFile(); err != nil {
+		return c.JSON(http.StatusInternalServerError, Response{Message: "Failed to write item to file"})
+	}
+
+	return c.JSON(http.StatusOK, newItem)
 }
 
 func getItem(c echo.Context) error {
-	itemID := c.Param("id") // URLパラメータからitem_idを取得
-
-	// アイテムのリストを検索して対応するアイテムを見つける
-	for _, item := range items {
-		if item.ID == itemID {
-			response := ItemResponse{
-				Name:      item.Name,
-				Category:  item.Category,
-				ImageName: item.ImageName,
-			}
-			return c.JSON(http.StatusOK, response)
-		}
+	itemID := c.Param("itemID")
+	item, exists := itemsMap[itemID]
+	if !exists {
+		return c.JSON(http.StatusNotFound, Response{Message: "Item not found"})
 	}
-
-	return c.JSON(http.StatusNotFound, echo.Map{"message": "Item not found"})
+	return c.JSON(http.StatusOK, item)
 }
 
 func getItems(c echo.Context) error {
-	return c.JSON(http.StatusOK, echo.Map{"items": items})
+	items := mapToItemsSlice()
+	return c.JSON(http.StatusOK, Items{Items: items})
 }
 
 func getImg(c echo.Context) error {
-	// Create image path
 	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
 
 	if !strings.HasSuffix(imgPath, ".jpg") {
@@ -158,16 +219,12 @@ func getImg(c echo.Context) error {
 }
 
 func main() {
-	if _, err := os.Stat("images"); os.IsNotExist(err) {
-		os.Mkdir("images", os.ModePerm)
-	}
 	e := echo.New()
 
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Logger.SetLevel(log.INFO)
-
+	e.Logger.SetLevel(log.DEBUG)
 	frontURL := os.Getenv("FRONT_URL")
 	if frontURL == "" {
 		frontURL = "http://localhost:3000"
@@ -177,12 +234,27 @@ func main() {
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 
+	// Read existing items from file at startup
+	items, err := readItemsFromFile()
+	if err != nil && !os.IsNotExist(err) {
+		e.Logger.Fatal("Failed to read items from file:", err)
+	}
+	if items == nil {
+		items = &Items{}
+	}
+
+	// Create a map of items for quick access
+	itemsMap = make(map[string]Item)
+	for _, item := range items.Items {
+		itemsMap[item.ID] = item
+	}
+
 	// Routes
 	e.GET("/", root)
 	e.POST("/items", addItem)
 	e.GET("/items", getItems)
 	e.GET("/image/:imageFilename", getImg)
-	e.GET("/items/:id", getItem)
+	e.GET("/items/:itemID", getItem)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
