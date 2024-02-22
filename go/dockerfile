@@ -8,7 +8,7 @@ COPY go/go.mod go/go.sum ./
 COPY go/app ./
 RUN go mod tidy
 
-RUN go build -o main .
+RUN go build -o main ./*.go
 RUN addgroup -S mercari && adduser -S trainee -G mercari
 RUN chown -R trainee:mercari /app/db
 USER trainee

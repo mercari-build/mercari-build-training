@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -45,21 +44,6 @@ func root(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
-/*
-getDatabasePath()
-
-return absolute path of mercari.sqlite3 database file
-which always will be located one up level of go directory.
-*/
-func getDatabasePath() string {
-	absPath, err := filepath.Abs("../db/mercari.sqlite3") // Adjust the relative path as needed
-	if err != nil {
-		msg := "Error occured while getting filepath!"
-		return msg
-	}
-	return absPath
-}
-
 func getFileSha256(c echo.Context, fileType string) (string, error) {
 	fileHeader, err := c.FormFile(fileType)
 	if err != nil {
@@ -86,11 +70,9 @@ func getFileSha256(c echo.Context, fileType string) (string, error) {
  2. O(n^2). iterate over rows and colums
 */
 func getItem(c echo.Context) error {
-	path := getDatabasePath()
-	db, err := sql.Open("sqlite3", path)
+	db, err := openDb()
 	if err != nil {
-		msg := "error occured while opening db!"
-		return c.JSON(http.StatusBadRequest, msg)
+		return err
 	}
 	defer db.Close()
 	var items Items
@@ -127,11 +109,9 @@ func addItem(c echo.Context) error {
 	}
 	image += ".jpg"
 	// Open items file
-	path := getDatabasePath()
-	db, err := sql.Open("sqlite3", path)
+	db, err := openDb()
 	if err != nil {
-		msg := "error occured while opening db!"
-		return c.JSON(http.StatusBadRequest, msg)
+		return err
 	}
 	var categoryId int
 	//first, search for the category. if exist, store the id
@@ -179,11 +159,9 @@ func getItemById(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, msg)
 	}
 	var item Item
-	path := getDatabasePath()
-	db, err := sql.Open("sqlite3", path)
+	db, err := openDb()
 	if err != nil {
-		msg := "error occured while reading db!"
-		return c.JSON(http.StatusBadRequest, msg)
+		return err
 	}
 	defer db.Close()
 	err = db.QueryRow("SELECT items.id, items.name, categories.name AS category_name, items.image_name FROM items JOIN categories ON items.category_id = categories.category_id WHERE id = ?", id).Scan(&item.ItemId, &item.Name, &item.CategoryName, &item.ImageName)
@@ -221,11 +199,9 @@ func getSearch(c echo.Context) error {
 	// in sql, % keyword % will search any
 	// results that contains keyword inside the word.
 	keyword = "%" + keyword + "%"
-	path := getDatabasePath()
-	db, err := sql.Open("sqlite3", path)
+	db, err := openDb()
 	if err != nil {
-		msg := path
-		return c.JSON(http.StatusBadRequest, msg)
+		return err
 	}
 	defer db.Close()
 	rows, err := db.Query("SELECT items.id, items.name, categories.name AS category_name, items.image_name FROM items JOIN categories ON items.category_id = categories.category_id WHERE items.name LIKE ? OR categories.name LIKE ?", keyword, keyword)
