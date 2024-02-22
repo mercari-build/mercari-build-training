@@ -37,7 +37,7 @@ $ curl -X GET 'http://127.0.0.1:9000/search?keyword=jacket'
 {"items": [{"name": "jacket", "category": "fashion"}, ...]}
 ```
 
-## 8. Move the category information to a separate table
+## 3. Move the category information to a separate table
 
 Modify the database as follows. That makes it possible to change the category names without modifying the all categories of items in the items table.
 Since `GET items` should return the category name as before, **join** these two tables when returning responses.
