@@ -133,4 +133,4 @@ Make sure you understand the following concepts
 
 ### Next
 
-[STEP5: Implement a simple Mercari webapp as frontend](07-frontend.en.md)
+[STEP6: Build Docker image using CI](06-ci.en.md)
