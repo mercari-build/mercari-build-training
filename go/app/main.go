@@ -33,8 +33,19 @@ type ItemsData struct {
 type Item struct {
 	ID       int    `json:"id"`
 	Name     string `json:"name"`
+	Category int    `json:"category"`
+	Image    string `json:"image"`
+}
+
+type ItemDisplay struct {
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
 	Category string `json:"category"`
 	Image    string `json:"image"`
+}
+
+type ItemsDisplay struct {
+	Items []ItemDisplay `json:"items"`
 }
 
 func root(c echo.Context) error {
@@ -150,7 +161,7 @@ func getItem(c echo.Context) error {
 	}
 	defer db.Close()
 
-	stmt, err := db.Prepare("SELECT * FROM items")
+	stmt, err := db.Prepare("SELECT items.id,items.name,categories.name,items.image_name FROM items LEFT JOIN categories ON items.category=categories.id")
 	if err != nil {
 		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
 	}
@@ -161,9 +172,9 @@ func getItem(c echo.Context) error {
 	}
 	defer rows.Close()
 
-	var itemsData ItemsData
+	var itemsData ItemsDisplay
 	for rows.Next() {
-		var item Item
+		var item ItemDisplay
 		err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image)
 		if err != nil {
 			return errMessage(c, err, http.StatusInternalServerError, "Unable to scan rows")
@@ -195,9 +206,9 @@ func getItems(c echo.Context) error {
 	}
 	defer rows.Close()
 
-	var itemsData ItemsData
+	var itemsData ItemsDisplay
 	for rows.Next() {
-		var item Item
+		var item ItemDisplay
 		err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image)
 		if err != nil {
 			return errMessage(c, err, http.StatusInternalServerError, "Unable to scan rows")
@@ -235,7 +246,7 @@ func searchItem(c echo.Context) error {
 	}
 	defer db.Close()
 
-	stmt, err := db.Prepare("SELECT * FROM items WHERE name LIKE CONCAT('%',?,'%')")
+	stmt, err := db.Prepare("SELECT items.id,items.name,categories.name,items.image_name FROM items LEFT JOIN categories ON items.category==categories.name HAVING name LIKE CONCAT('%',?,'%')")
 	if err != nil {
 		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
 	}
@@ -246,9 +257,9 @@ func searchItem(c echo.Context) error {
 	}
 	defer rows.Close()
 
-	var itemsData ItemsData
+	var itemsData ItemsDisplay
 	for rows.Next() {
-		var item Item
+		var item ItemDisplay
 		err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image)
 		if err != nil {
 			return errMessage(c, err, http.StatusInternalServerError, "Unable to scan rows")
