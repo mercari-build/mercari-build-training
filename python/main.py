@@ -1,16 +1,17 @@
 import os
+import hashlib
 import json
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException, UploadFile, File
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-import hashlib
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
-logger.level = logging.INFO
+logger.level = logging.DEBUG
 images = pathlib.Path(__file__).parent.resolve() / "images"
+items_file = pathlib.Path(__file__).parent.resolve() / "items.json"
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
     CORSMiddleware,
@@ -20,68 +21,89 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/")
 def root():
+    logger.info("Hello world")
     return {"message": "Hello, world!"}
 
 @app.get("/items")
 def get_items():
-    with open('items.json', 'r') as f:
-        items_data = json.load(f)
-    return items_data
+    items_json_path = pathlib.Path(__file__).parent.resolve() / "items.json"
+    if os.path.exists(items_file):
+        with open(items_json_path, 'r') as f:
+            items_data = json.load(f)
+        logger.info(f"Receive items: {items_data}")
+        return items_data
+    else:
+        logger.error("items.json not found")
+        raise HTTPException(status_code=404, detail="Items not found")
 
 @app.post("/items")
 async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
-    logger.info(f"Receive item: {name}")
+    try:
+        #Hash
+        image_bytes = await image.read()
+        image_hash = hashlib.sha256(image_bytes).hexdigest()
+        image_name = f"{image_hash}.jpg"
+        image_path = images / image_name
+        with open(image_path, 'wb') as f:
+            f.write(image_bytes)
 
-    #Hash
-    image_bytes = await image.read()
-    image_hash = hashlib.sha256(image_bytes).hexdigest()
+        # Open the JSON file
+        if os.path.exists(items_file):
+            with open('items.json', 'r') as f:
+                items_data = json.load(f)
+        else:
+            items_data = {"items": []}
+        logger.debug(items_data)
 
-    image_name = f"{image_hash}.jpg"
-    image_dir = os.getcwd() / "images"
-    with open(image_dir / image_name, 'wb') as f:
-        f.write(image_bytes)
+        #Append the new item
+        items_data["items"].append({
+            'name': name,
+            'category': category,
+            'image_name':image_name
+        })
+        logger.debug(items_data)
+        #Write the updates to items.json
+        with open('items.json', 'w') as f:
+            json.dump(items_data, f)
 
-    # Open the JSON file
-    with open('items.json', 'r') as f:
-        items_data = json.load(f)
-    
-    #Append the new item
-    items_data["items"].append({
-        'name': name,
-        'category': category
-        'image_name':image_name
-    })
+        logger.info(f"Receive item: {name}, category: {category}, image: {image_name}")
+        return {"message": f"item received: {name}, Category: {category}"}
+    except Exception as error:
+        logger.error(f"An unexpected error occured. Error: {error}")
+        raise HTTPException(status_code=500, detail=f"Error: {error}")
 
-    #Write the updates to items.json
-    with open('items.json', 'w') as f:
-        json.dump(items_data, f)
-
-    return {"message": f"item received: {name}, Category: {category}"}
 
 
 @app.get("/image/{image_name}")
 async def get_image(image_name):
+    logger.info(f"Receive image: {image_name}")
     # Create image path
-    image = images / image_name
+    image_path = images / image_name
 
     if not image_name.endswith(".jpg"):
-        raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
+        logger.error(f"Image path does not end with .jpg")
+        raise HTTPException(status_code=400, detail="Image path does not end with .jpg Make sure the file name is correct")
 
-    if not image.exists():
-        logger.debug(f"Image not found: {image}")
-        image = images / "default.jpg"
+    elif not image_path.exists():
+        logger.error(f"Image not found: {image_name}")
+        image_path = images / "default.jpg"
 
-    return FileResponse(image)
+    return FileResponse(image_path)
 
-@app.get("/items/<item_id")
+@app.get("/items/{item_id}")
 def get_item(item_id: int):
     try:
         with open('items.json', 'r') as f:
             items_data = json.load(f)
-        item = items_data[item_id + 1]
-        return item
-    except IndexError:
-        raise HTTPException(status_code=404, detail="Item not found")
+        if 1 <= item_id <= len(items_data["items"]):
+            item = items_data["items"][item_id - 1]
+            logger.info(f"Access item: {item_id}")
+            return item
+        else:
+            logger.error(f"Invalid item ID: {item_id}")
+            raise HTTPException(status_code=404, detail="Item not found (Invalid ID)")
+    except FileNotFoundError: #if items.json is not found
+        logger.error(f"File not found")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
