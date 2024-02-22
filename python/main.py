@@ -22,12 +22,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+#Reset the table everytime virtual environment is re-built
+con = sqlite3.connect(db / "mercari.sqlite3") #create connection object
+cur = con.cursor() #create cursor
+cur.execute('''DROP TABLE IF EXISTS items''')
+cur.execute('''DROP TABLE IF EXISTS categories''')
+con.commit()
+con.close()
+
 # Function: Create table if it doesn't exist yet
 def create_tables():
     con = sqlite3.connect(db / "mercari.sqlite3") #create connection object
     cur = con.cursor() #create cursor
-    # cur.execute('''DROP TABLE IF EXISTS items''')
-    # cur.execute('''DROP TABLE IF EXISTS categories''')
     cur.execute('''CREATE TABLE IF NOT EXISTS items 
              (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, category_id INTEGER, image_name TEXT)''')
 
