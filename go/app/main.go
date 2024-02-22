@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -26,7 +25,6 @@ const (
 )
 
 type Item struct {
-	SeqID     string `json:"seq_id"`
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Category  string `json:"category"`
@@ -42,10 +40,6 @@ type Response struct {
 }
 
 var itemsMap map[string]Item
-
-func GenerateUUID() string {
-	return uuid.New().String()
-}
 
 func mapToItemsSlice() []Item {
 	items := make([]Item, 0, len(itemsMap))
@@ -73,12 +67,6 @@ func readItemsFromFile() (*Items, error) {
 			return &Items{Items: []Item{}}, nil
 		}
 		return nil, err
-	}
-
-	// Create a map of items for quick access
-	itemsMap = make(map[string]Item)
-	for _, item := range items.Items {
-		itemsMap[item.ID] = item
 	}
 
 	return &items, nil
@@ -182,19 +170,17 @@ func addItem(c echo.Context) error {
 		imagePath = "default.jpg"
 	}
 
-	uuid := GenerateUUID()
-	seqID := strconv.Itoa(len(itemsMap) + 1)
+	newID := strconv.Itoa(len(itemsMap) + 1)
 
 	newItem := Item{
-		SeqID:     seqID,
-		ID:        uuid,
+		ID:        newID,
 		Name:      name,
 		Category:  category,
 		ImageName: imagePath,
 	}
 
 	// Add new item to the map
-	itemsMap[uuid] = newItem
+	itemsMap[newID] = newItem
 
 	// Write updated items back to file
 	if err := writeItemsToFile(); err != nil {
@@ -255,6 +241,12 @@ func main() {
 	}
 	if items == nil {
 		items = &Items{}
+	}
+
+	// Create a map of items for quick access
+	itemsMap = make(map[string]Item)
+	for _, item := range items.Items {
+		itemsMap[item.ID] = item
 	}
 
 	// Routes
