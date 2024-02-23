@@ -1,8 +1,23 @@
-FROM alpine
+# syntax=docker/dockerfile:1
 
-RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari /path/to/db
+FROM python:3.8-slim-buster
 
-USER trainee
+WORKDIR /app
 
-CMD ["python", "-V"]
+COPY requirements.txt requirements.txt
+RUN pip3 install -r requirements.txt
+
+# RUN addgroup -S mercari && adduser -S trainee -G mercari
+
+# USER trainee
+
+
+COPY . .
+
+EXPOSE 7000
+
+# STEP5.5
+# CMD [ "python3", "--version"]
+
+# STEP5.6
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7000"]
