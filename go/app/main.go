@@ -113,8 +113,8 @@ func saveImage(image *multipart.FileHeader) (string, error) {
 		return "", err
 	}
 
-	fileName := fmt.Sprintf("%x", hash) + ".jpg"
-	imagePath := "./images/" + fileName
+	fileName := fmt.Sprintf("%x.jpg", hash)
+	imagePath := fmt.Sprintf("./images/%s", fileName)
 
 	_, err = os.Create(imagePath)
 	if err != nil {
@@ -139,10 +139,10 @@ func getItems(c echo.Context) error {
 	return c.JSON(http.StatusOK, items)
 }
 
-func readItems(filepath string) (Items, error) {
+func readItems(filePath string) (Items, error) {
 	var items Items
 
-	data, err := os.ReadFile(filepath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		err := fmt.Errorf("error while reading file: %w", err)
 		return Items{}, err
