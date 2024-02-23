@@ -1,8 +1,46 @@
-FROM alpine
+FROM python:3.9-alpine
+#Specify base image for this Dockerfile
 
+
+# Install Python and pip dependencies (Update the package list inside container)
+RUN apk update && apk add --no-cache python3 py3-pip
+
+
+#Set the working directory for subsequent commands to inside the container
+WORKDIR /app
+
+
+#Copy requirements.txt file from host into the container
+#Then intall Python dependencies from requirement.txt using pip
+COPY requirements.txt requirements.txt
+RUN pip3 install -r requirements.txt
+
+
+#Create a group named "mercari" and a user named "trainee" within that group
 RUN addgroup -S mercari && adduser -S trainee -G mercari
 # RUN chown -R trainee:mercari /path/to/db
 
+
+#Set the user to "trainee"
+#(All subsequent commands will be executed as a trainee)
 USER trainee
 
-CMD ["python", "-V"]
+
+# Copy the host current directory into the container's working directory
+#(.) to (/app)
+COPY . .
+
+
+#Expose port 7000 from the container for external access
+EXPOSE 7000
+
+
+#Define default command to run when the container starts
+
+
+# STEP5.5
+# CMD ["python", "-V"]
+
+
+# # STEP5.6
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7000"]
