@@ -1,8 +1,23 @@
-FROM alpine
+FROM python:3.10.13-alpine
 
-RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari /path/to/db
+# 作業ディレクトリを設定
+WORKDIR /mercari-build-training/python
 
-USER trainee
+# 必要なファイルをコピー
+COPY requirements.txt ./
 
-CMD ["python", "-V"]
+# システムパッケージをインストール
+RUN apk add --no-cache curl
+
+# Pythonパッケージをインストール
+RUN pip install -r requirements.txt
+
+# アプリケーションのファイルをコピー
+COPY . .
+
+# ポートを公開
+EXPOSE 9000
+
+# コンテナ起動時に実行するコマンドを指定
+CMD ["python", "main.py"]
+
