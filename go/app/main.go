@@ -26,10 +26,10 @@ const (
 )
 
 type Item struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Category  string `json:"category"`
-	ImageName string `json:"image_name"`
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	CategoryId string `json:"category"`
+	ImageName  string `json:"image_name"`
 }
 
 type Items struct {
@@ -100,7 +100,7 @@ func root(c echo.Context) error {
 
 func addItem(c echo.Context) error {
 	name := c.FormValue("name")
-	category := c.FormValue("category")
+	category := c.FormValue("category_id")
 	image, err := c.FormFile("image")
 	var imagePath string
 	if err != nil {
@@ -125,7 +125,7 @@ func addItem(c echo.Context) error {
 	defer db.Close()
 
 	// invoke SQL to collect all of items
-	stmt, err := db.Prepare("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)")
+	stmt, err := db.Prepare("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -141,10 +141,10 @@ func addItem(c echo.Context) error {
 	}
 
 	newItem := Item{
-		ID:        strconv.Itoa(int(newID)),
-		Name:      name,
-		Category:  category,
-		ImageName: imagePath,
+		ID:         strconv.Itoa(int(newID)),
+		Name:       name,
+		CategoryId: category,
+		ImageName:  imagePath,
 	}
 
 	itemsMap[strconv.Itoa(int(newID))] = newItem
@@ -154,10 +154,27 @@ func addItem(c echo.Context) error {
 
 func getItem(c echo.Context) error {
 	itemID := c.Param("itemID")
-	item, exists := itemsMap[itemID]
-	if !exists {
-		return c.JSON(http.StatusNotFound, Response{Message: "Item not found"})
+	if item, exists := itemsMap[itemID]; exists {
+		return c.JSON(http.StatusOK, item)
 	}
+
+	// データベースからアイテムを取得する処理を追加
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database connection failed")
+	}
+	defer db.Close()
+
+	var item Item
+	err = db.QueryRow("SELECT id, name, category_id, image_name FROM items WHERE id = ?", itemID).Scan(&item.ID, &item.Name, &item.CategoryId, &item.ImageName)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return c.JSON(http.StatusNotFound, Response{Message: "Item not found"})
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "Database query failed")
+	}
+
+	// アイテムを見つけたらJSONとして返す
 	return c.JSON(http.StatusOK, item)
 }
 
@@ -170,7 +187,7 @@ func getItems(c echo.Context) error {
 	defer db.Close()
 
 	// invoke SQL to collect all of items
-	rows, err := db.Query("SELECT id, name, category, image_name FROM items")
+	rows, err := db.Query("SELECT id, name, category_id, image_name FROM items")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -180,7 +197,7 @@ func getItems(c echo.Context) error {
 	items := Items{Items: []*Item{}}
 	for rows.Next() {
 		var item Item
-		err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.ImageName)
+		err := rows.Scan(&item.ID, &item.Name, &item.CategoryId, &item.ImageName)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
@@ -217,7 +234,7 @@ func searchItem(c echo.Context) error {
 	defer db.Close()
 
 	// invoke SQL to enumerate items by filtering with the `keyword` value
-	rows, err := db.Query("SELECT id, name, category, image_name FROM items WHERE name LIKE ?", "%"+keyword+"%")
+	rows, err := db.Query("SELECT id, name, category_id, image_name FROM items WHERE name LIKE ?", "%"+keyword+"%")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
@@ -227,7 +244,7 @@ func searchItem(c echo.Context) error {
 	items := Items{Items: []*Item{}}
 	for rows.Next() {
 		var item Item
-		err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.ImageName)
+		err := rows.Scan(&item.ID, &item.Name, &item.CategoryId, &item.ImageName)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
