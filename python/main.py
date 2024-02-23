@@ -26,7 +26,8 @@ database_file : sqlite3 database file location.
 
 Notes: given sqlite module version is not thread safe according to sqlite3.threadsafety.
 '''
-database_file = "/Users/miamakino/Mercari/mercari-build-training/db/mercari.sqlite3"
+
+database_file = "../db/mercari.sqlite3"
 
 @app.get("/")
 def root():
