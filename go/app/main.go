@@ -84,16 +84,18 @@ func addItem(c echo.Context) error {
     }
 
 	//DBに接続
-	db, err := sql.Open("sqlite3", "/Users/fukawanozomi/Desktop/mercari-build-traning/db/mercari.sqlite3")
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
 	if err != nil {
-		return err
+		res := Response{Message: "Error Connecting to database"}
+		return c.JSON(http.StatusInternalServerError, res)
 	}
 	defer db.Close()
 
 	//DBに商品を追加
 	stmt, err := db.Prepare("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)")
 	if err != nil {
-		return err
+		res := Response{Message: "Error preparing statement for database insertion"}
+		return c.JSON(http.StatusInternalServerError, res)
 	}
 	defer stmt.Close()
 
@@ -102,26 +104,39 @@ func addItem(c echo.Context) error {
 	}
 	c.Logger().Infof("Name: %s, Category: %s, ImageName: %s", name, category, newItem.ImageName)
 
+	// res := Response{Message: message}
 	return c.JSON(http.StatusOK, newItem)
 }
 
 func getAllItem(c echo.Context) error {
 	//db接続
-	db, err := sql.Open("sqlite3", "../mercari.sqlite3")
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
 	//itemsからデータ取得
-	cmd := "SELECT * FROM items"
-	rows, err := db.Query(cmd)
+	rows, err := db.Query("SELECT name, category, image_name FROM items")
 	if err != nil {
 		return err
 	}
 	defer rows.Close()
 
-	return c.JSON(http.StatusOK, rows)
+	var items Items
+
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.Name, &item.Category, &item.ImageName)
+
+		if err != nil {
+			return err
+		}
+		items.Items = append(items.Items, item)
+	}
+
+	c.Logger().Info("Retrieved items")
+	return c.JSON(http.StatusOK, items)
 }
 
 func getImg(c echo.Context) error {
@@ -142,7 +157,7 @@ func getImg(c echo.Context) error {
 func getItemById(c echo.Context) error {
     // paramsからidを取得
     idStr := c.Param("id")
-	_, err := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(idStr)
     if err != nil {
         return c.JSON(http.StatusBadRequest, "Invalid ID")
     }
@@ -169,7 +184,7 @@ func getItemById(c echo.Context) error {
 
     // 指定されたidに一致するアイテムを探す
     for _, item := range items.Items {
-        if item.ID == idStr {
+        if item.ID == id {
             return c.JSON(http.StatusOK, item)
         }
     }
