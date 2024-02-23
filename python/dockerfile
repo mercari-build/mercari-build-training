@@ -7,10 +7,9 @@ WORKDIR /app
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 
-# RUN addgroup -S mercari && adduser -S trainee -G mercari
+RUN groupadd -r mercari && useradd -r -g mercari trainee
 
-# USER trainee
-
+USER trainee
 
 COPY . .
 
