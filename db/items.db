@@ -1,2 +1,1 @@
-CREATE TABLE categories (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
 CREATE TABLE items (id INTEGER PRIMARY KEY, name TEXT NOT NULL, category_id INTEGER, image_name TEXT, FOREIGN KEY (category_id) REFERENCES categories(id));
