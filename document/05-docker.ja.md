@@ -97,9 +97,9 @@ ERRO[0000] error waiting for container: context canceled
 Goの場合は、上のエラーメッセージの`"python"`の部分が`"go"`になります。
 
 
-**`dockerfile` を変更し STEP2 でインストールしたのと同じバージョンの Python や Go が docker image で使えるようにしましょう。**
+**`Dockerfile` を変更し STEP2 でインストールしたのと同じバージョンの Python や Go が docker image で使えるようにしましょう。**
 
-変更した `dockerfile` で build した Image を実行し、STEP2-2 と同じ結果が表示されれば成功です。
+変更した `Dockerfile` で build した Image を実行し、STEP2-2 と同じ結果が表示されれば成功です。
 
 **:book: Reference**
 
@@ -110,7 +110,7 @@ Goの場合は、上のエラーメッセージの`"python"`の部分が`"go"`�
 
 STEP4-5 までで docker image の中は STEP2-2 と同じ状態になっています。
 
-**`dockerfile`を変更し、必要なファイルをコピーしたり依存ライブラリをインストールしたりして, docker image 上で 出品 API が動くようにしましょう。**
+**`Dockerfile`を変更し、必要なファイルをコピーしたり依存ライブラリをインストールしたりして, docker image 上で 出品 API が動くようにしましょう。**
 
 `$ docker run -d -p 9000:9000 build2024/app:latest`
 
