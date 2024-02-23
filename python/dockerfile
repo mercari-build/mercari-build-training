@@ -1,8 +1,12 @@
-FROM alpine
+# alpineは軽量なので、これを使用する
+FROM python:3.10-alpine
 
 RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari /path/to/db
 
-USER trainee
-
-CMD ["python", "-V"]
+# 作業ディレクトリの作成
+WORKDIR /app
+COPY requirements.txt requirements.txt
+RUN pip3 install -r requirements.txt
+COPY . .
+# コマンドを指定
+CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "9000"]

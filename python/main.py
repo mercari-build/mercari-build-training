@@ -47,7 +47,7 @@ def get_items():
     cursor.close()
     conn.close()
     
-    {"items": items}
+    return {"items": items}
 
 
 @app.post("/items")
