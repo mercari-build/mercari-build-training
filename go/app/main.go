@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -17,10 +18,9 @@ import (
 )
 
 const (
-	ImgDir = "images"
+	ImgDir    = "images"
+	ItemsPath = "items.json"
 )
-
-const ItemsPath = "items.json"
 
 type Response struct {
 	Message string `json:"message"`
@@ -30,6 +30,7 @@ type Item struct {
 	Name      string `json:"name"`
 	Category  string `json:"category"`
 	ImageName string `json:"image_name"`
+	Id        uint   `json:"item_id"`
 }
 
 type Items struct {
@@ -70,6 +71,7 @@ func addItem(c echo.Context) error {
 }
 
 func saveItem(name, category, fileName string) error {
+	//writing item information to JSON file
 	item := Item{Name: name, Category: category, ImageName: fileName}
 
 	items, err := readItems(ItemsPath)
@@ -77,6 +79,8 @@ func saveItem(name, category, fileName string) error {
 		err := fmt.Errorf("error while reading or unmarshaling file: %w", err)
 		return err
 	}
+
+	item.Id = uint(len(items.Items) + 1)
 
 	items.Items = append(items.Items, item)
 
@@ -95,6 +99,7 @@ func saveItem(name, category, fileName string) error {
 }
 
 func saveImage(image *multipart.FileHeader) (string, error) {
+
 	img, err := image.Open()
 	if err != nil {
 		return "", err
@@ -169,6 +174,34 @@ func getImg(c echo.Context) error {
 	return c.File(imgPath)
 }
 
+func getInfo(c echo.Context) error {
+	itemId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		err := fmt.Errorf("invalid ID: %w", err)
+		return err
+	}
+
+	items, err := readItems(ItemsPath)
+	if err != nil {
+		err := fmt.Errorf("error while reading file: %w", err)
+		return err
+	}
+
+	if itemId > len(items.Items) {
+		err := fmt.Errorf("invalid ID: %w", err)
+		return err
+	}
+
+	for _, item := range items.Items {
+		if item.Id == uint(itemId) {
+			return c.JSON(http.StatusOK, item)
+		}
+	}
+
+	res := Response{Message: "There is not such item"}
+	return c.JSON(http.StatusInternalServerError, res)
+}
+
 func main() {
 	e := echo.New()
 
@@ -191,6 +224,7 @@ func main() {
 	e.POST("/items", addItem)
 	e.GET("/items", getItems)
 	e.GET("/image/:imageFilename", getImg)
+	e.GET("/items/:id", getInfo)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
