@@ -1,8 +1,16 @@
-FROM alpine
+FROM python:3.10.9-alpine3.17
 
-RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari /path/to/db
+RUN apk update && apk upgrade
+RUN apk add --no-cache sqlite
 
-USER trainee
+WORKDIR /mercari/python
+COPY python/main.py .
+COPY python/requirements.txt .
 
-CMD ["python", "-V"]
+WORKDIR /mercari/db
+#COPY db/mercari.sqlite3 .
+
+RUN pip install --no-cache-dir -r /mercari/python/requirements.txt
+
+WORKDIR /mercari/python
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000"]
