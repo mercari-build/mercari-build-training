@@ -60,7 +60,7 @@ type ItemWithCategory struct{
 	CategoryID int `db:"category_id"`
 	ImageName string `db:"image_name"`
 	CategoryName string `db:"category_name"`
-	CategoriesID int `db:"categories_id`
+	// CategoriesID int `db:"categories_id`
 }
 type ItemsWithCategory struct{
 	ItemsWithCategory []ItemWithCategory `db:"itemswithcategory"`
@@ -105,9 +105,6 @@ func getCategoryID(db *sql.DB, categoryName string, c echo.Context) (int, error)
 	// if err != nil {
 	// 	fmt.Printf("we haven't had its ID, so let's insert it : %v",categoryId)
 	// }
-	// fmt.Printf("QueryRow error!: %v\n",categoryName)
-	// fmt.Printf("QueryRow error!!!: %v\n",cmd)
-	//↑と同じScanにかかるエラー。エラーをさらに細分化するため
 	if err != nil {
 		//no wanted rows error
 		if err == sql.ErrNoRows {
@@ -286,18 +283,31 @@ func getItemByItemId(db *sql.DB) echo.HandlerFunc {
         }
 
         var itemWithCategory ItemWithCategory
-        cmd := "SELECT items.name, items.category_id, items.image_name, categories.name FROM items JOIN categories ON items.category_id = categories.id WHERE items.id = ?"
-		fmt.Printf("error: %v",cmd)
+        // cmd := "SELECT items.name, items.image_name, categories.name FROM items JOIN categories ON items.category_id = categories.id WHERE items.id = ?"
+		// fmt.Printf("error: %v",cmd)
         // err = db.QueryRow(cmd, itemId).Scan(&itemWithCategory.ID, &itemWithCategory.Name, &itemWithCategory.CategoryID, &itemWithCategory.ImageName, &itemWithCategory.CategoryName)
+		cmd := `
+		SELECT items.name, categories.name, items.image_name
+		FROM items
+		LEFT JOIN categories ON items.category_id=categories.id
+		WHERE items.id = ?;
+	`
 		row := db.QueryRow(cmd,itemId)
 		fmt.Printf("error: %v",row)
 		fmt.Printf("error: %v",itemId)
-		err = row.Scan(&itemWithCategory.Name, &itemWithCategory.CategoryID, &itemWithCategory.ImageName, &itemWithCategory.CategoryName)
-		fmt.Printf("error: %v",itemWithCategory.Name)
-		fmt.Printf("error: %v",itemWithCategory.CategoryID)
-		fmt.Printf("error: %v",itemWithCategory.ImageName)
-		if err != nil {
-			return c.JSON(http.StatusNotFound, map[string]string{"error!!": "Item not found"})
+		// err = row.Scan(&itemWithCategory.Name, &itemWithCategory.ImageName, &itemWithCategory.CategoryName)
+		// fmt.Printf("error: %v",itemWithCategory.Name)
+		// fmt.Printf("error: %v",itemWithCategory.ImageName)
+		// if err != nil {
+		// 	return c.JSON(http.StatusNotFound, map[string]string{"error!!": "Item not found"})
+		// }
+		if err := row.Scan(&itemWithCategory.Name, &itemWithCategory.CategoryName, &itemWithCategory.ImageName); err != nil {
+		if err == sql.ErrNoRows {
+			c.Logger().Errorf("Error: no row")
+			return err
+		}
+		c.Logger().Errorf("Error in scanning: %s", err)
+		return err
 		}
 
         if err != nil {
@@ -310,8 +320,6 @@ func getItemByItemId(db *sql.DB) echo.HandlerFunc {
         return c.JSON(http.StatusOK, itemWithCategory)
     }
 }
-
-
 
 func getItems (c echo.Context) error {
 		//connect to db
@@ -417,6 +425,9 @@ func main() {
 	e.GET("/items",getItems)
 	e.GET("/image/:imageFilename", getImg)
 	e.GET("/items/:item_id", getItemByItemId(db))
+	// e.GET("/items/:id", func(c echo.Context) error {
+	// 	return getItemById(c, db)
+	// })
 	e.GET("/search",searchItems)
 	// Start server
 	e.Logger.Fatal(e.Start(":9000")) 
