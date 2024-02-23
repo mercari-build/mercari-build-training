@@ -36,7 +36,7 @@ def get_items_from_db():
     global database_file
     con = sqlite3.connect(database_file)
     cur = con.cursor()
-    res = cur.execute("SELECT id, name, category, image_name FROM items")
+    res = cur.execute("SELECT items.id, name, category, image_name FROM items inner join categories on items.category_id = categories.id")
     items = res.fetchall()
     cur.close()
     con.close()
@@ -52,7 +52,7 @@ def get_item(item_id):
     global database_file
     con = sqlite3.connect(database_file)
     cur = con.cursor()
-    res = cur.execute("SELECT id, name, category, image_name FROM items WHERE id = ?", [int(item_id)])
+    res = cur.execute("SELECT items.id, name, category, image_name FROM items inner join categories on items.category_id WHERE items.id = ?", [int(item_id)])
     item = res.fetchone()
     cur.close()
     con.close()
@@ -63,7 +63,7 @@ def search_items(keyword: str):
     global database_file
     con = sqlite3.connect(database_file)
     cur = con.cursor() 
-    res = cur.execute("SELECT id, name, category, image_name FROM items WHERE name like ? or category like ?", [keyword, keyword])
+    res = cur.execute("SELECT items.id, name, category, image_name FROM items INNER JOIN categories ON items.category_id = categories.id WHERE name LIKE ? OR category LIKE ?", [keyword, keyword])
     found_items = res.fetchall()
     cur.close()
     con.close()
@@ -71,7 +71,7 @@ def search_items(keyword: str):
     
 
 @app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = Form(...)):
+def add_item(name: str = Form(...), category_id: int = Form(...), image: UploadFile = Form(...)):
     logger.info(f"Receive item: {name}")
 
     file_content = image.file.read()
@@ -83,7 +83,7 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     global database_file
     con = sqlite3.connect(database_file)
     cur = con.cursor()
-    data = [name, category, f"{image_hash}.jpg"]
+    data = [name, category_id, f"{image_hash}.jpg"]
     res = cur.execute("INSERT INTO items VALUES(NULL,?,?,?)", data)
     con.commit()
     items = get_items_from_db()
