@@ -30,10 +30,25 @@ Pythonでは、`requirements.txt`というファイルに依存しているラ�
 
 ```shell
 $ cd python
+
+# 仮想環境をつくる
+$ python -m venv .venv
+$ source .venv/bin/activate
+# Unixを利用していない場合コマンドが違うことがあります
+
+# 必要なライブラリをインストールする
 $ pip install -r requirements.txt
 ```
 
 追加でライブラリをインストールした場合は、requirements.txtにライブラリを追加するようにしましょう。
+
+`python -m venv .venv`はPythonの仮想環境を作成するコマンドです。
+仮想環境とは、プロジェクト固有のPythonの環境を作成するための方法です。
+仮想環境を使うことで必要なパッケージをプロジェクトごとに分けて管理できるため、異なるプロジェクト間での依存関係の衝突を避けることができます。
+仮想環境を作成したら`source .venv/bin/activate`コマンドによってその環境を有効化する必要があります。
+
+* [venv --- 仮想環境の作成](https://docs.python.org/ja/3/library/venv.html)
+* [仮想環境: Python環境構築ガイド](https://www.python.jp/install/windows/venv.html)
 
 ### 4. アプリにアクセスする
 

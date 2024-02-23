@@ -111,7 +111,7 @@ Run the image with the modified `Dockerfile`, check if the same message is displ
 
 The environment within the docker image should be the same as STEP2-2 after STEP4-5.
 
-**Modify `dockerfile` to copy necessary files and install dependencies such that you can run the listing API on docker**
+**Modify `Dockerfile` to copy necessary files and install dependencies such that you can run the listing API on docker**
 
 
 `$ docker run -d -p 9000:9000 build2024/app:latest`
