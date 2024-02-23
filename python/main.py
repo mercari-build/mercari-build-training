@@ -13,6 +13,7 @@ app = FastAPI()
 conn=sqlite3.connect(dbname)
 cur=conn.cursor()
 
+
 cur.execute(CREATE TABLE items (
     id INTEGER PRIMARY KEY,
     name TEXT,
@@ -36,23 +37,12 @@ app.add_middleware(
 )
 
 
-
-
-def load_item():
-    if items_json.exists():
-        with open(items.json,"r") as f:
-            return json.load(f)
-    return{"item": []}
-
 def save_image(file,filename):
     with open(images / filename, "wb") as image:
         image.write(file)
 
-def save_item_db(id, name,category,image_name):
-    cur.execute("INSERT INTO id values(id)")
-    cur.execute("INSERT INTO name values(name)")
-    cur.execute("INSERT INTO category values(category)")
-    cur.execute("INSERT INTO image_name values(image_name)")
+def save_item_db(name, category, image_name):
+    cur.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)", (name, category, image_name))
     conn.commit()
 
 @app.get("/")
@@ -63,39 +53,24 @@ items_list=[]
 @app.post("/items")
 def add_item(name: str = Form(...), category:str=Form(...), image:UpladFile = File(...)):
     logger.info(f"Receive item: {name}, category: {category}, image: {image}")
-    item={"name": name, "category": category,"image_name": image_filename}
-    save_item(item)
-
     
     file_content = image.file.read()
     hash_value = hashlib.sha256(file_content).hexdigest()
-
-    
     image_filename = f"{hash_value}.jpg"
     save_image(file_content, image_filename)
 
-    
-    new_item = {"name": name, "category": category, "image": image_filename}
-
-    
-    items_data = load_items_from_json()
-    existing_items = items_data.get("items", [])
-
-    
-    existing_items.append(new_item)
-    items_data["items"] = existing_items
-
-   
-    save_item_db(items_data)
+    save_item_db(name, category, image_filename)
     return {"message": f"item received: {name},category:{category}","image_name": image_filename}
 
-
+cur.execute("CREATE TABLE category (id INTEGER PRIMARY KEY, name TEXT)")
 
 @app.get("/items")
 def get_items():
-    cur.execute("SELECT * FROM items")
-    items = cur.fetchall()
-    return {"items": items}
+    cur.execute("SELECT name, category, image_name FROM items")
+    items=cur.fetchall()
+    cur.execute("SELECT category_id FROM items INNER JOIN category ON items.category_id=category.id")
+    return {"items":items}
+
 
 @app.get("/image/{image_name}")
 async def get_image(image_name):
@@ -119,10 +94,11 @@ def get_item(item_id: int= Path(..., title="The ID of the item to get")):
         item = existing_items[item_id-1]
         return item
 
-@app.get(/search)
-def search_item
+@app.get("/search/{search_item}")
+def search_item(search_item:str):
+    cur.execute("SELECT name, category, image_name FROM items WHERE name LIKE ?",("%"+search_item+"%",))
+    items= cur.fetchall()
+    return {"items":items}
 
-
-conn.commit()
 cur.close()
 conn.close()
