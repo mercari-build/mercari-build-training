@@ -1,8 +1,18 @@
-FROM alpine
+FROM python:3.9-slim
 
-RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari /path/to/db
+WORKDIR /app
 
-USER trainee
+COPY db/ /app/db
+COPY python/ /app/python
+COPY images/ /app/images
 
-CMD ["python", "-V"]
+RUN pip3 install -r /app/python/requirements.txt
+
+EXPOSE 9000
+
+# 5-5 Change Dockerfile
+# CMD [ "python3", "-V"]
+
+# 5-6 API
+CMD ["uvicorn", "python.main:app", "--host", "0.0.0.0", "--port", "9000"]
+# the host should not be "127.0.0.1"
