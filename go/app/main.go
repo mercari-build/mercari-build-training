@@ -109,21 +109,28 @@ func (s ServerImpl) addItemToDB(name, category, imageName string) error {
 	}
 	defer tx.Rollback()
 
-	// カテゴリをcategoriesテーブルに追加
-	stmt1, err := tx.Prepare("INSERT INTO categories (name) VALUES (?)")
+	var id int64
+	err = tx.QueryRow("SELECT id FROM categories WHERE name = ?", category).Scan(&id)
 	if err != nil {
-		return fmt.Errorf("failed to prepare SQL statement1 in addItemToDB: %w", err)
-	}
-	defer stmt1.Close()
+		if errors.Is(err, sql.ErrNoRows) { // カテゴリが存在しない場合
+			stmt1, err := tx.Prepare("INSERT INTO categories (name) VALUES (?)")
+			if err != nil {
+				return fmt.Errorf("failed to prepare SQL statement1 in addItemToDB: %w", err)
+			}
+			defer stmt1.Close()
 
-	result, err := stmt1.Exec(category)
-	if err != nil {
-		return fmt.Errorf("failed to execute SQL statement1 in addItemToDB: %w", err)
-	}
-	// 新しく挿入された行のIDを取得
-	id, err := result.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("failed to get last insert ID in addItemToDB: %w", err)
+			result, err := stmt1.Exec(category)
+			if err != nil {
+				return fmt.Errorf("failed to execute SQL statement1 in addItemToDB: %w", err)
+			}
+			// 新しく挿入された行のIDを取得
+			id, err = result.LastInsertId()
+			if err != nil {
+				return fmt.Errorf("failed to get last insert ID in addItemToDB: %w", err)
+			}
+		} else {
+			return fmt.Errorf("failed to select id from categories in addItemToDB: %w", err)
+		}
 	}
 
 	// itemsテーブルに商品を追加
