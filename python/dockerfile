@@ -1,23 +1,16 @@
 FROM python:3.10.13-alpine
 
-# 作業ディレクトリを設定
 WORKDIR /mercari-build-training/python
 
-# 必要なファイルをコピー
 COPY requirements.txt ./
 
-# システムパッケージをインストール
 RUN apk add --no-cache curl
 
-# Pythonパッケージをインストール
 RUN pip install -r requirements.txt
 
-# アプリケーションのファイルをコピー
 COPY . .
 
-# ポートを公開
 EXPOSE 9000
 
-# コンテナ起動時に実行するコマンドを指定
 CMD ["python", "main.py"]
 
