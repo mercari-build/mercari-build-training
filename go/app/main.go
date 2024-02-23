@@ -282,7 +282,6 @@ func getItemByItemId(db *sql.DB) echo.HandlerFunc {
             // Use echo's HTTP error to return the error to the client properly.
             return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid item ID: %v", err))
         }
-
         var items ItemWithCategory
         cmd := `SELECT items.id, items.name, categories.name, items.category_id ,items.image_name FROM items LEFT OUTER JOIN categories ON items.category_id = categories.id WHERE items.id = ?`
 
