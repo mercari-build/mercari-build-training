@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"io"
@@ -14,10 +15,11 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Item struct {
-	ID string `json: "id"`
+	ID int `json: "id"`
 	Name     string  `json:"name"`
 	Category string  `json:"category"`
 	ImageName string `json:"image_name"`
@@ -47,7 +49,6 @@ func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
 	category := c.FormValue("category")
-
 	// 画像ファイル取得
 	imageFile, err := c.FormFile("image")
 
@@ -82,62 +83,45 @@ func addItem(c echo.Context) error {
         ImageName: hash + ".jpg", 
     }
 
-	jsonFile, err := os.Open("items.json")
+	//DBに接続
+	db, err := sql.Open("sqlite3", "/Users/fukawanozomi/Desktop/mercari-build-traning/db/mercari.sqlite3")
 	if err != nil {
 		return err
 	}
-	defer jsonFile.Close()
+	defer db.Close()
 
-	var items Items
-	jsonData, err := io.ReadAll(jsonFile)
+	//DBに商品を追加
+	stmt, err := db.Prepare("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)")
 	if err != nil {
 		return err
 	}
-	json.Unmarshal(jsonData, &items)
+	defer stmt.Close()
 
-	items.Items = append(items.Items, newItem)
-
-	jsonFile, err = os.Create("items.json")
-	if err != nil {
+	if _, err := stmt.Exec(newItem.Name, newItem.Category, newItem.ImageName); err != nil {
 		return err
 	}
-	defer jsonFile.Close()
-
-	encoder := json.NewEncoder(jsonFile)
-	err = encoder.Encode(items)
-	if err != nil {
-		return err
-	}
-
 	c.Logger().Infof("Name: %s, Category: %s, ImageName: %s", name, category, newItem.ImageName)
+
 	return c.JSON(http.StatusOK, newItem)
 }
 
 func getAllItem(c echo.Context) error {
-	//JSONファイルを開く
-	jsonFile, err :=os.Open("items.json")
-    if err != nil {
-        // ファイルが開けない場合はエラーレスポンスを返す
-        return c.JSON(http.StatusInternalServerError, Response{Message: "Failed to open items.json"})
-    }
-    defer jsonFile.Close()
-    // ファイルの内容を読み込む
-    jsonData, err := io.ReadAll(jsonFile)
-    if err != nil {
-        // 読み込みに失敗した場合はエラーレスポンスを返す
-        return c.JSON(http.StatusInternalServerError, Response{Message: "Failed to read items.json"})
-    }
+	//db接続
+	db, err := sql.Open("sqlite3", "../mercari.sqlite3")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
 
-    // 読み込んだJSONデータをItems構造体にデコードする
-    var items Items
-    err = json.Unmarshal(jsonData, &items)
-    if err != nil {
-        // デコードに失敗した場合はエラーレスポンスを返す
-        return c.JSON(http.StatusInternalServerError, Response{Message: "Failed to decode items.json"})
-    }
+	//itemsからデータ取得
+	cmd := "SELECT * FROM items"
+	rows, err := db.Query(cmd)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
 
-    // デコードしたデータをレスポンスとして返す
-    return c.JSON(http.StatusOK, items)
+	return c.JSON(http.StatusOK, rows)
 }
 
 func getImg(c echo.Context) error {
