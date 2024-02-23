@@ -7,7 +7,6 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"io"
@@ -33,18 +32,6 @@ func saveImageAndHash(imageFile io.Reader) (string, error) {
 		return "", err
 	}
 	return hashedFileName, nil
-}
-
-func getAllItems() (Items, error) {
-	var items Items
-	fileContent, err := os.ReadFile("items.json")
-	if err != nil {
-		return items, err
-	}
-	if err := json.Unmarshal(fileContent, &items); err != nil {
-		return items, err
-	}
-	return items, nil
 }
 
 func createNewItem(c echo.Context) (Item, error) {
@@ -81,28 +68,4 @@ func createNewItem(c echo.Context) (Item, error) {
 		ImageName:  hashedFileName,
 	}
 	return item, nil
-}
-
-func addItemToFile(item Item) error {
-	var items Items
-	_, err := os.Stat("items.json")
-	if err == nil {
-		fileContent, err := os.ReadFile("items.json")
-		if err != nil {
-			return err
-		}
-		if len(fileContent) != 0 {
-			if err := json.Unmarshal(fileContent, &items); err != nil {
-				return err
-			}
-		}
-	} else if !os.IsNotExist(err) {
-		return err
-	}
-	items.Items = append(items.Items, item)
-	updatedContent, err := json.Marshal(items)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile("items.json", updatedContent, 0644)
 }

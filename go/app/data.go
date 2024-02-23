@@ -4,8 +4,8 @@
 
 package main
 
-func getAllDB() (ShowItems, error) {
-	var items ShowItems
+func getAllDB() (Items, error) {
+	var items Items
 	query := `SELECT items.id,items.name,categories.name AS category,items.image_name
 	FROM items
 	JOIN categories ON items.category_id=categories.id`
@@ -15,7 +15,7 @@ func getAllDB() (ShowItems, error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var item ShowItem
+		var item Item
 		err = rows.Scan(&item.ID, &item.Name, &item.Category, &item.ImageName)
 		if err != nil {
 			return items, err
@@ -38,20 +38,19 @@ func addItemToDB(item Item) (int64, error) {
 	return insertedId, err
 }
 
-func readKeywordDB(keyword string) (ShowItems, error) {
-	var items ShowItems
+func readKeywordDB(keyword string) (Items, error) {
+	var items Items
 	query := `SELECT items.id,items.name,categories.name AS category,items.image_name
 	FROM items
 	JOIN categories ON items.category_id=categories.id
-	WHERE items.name=?`
-	//Partial Match WHERE items.name LIKE ?
-	rows, err := db.Query(query, keyword) //Partial Match "%"+keyword+"%"
+	WHERE items.name LIKE ?`
+	rows, err := db.Query(query, "%"+keyword+"%")
 	if err != nil {
 		return items, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var item ShowItem
+		var item Item
 		err = rows.Scan(&item.ID, &item.Name, &item.Category, &item.ImageName)
 		if err != nil {
 			return items, err

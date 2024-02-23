@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 
 	"database/sql"
@@ -34,35 +33,17 @@ type Item struct {
 	ID         int    `json:"id"`
 	Name       string `json:"name"`
 	CategoryID int    `json:"category_id"`
+	Category   string `json:"category"`
 	ImageName  string `json:"imagename"`
-}
-
-type ShowItem struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	Category  string `json:"category"`
-	ImageName string `json:"imagename"`
 }
 
 type Items struct {
 	Items []Item `json:"items"`
 }
 
-type ShowItems struct {
-	Items []ShowItem `json:"showitems"`
-}
-
 func root(c echo.Context) error {
 	res := Response{Message: "Hello, world!"}
 	return c.JSON(http.StatusOK, res)
-}
-
-func readAll(c echo.Context) error {
-	items, err := getAllItems()
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-	return c.JSON(http.StatusOK, items)
 }
 
 func readAllDB(c echo.Context) error {
@@ -73,23 +54,6 @@ func readAllDB(c echo.Context) error {
 	return c.JSON(http.StatusOK, items)
 }
 
-func readOne(c echo.Context) error {
-	items, err := getAllItems()
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
-	}
-	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, echo.Map{"error": "InValid item ID"})
-	}
-	if id < 0 || id >= len(items.Items) {
-		return c.JSON(http.StatusNotFound, echo.Map{"error": "InValid index"})
-	}
-	item := items.Items[id]
-	return c.JSON(http.StatusOK, item)
-}
-
 func readKeywordItem(c echo.Context) error {
 	keyword := c.Param("keyword")
 	items, err := readKeywordDB(keyword)
@@ -97,21 +61,6 @@ func readKeywordItem(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusOK, items)
-}
-
-func createItem(c echo.Context) error {
-
-	item, err := createNewItem(c)
-	if err != nil {
-		return err
-	}
-	c.Logger().Infof("Receive item: %s", item.Name)
-	if err := addItemToFile(item); err != nil {
-		return err
-	}
-	message := fmt.Sprintf("item received: %s", item.Name)
-	res := Response{Message: message}
-	return c.JSON(http.StatusOK, res)
 }
 
 func createItemDB(c echo.Context) error {
@@ -157,54 +106,7 @@ func main() {
 		panic(err)
 	}
 
-	//print items table
-	rows, err := db.Query("SELECT * FROM items")
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	var id int
-	var name string
-	var categoryId int
-	var image string
-	fmt.Println("Items:")
-	for rows.Next() {
-		err = rows.Scan(&id, &name, &categoryId, &image)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Printf("%d | %s | %d | %s\n", id, name, categoryId, image)
-	}
-
-	err = rows.Err()
-	if err != nil {
-		panic(err)
-	}
-
-	//print categories table
-	rows, err = db.Query("SELECT * FROM categories")
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	var categoryName string
-	fmt.Println("\nCategories:")
-	for rows.Next() {
-		err = rows.Scan(&id, &categoryName)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Printf("%d | %s\n", id, categoryName)
-	}
-
-	err = rows.Err()
-	if err != nil {
-		panic(err)
-	}
 	e := echo.New()
-
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -221,11 +123,8 @@ func main() {
 
 	// Routes
 	e.GET("/", root)
-	e.GET("/items", readAll)
-	e.GET("/itemsdb", readAllDB)
-	e.GET("/items/:id", readOne)
-	e.POST("/items", createItem)
-	e.POST("/itemsdb", createItemDB)
+	e.GET("/items", readAllDB)
+	e.POST("/items", createItemDB)
 	e.GET("/image/:imageFilename", getImg)
 	e.GET("/search/:keyword", readKeywordItem)
 
