@@ -30,7 +30,6 @@ type Item struct {
 	Name      string `json:"name"`
 	Category  string `json:"category"`
 	ImageName string `json:"image_name"`
-	Id        uint   `json:"item_id"`
 }
 
 type Items struct {
@@ -79,8 +78,6 @@ func saveItem(name, category, fileName string) error {
 		err := fmt.Errorf("error while reading or unmarshaling file: %w", err)
 		return err
 	}
-
-	item.Id = uint(len(items.Items) + 1)
 
 	items.Items = append(items.Items, item)
 
@@ -187,19 +184,13 @@ func getInfo(c echo.Context) error {
 		return err
 	}
 
-	if itemId > len(items.Items) {
+	if itemId <= 0 || itemId > len(items.Items) {
 		err := fmt.Errorf("invalid ID: %w", err)
 		return err
 	}
 
-	for _, item := range items.Items {
-		if item.Id == uint(itemId) {
-			return c.JSON(http.StatusOK, item)
-		}
-	}
-
-	res := Response{Message: "There is not such item"}
-	return c.JSON(http.StatusInternalServerError, res)
+	item := items.Items[(itemId - 1)]
+	return c.JSON(http.StatusOK, item)
 }
 
 func main() {
