@@ -91,6 +91,7 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
         con.close()
 
         logger.info(f"Receive item: {name}, category_id: {category_id}, category: {category}, image: {image_name}")
+
         return {"message": f"item received: {name}, Category: {category}"}
     except sqlite3.Error as sqlerror:
         logger.error(f"SQLite error occurred: {sqlerror}")
@@ -98,7 +99,6 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
     except Exception as error:
         logger.error(f"An unexpected error occured. Error: {error}")
         raise HTTPException(status_code=500, detail=f"Error: {error}")
-
 
 
 @app.get("/image/{image_name}")
