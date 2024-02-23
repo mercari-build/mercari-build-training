@@ -108,7 +108,7 @@ func saveImage(image *multipart.FileHeader) (string, error) {
 
 	hash := sha256.Sum256(source)
 
-	err = os.MkdirAll("./images", 0777)
+	err = os.MkdirAll("./images", 0750)
 	if err != nil {
 		return "", err
 	}
@@ -121,7 +121,7 @@ func saveImage(image *multipart.FileHeader) (string, error) {
 		return "", err
 	}
 
-	err = os.WriteFile(imagePath, source, 0777)
+	err = os.WriteFile(imagePath, source, 0644)
 	if err != nil {
 		return "", err
 	}
