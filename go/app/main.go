@@ -279,45 +279,25 @@ func getItemByItemId(db *sql.DB) echo.HandlerFunc {
     return func(c echo.Context) error {
         itemId, err := strconv.Atoi(c.Param("item_id"))
         if err != nil {
-            return c.JSON(http.StatusBadRequest, map[string]string{"error": fmt.Sprintf("Invalid item ID: %v", err)})
+            // Use echo's HTTP error to return the error to the client properly.
+            return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid item ID: %v", err))
         }
 
-        var itemWithCategory ItemWithCategory
-        // cmd := "SELECT items.name, items.image_name, categories.name FROM items JOIN categories ON items.category_id = categories.id WHERE items.id = ?"
-		// fmt.Printf("error: %v",cmd)
-        // err = db.QueryRow(cmd, itemId).Scan(&itemWithCategory.ID, &itemWithCategory.Name, &itemWithCategory.CategoryID, &itemWithCategory.ImageName, &itemWithCategory.CategoryName)
-		cmd := `
-		SELECT items.name, categories.name, items.image_name
-		FROM items
-		LEFT JOIN categories ON items.category_id=categories.id
-		WHERE items.id = ?;
-	`
-		row := db.QueryRow(cmd,itemId)
-		fmt.Printf("error: %v",row)
-		fmt.Printf("error: %v",itemId)
-		// err = row.Scan(&itemWithCategory.Name, &itemWithCategory.ImageName, &itemWithCategory.CategoryName)
-		// fmt.Printf("error: %v",itemWithCategory.Name)
-		// fmt.Printf("error: %v",itemWithCategory.ImageName)
-		// if err != nil {
-		// 	return c.JSON(http.StatusNotFound, map[string]string{"error!!": "Item not found"})
-		// }
-		if err := row.Scan(&itemWithCategory.Name, &itemWithCategory.CategoryName, &itemWithCategory.ImageName); err != nil {
-		if err == sql.ErrNoRows {
-			c.Logger().Errorf("Error: no row")
-			return err
-		}
-		c.Logger().Errorf("Error in scanning: %s", err)
-		return err
-		}
+        var items ItemWithCategory
+        cmd := `SELECT items.id, items.name, categories.name, items.category_id ,items.image_name FROM items LEFT OUTER JOIN categories ON items.category_id = categories.id WHERE items.id = ?`
 
+        err = db.QueryRow(cmd, itemId).Scan(&items.ID, &items.Name, &items.CategoryName,&items.CategoryID,&items.ImageName)
+		// fmt.Printf("item.ID %v",items.ID)
         if err != nil {
             if err == sql.ErrNoRows {
-                return c.JSON(http.StatusNotFound, map[string]string{"error": "Item not found"})
+                // Item not found
+                return echo.NewHTTPError(http.StatusNotFound, "Item not found")
             }
-            return c.JSON(http.StatusInternalServerError, map[string]string{"error": fmt.Sprintf("Database error: %v", err)})
+            // Internal server error for other types of errors
+            return echo.NewHTTPError(http.StatusInternalServerError, fmt.Sprintf("Database error: %v", err))
         }
 
-        return c.JSON(http.StatusOK, itemWithCategory)
+        return c.JSON(http.StatusOK, items)
     }
 }
 
