@@ -19,24 +19,19 @@ import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
 )
-//フォルダアクセス用宣言
 const (
 	ImgDir = "images"
 	JsonFile = "items.json"
 )
-
-//商品情報用構造体
 type Item struct {
 	Name string `json:"name"`
 	Category string `json:"category"`
 	Images string `json:"images"`
 	Id int `json:"id"`
 }
-//商品情報用構造体↑を一覧する用構造体
 type Items struct {
 	Items []Item `json:"items"`
 }
-//response用構造体
 type Response struct {
 	Message string `json:"message"`
 }
@@ -60,7 +55,6 @@ type ItemWithCategory struct{
 	CategoryID int `db:"category_id"`
 	ImageName string `db:"image_name"`
 	CategoryName string `db:"category_name"`
-	// CategoriesID int `db:"categories_id`
 }
 type ItemsWithCategory struct{
 	ItemsWithCategory []ItemWithCategory `db:"itemswithcategory"`
@@ -84,7 +78,6 @@ func getNewItemsForClm(c echo.Context) (string,*multipart.FileHeader, error) {
 	image, err := c.FormFile("image")
 	if err != nil{
 		c.Logger().Errorf("FormFile error : %v\n", err)
-		//*multipart.FileHeaderは ""でなくてnil
 		return "", nil, err
 	}
 	return name, image, nil
@@ -96,21 +89,13 @@ func getCategoryID(db *sql.DB, categoryName string, c echo.Context) (int, error)
 	//Query.Row id
 	cmd := "SELECT id FROM categories where name = ?"
 	//run sql-stmt and assigning the retreived data(because got data by sql-stmt already) to variable
-	//scanは一度sqlで取得したデータをプログラムが使いやすいように変数に割り当てるメソッド
 	row := db.QueryRow(cmd, categoryName)
-	// fmt.Printf("QueryRow !!!err: %v\n",categoryName)
-	//rowにはidが入っている
 	err := row.Scan(&categoryId)
-	// fmt.Printf("QueryRow err!!: %v\n",categoryName)
-	// if err != nil {
-	// 	fmt.Printf("we haven't had its ID, so let's insert it : %v",categoryId)
-	// }
 	if err != nil {
 		//no wanted rows error
 		if err == sql.ErrNoRows {
 			err := insertNewclm(db, categoryName, c)
 			if err != nil {
-				// fmt.Printf("cate!!!: %v", categoryName)
 				return 0, fmt.Errorf("insertNewclm error : %v", err)
 			}
 		}
@@ -121,8 +106,6 @@ func getCategoryID(db *sql.DB, categoryName string, c echo.Context) (int, error)
 }
 
 func insertNewclm(db *sql.DB, categoryName string, c echo.Context) error {
-		// fmt.Printf("category!?: %v", categoryName)
-		// fmt.Printf("category!!!: %v\n", categoryName)
 		name, image, err := getNewItemsForClm(c)
 		if err != nil {
 			c.Logger().Errorf("getItemFromRequest error: %v", err)
@@ -131,7 +114,6 @@ func insertNewclm(db *sql.DB, categoryName string, c echo.Context) error {
 		if err != nil {
 			c.Logger().Errorf("ImgSave error: %v",err)
 		}
-		// c.Logger().Errorf("name!?: %v, %v",image_name,name)
 		cmd := "INSERT INTO categories (name) VALUES(?)"
 		stmt, err := db.Prepare(cmd)
 		if err != nil {
@@ -145,7 +127,6 @@ func insertNewclm(db *sql.DB, categoryName string, c echo.Context) error {
 		if err != nil {
 			c.Logger().Errorf("getting last insert ID error : %v",err)
 		}
-		// c.Logger().Errorf("category_id!?: %v",category_id)
 
 		ItemQuery := "INSERT INTO items (name,category_id,image_name) VALUES (?,?,?)"
 		insertQuery, err := db.Prepare(ItemQuery)
@@ -154,7 +135,6 @@ func insertNewclm(db *sql.DB, categoryName string, c echo.Context) error {
 			return err
 		}
 		defer insertQuery.Close()
-		//Exec(sql-statement is executed)(get Exec's arguments into ↑?,?,?)
 		//you can change param easily nothing to change sql-statement
 		if _,err = insertQuery.Exec(name,category_id,image_name); err != nil{
 			c.Logger().Errorf("insertQuery.Exec error", err)
@@ -165,11 +145,6 @@ func insertNewclm(db *sql.DB, categoryName string, c echo.Context) error {
 }
 
 func ImgSave(image *multipart.FileHeader)(string, error) {
-		// image, err := c.FormFile("image")
-		// if err != nil{
-		// 	c.Logger().Errorf("FormFile error : %v\n", err)
-		// 	return err
-		// }
 		src, err := image.Open()
 		if err != nil {
 			return "", fmt.Errorf("image.Open error: %v", err)
@@ -283,6 +258,7 @@ func getItemByItemId(db *sql.DB) echo.HandlerFunc {
             return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid item ID: %v", err))
         }
         var items ItemWithCategory
+		//PLEASE BE CAREFULL TO BE THE RIGHT SEQUENCE
         cmd := `SELECT items.id, items.name, categories.name, items.category_id ,items.image_name FROM items LEFT OUTER JOIN categories ON items.category_id = categories.id WHERE items.id = ?`
 
         err = db.QueryRow(cmd, itemId).Scan(&items.ID, &items.Name, &items.CategoryName,&items.CategoryID,&items.ImageName)
@@ -391,11 +367,10 @@ func main() {
 		AllowOrigins: []string{frontURL},
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
-	//db := InitDB()だとDB初期化(複雑な要件がある場合に統括的に設定)
-	//sqlOpenは複雑ではないときに、エラーハンドリングができる
+	//db := InitDB() <- good connect-DB-code better than sqlOpen() in more complex situation
 	db, err := sqlOpen()
 	if err != nil {
-		//%vはどんな型でもOK,%sはstring型
+		//%v can be putted any data-type,%s is string-type only though
 		e.Logger.Infof("Failed to open the database: %v",err)
 	}
 	defer db.Close()
@@ -404,9 +379,6 @@ func main() {
 	e.GET("/items",getItems)
 	e.GET("/image/:imageFilename", getImg)
 	e.GET("/items/:item_id", getItemByItemId(db))
-	// e.GET("/items/:id", func(c echo.Context) error {
-	// 	return getItemById(c, db)
-	// })
 	e.GET("/search",searchItems)
 	// Start server
 	e.Logger.Fatal(e.Start(":9000")) 
