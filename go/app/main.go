@@ -164,7 +164,6 @@ func getItemById(c echo.Context) error {
 		log.Print("JSONファイルからの変換に失敗", err)
 		return err
 	}
-	fmt.Print(itemsData)
 	return c.JSON(http.StatusOK, itemsData.Items[id-1])
 
 }
@@ -190,7 +189,7 @@ func main() {
 	// Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Logger.SetLevel(log.INFO)
+	e.Logger.SetLevel(log.DEBUG)
 
 	frontURL := os.Getenv("FRONT_URL")
 	if frontURL == "" {
