@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -147,6 +148,27 @@ func getItems(c echo.Context) error {
 	return c.JSON(http.StatusOK, itemsData)
 }
 
+func getItemById(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
+	file, err := os.Open("items.json")
+	if err != nil {
+		c.Logger().Errorf("Error opening file: %s", err)
+		res := Response{Message: "Error opening file"}
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+	defer file.Close()
+
+	itemsData := Items{}
+	err = json.NewDecoder(file).Decode(&itemsData)
+	if err != nil {
+		log.Print("JSONファイルからの変換に失敗", err)
+		return err
+	}
+	fmt.Print(itemsData)
+	return c.JSON(http.StatusOK, itemsData.Items[id-1])
+
+}
+
 func getImg(c echo.Context) error {
 	// Create image path
 	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
@@ -183,6 +205,7 @@ func main() {
 	e.GET("/", root)
 	e.POST("/items", addItem)
 	e.GET("/items", getItems)
+	e.GET("/items/:id", getItemById)
 	e.GET("/image/:imageFilename", getImg)
 
 	// Start server
