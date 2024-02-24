@@ -280,7 +280,7 @@ func addCategory(c echo.Context) error {
 	message := fmt.Sprintf("category received: %s", name)
 	res := Response{Message: message}
 
-	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
+	db, err := sql.Open("sqlite3", "/db/mercari.sqlite3")
 	if err != nil {
 		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
 	}
