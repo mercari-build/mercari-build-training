@@ -92,14 +92,39 @@ func addItem(c echo.Context) error {
 	defer db.Close()
 
 	//DBに商品を追加
-	stmt, err := db.Prepare("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)")
+	// stmt, err := db.Prepare("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)")
+	//Categoryテーブルに追加
+	stmt1, err := db.Prepare("INSERT INTO categories (name) VALUES (?) ON DUPLICATE KEY UPDATE name = VALUE(name)")
 	if err != nil {
 		res := Response{Message: "Error preparing statement for database insertion"}
 		return c.JSON(http.StatusInternalServerError, res)
 	}
-	defer stmt.Close()
+	defer stmt1.Close()
 
-	if _, err := stmt.Exec(newItem.Name, newItem.Category, newItem.ImageName); err != nil {
+	if _, err := stmt1.Exec(newItem.Category); err != nil {
+		return err
+	}
+
+	//Categoryテーブルからidを取得
+	row, err := db.Query("SELECT id FROM categories WHERE name LIKE ?", newItem.Category)
+	if err != nil {
+		return err
+	}
+	defer row.Close()
+
+	var category_id int	
+	if err := row.Scan(&category_id); err != nil {
+		return err
+	}
+	 
+	//itemsテーブルからitemを作成
+	stmt2, err := db.Prepare("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)")
+	if err != nil {
+		return err
+	}
+	defer stmt2.Close()
+
+	if _, err = stmt2.Exec(newItem.Name, row, newItem.ImageName); err != nil {
 		return err
 	}
 	c.Logger().Infof("Name: %s, Category: %s, ImageName: %s", name, category, newItem.ImageName)
