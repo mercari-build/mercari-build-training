@@ -250,7 +250,7 @@ func getImg(c echo.Context) error {
 	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
 
 	if !strings.HasSuffix(imgPath, ".jpg") {
-		c.Logger().Error("Image path does not end with .jpg")
+		c.Logger().Errorf("Image path does not end with .jpg, got: %s", imgPath)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Image path does not end with .jpg")
 	}
 	if _, err := os.Stat(imgPath); err != nil {
