@@ -71,6 +71,12 @@ func (s ServerImpl) addItem(c echo.Context) error {
 	}
 	hashedImageName := fmt.Sprintf("%x.jpeg", hash.Sum(nil))
 
+	// DBへの保存
+	if err := s.addItemToDB(name, category, hashedImageName); err != nil {
+		c.Logger().Errorf("Failed to add item to DB in addItem: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to add item to DB")
+	}
+
 	// 画像ファイルを保存
 	dst, err := os.Create(fmt.Sprintf("images/%s", hashedImageName))
 	if err != nil {
@@ -83,12 +89,6 @@ func (s ServerImpl) addItem(c echo.Context) error {
 	if _, err := io.Copy(dst, src); err != nil {
 		c.Logger().Errorf("Failed to copy image file in addItem: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to copy image file")
-	}
-
-	// DBへの保存
-	if err := s.addItemToDB(name, category, hashedImageName); err != nil {
-		c.Logger().Errorf("Failed to add item to DB in addItem: %v", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to add item to DB")
 	}
 
 	c.Logger().Infof("Receive item: %s", name)
