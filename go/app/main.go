@@ -193,6 +193,39 @@ func getItemById(c echo.Context) error {
     return c.JSON(http.StatusNotFound, "Item not found")
 }
 
+func getItemByKeyword(c echo.Context) error {
+	//DBとの接続
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	//keywordを取得
+	keyword := c.QueryParam("keyword")
+
+	//dbからデータ取得
+	rows, err := db.Query("SELECT name, category, image_name FROM items WHERE name LIKE '%' || ? || '%'", keyword)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	var items Items
+
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.Name, &item.Category, &item.ImageName)
+
+		if err != nil {
+			return err
+		}
+		items.Items = append(items.Items, item)
+	}
+	return c.JSON(http.StatusOK, items)
+
+}
+
 
 func main() {
 	e := echo.New()
@@ -217,6 +250,7 @@ func main() {
 	e.GET("/image/:imageFilename", getImg)
 	e.GET("/items", getAllItem)
 	e.GET("/items/:id", getItemById)
+	e.GET("/search", getItemByKeyword)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
