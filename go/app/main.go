@@ -30,7 +30,7 @@ type Response struct {
 }
 
 type Item struct {
-	Id        string
+	Id        int
 	Name      string `json:"name"`
 	Category  string `json:"category"`
 	ImageName string `json:"image_name"`
@@ -45,6 +45,7 @@ func root(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+// addItem processes form data and saves item information.
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
@@ -73,9 +74,10 @@ func addItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+// saveItem writes the item information into the database.
 func saveItem(name, category, fileName string) error {
 
-	dbCon, err := connectDB("mercari.sqlite3")
+	dbCon, err := connectDB("../db/mercari.sqlite3")
 	if err != nil {
 		return err
 	}
@@ -87,6 +89,7 @@ func saveItem(name, category, fileName string) error {
 	return nil
 }
 
+// saveImage hashes the image, saves it, and returns its file name.
 func saveImage(image *multipart.FileHeader) (string, error) {
 
 	img, err := image.Open()
@@ -100,7 +103,7 @@ func saveImage(image *multipart.FileHeader) (string, error) {
 
 	hash := sha256.Sum256(source)
 
-	err = os.MkdirAll("./images", 0777)
+	err = os.MkdirAll("./images", 0750)
 	if err != nil {
 		return "", err
 	}
@@ -113,7 +116,7 @@ func saveImage(image *multipart.FileHeader) (string, error) {
 		return "", err
 	}
 
-	err = os.WriteFile(imagePath, source, 0777)
+	err = os.WriteFile(imagePath, source, 0644)
 	if err != nil {
 		return "", err
 	}
@@ -135,7 +138,7 @@ func getItems(c echo.Context) error {
 // readItems reads database and returns all the item information.
 func readItems() (Items, error) {
 
-	dbCon, err := connectDB("mercari.sqlite3")
+	dbCon, err := connectDB("../db/mercari.sqlite3")
 	if err != nil {
 		return Items{}, err
 	}
@@ -160,6 +163,7 @@ func readItems() (Items, error) {
 	return items, nil
 }
 
+// getImg gets the designated image by file name.
 func getImg(c echo.Context) error {
 	// Create image path
 	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
@@ -175,6 +179,7 @@ func getImg(c echo.Context) error {
 	return c.File(imgPath)
 }
 
+// getInfo gets information of the designeted item by id.
 func getInfo(c echo.Context) error {
 	itemId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -197,9 +202,11 @@ func getInfo(c echo.Context) error {
 	return c.JSON(http.StatusOK, item)
 }
 
-func connectDB(dbName string) (*sql.DB, error) {
-	dbCon, err := sql.Open("sqlite3", dbName)
+// 　connectDB opens database connection.
+func connectDB(dbPath string) (*sql.DB, error) {
+	dbCon, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
+		fmt.Println("kokodesu")
 		return nil, err
 	}
 
