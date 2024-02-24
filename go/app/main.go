@@ -41,6 +41,7 @@ func root(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+// addItem processes form data and saves item information.
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
@@ -69,8 +70,9 @@ func addItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+// saveItem writes the item information into the JSON file.
 func saveItem(name, category, fileName string) error {
-	//writing item information to JSON file
+
 	item := Item{Name: name, Category: category, ImageName: fileName}
 
 	items, err := readItems(ItemsPath)
@@ -95,6 +97,7 @@ func saveItem(name, category, fileName string) error {
 	return nil
 }
 
+// saveImage hashes the image, saves it, and returns its file name.
 func saveImage(image *multipart.FileHeader) (string, error) {
 
 	img, err := image.Open()
@@ -129,6 +132,7 @@ func saveImage(image *multipart.FileHeader) (string, error) {
 	return fileName, err
 }
 
+// getItems gets all the item information from the JSON file.
 func getItems(c echo.Context) error {
 	items, err := readItems(ItemsPath)
 	if err != nil {
@@ -139,6 +143,7 @@ func getItems(c echo.Context) error {
 	return c.JSON(http.StatusOK, items)
 }
 
+// readItems reads and unmarshals the JSON file.
 func readItems(filePath string) (Items, error) {
 	var items Items
 
@@ -156,6 +161,7 @@ func readItems(filePath string) (Items, error) {
 	return items, nil
 }
 
+// getImg gets the designated image by file name.
 func getImg(c echo.Context) error {
 	// Create image path
 	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
@@ -171,6 +177,7 @@ func getImg(c echo.Context) error {
 	return c.File(imgPath)
 }
 
+// getInfo gets information of the designeted item by id.
 func getInfo(c echo.Context) error {
 	itemId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
