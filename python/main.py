@@ -100,7 +100,6 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
         logger.error(f"An unexpected error occured. Error: {error}")
         raise HTTPException(status_code=500, detail=f"Error: {error}")
 
-
 @app.get("/image/{image_name}")
 async def get_image(image_name):
     logger.info(f"Receive image: {image_name}")
