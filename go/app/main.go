@@ -106,7 +106,12 @@ func (s ServerImpl) addItemToDB(name, category, imageName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction in addItemToDB: %w", err)
 	}
-	defer tx.Rollback()
+
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			log.Printf("Failed to rollback: %v", err)
+		}
+	}()
 
 	var id int64
 	err = tx.QueryRow("SELECT id FROM categories WHERE name = ?", category).Scan(&id)
