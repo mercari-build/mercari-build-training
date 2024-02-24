@@ -2,7 +2,9 @@ package main
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,6 +16,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	_ "github.com/mattn/go-sqlite3" // SQLite3 driver
 )
 
 const (
@@ -25,8 +28,7 @@ type Response struct {
 }
 
 func root(c echo.Context) error {
-	res := Response{Message: "Hello, world!"}
-	return c.JSON(http.StatusOK, res)
+	return echo.NewHTTPError(http.StatusOK, "Hello, World!")
 }
 
 type Item struct {
@@ -39,7 +41,11 @@ type Items struct {
 	Items []Item `json:"items"`
 }
 
-func addItem(c echo.Context) error {
+type ServerImpl struct {
+	db *sql.DB
+}
+
+func (s ServerImpl) addItem(c echo.Context) error {
 	// リクエストボディからデータを取得
 	name := c.FormValue("name")
 	category := c.FormValue("category")
@@ -47,58 +53,42 @@ func addItem(c echo.Context) error {
 	// 画像ファイルを取得
 	imageFile, err := c.FormFile("image")
 	if err != nil {
-		res := Response{Message: "Failed to get image file"}
-		return c.JSON(http.StatusBadRequest, res)
+		c.Logger().Errorf("Failed to get image file in addItem: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to get image file")
 	}
 	src, err := imageFile.Open()
 	if err != nil {
-		res := Response{Message: "Failed to open image file"}
-		return c.JSON(http.StatusInternalServerError, res)
+		c.Logger().Errorf("Failed to open image file in addItem: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to open image file")
 	}
 	defer src.Close()
 
 	// 画像ファイルをハッシュ化
 	hash := sha256.New()
 	if _, err := io.Copy(hash, src); err != nil {
-		res := Response{Message: "Failed to hash image file"}
-		return c.JSON(http.StatusInternalServerError, res)
+		c.Logger().Errorf("Failed to hash image file in addItem: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to hash image file")
 	}
 	hashedImageName := fmt.Sprintf("%x.jpeg", hash.Sum(nil))
 
+	// DBへの保存
+	if err := s.addItemToDB(name, category, hashedImageName); err != nil {
+		c.Logger().Errorf("Failed to add item to DB in addItem: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to add item to DB")
+	}
+
 	// 画像ファイルを保存
-	dst, err := os.Create("images/" + hashedImageName)
+	dst, err := os.Create(fmt.Sprintf("images/%s", hashedImageName))
 	if err != nil {
-		res := Response{Message: fmt.Sprintf("Failed to create image file: %s", hashedImageName)}
-		return c.JSON(http.StatusInternalServerError, res)
+		c.Logger().Errorf("Failed to create image file in addItem: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create image file")
 	}
 	defer dst.Close()
 	src.Seek(0, 0) // ファイルポインタを先頭に戻す
 	//srcからdstへ内容をコピー
 	if _, err := io.Copy(dst, src); err != nil {
-		res := Response{Message: "Failed to save image file"}
-		return c.JSON(http.StatusInternalServerError, res)
-	}
-
-	// JSONファイルの既存のデータを読み込む
-	allItems, err := LoadItemsFromJSON()
-	if err != nil {
-		res := Response{Message: "Failed to load items.json"}
-		return c.JSON(http.StatusInternalServerError, res)
-	}
-
-	// 新しいデータを追加
-	allItems.Items = append(allItems.Items, Item{Name: name, Category: category, ImageName: hashedImageName})
-
-	// ファイルに書き込み
-	jsonData, err := json.MarshalIndent(allItems, "", "  ")
-	if err != nil {
-		res := Response{Message: "Failed to marshal allItems"}
-		return c.JSON(http.StatusInternalServerError, res)
-	}
-	// 0644: パーミッション(所有者は読み書き可能)
-	if err = os.WriteFile("items.json", jsonData, 0644); err != nil {
-		res := Response{Message: "Failed to write items.json"}
-		return c.JSON(http.StatusInternalServerError, res)
+		c.Logger().Errorf("Failed to copy image file in addItem: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to copy image file")
 	}
 
 	c.Logger().Infof("Receive item: %s", name)
@@ -107,49 +97,148 @@ func addItem(c echo.Context) error {
 	res := Response{Message: message}
 
 	return c.JSON(http.StatusOK, res)
+
 }
 
-func getAllItems(c echo.Context) error {
-	allItems, err := LoadItemsFromJSON()
+func (s ServerImpl) addItemToDB(name, category, imageName string) error {
+	// トランザクションを開始
+	tx, err := s.db.Begin()
 	if err != nil {
-		res := Response{Message: "Failed to load items.json"}
-		return c.JSON(http.StatusInternalServerError, res)
+		return fmt.Errorf("failed to begin transaction in addItemToDB: %w", err)
 	}
 
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			log.Printf("Failed to rollback: %v", err)
+		}
+	}()
+
+	var id int64
+	err = tx.QueryRow("SELECT id FROM categories WHERE name = ?", category).Scan(&id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) { // カテゴリが存在しない場合
+			stmt1, err := tx.Prepare("INSERT INTO categories (name) VALUES (?)")
+			if err != nil {
+				return fmt.Errorf("failed to prepare SQL statement1 in addItemToDB: %w", err)
+			}
+			defer stmt1.Close()
+
+			result, err := stmt1.Exec(category)
+			if err != nil {
+				return fmt.Errorf("failed to execute SQL statement1 in addItemToDB: %w", err)
+			}
+			// 新しく挿入された行のIDを取得
+			id, err = result.LastInsertId()
+			if err != nil {
+				return fmt.Errorf("failed to get last insert ID in addItemToDB: %w", err)
+			}
+		} else {
+			return fmt.Errorf("failed to select id from categories in addItemToDB: %w", err)
+		}
+	}
+
+	// itemsテーブルに商品を追加
+	stmt2, err := tx.Prepare("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)")
+	if err != nil {
+		return fmt.Errorf("failed to prepare SQL statement2 in addItemToDB: %w", err)
+	}
+	defer stmt2.Close()
+	if _, err := stmt2.Exec(name, id, imageName); err != nil {
+		return fmt.Errorf("failed to execute SQL statement2 in addItemToDB: %w", err)
+	}
+
+	// トランザクションをコミット
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction in addItemToDB: %w", err)
+	}
+
+	return nil
+}
+
+func (s ServerImpl) getAllItems(c echo.Context) error {
+	// itemsテーブルとcategoriesテーブルをJOINして全てのアイテムを取得
+	rows, err := s.db.Query("SELECT items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.id")
+	if err != nil {
+		c.Logger().Errorf("Failed to search items from DB in getAllItems: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to search items from DB")
+	}
+	defer rows.Close()
+
+	var allItems Items
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.Name, &item.Category, &item.ImageName); err != nil {
+			c.Logger().Errorf("Failed to scan items from DB in getAllItems: %v", err)
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to scan items from DB")
+		}
+		allItems.Items = append(allItems.Items, item)
+	}
 	return c.JSON(http.StatusOK, allItems)
 }
 
-func getItemById(c echo.Context) error {
+func (s ServerImpl) getItemsByKeyword(c echo.Context) error {
+	// クエリパラメータからキーワードを取得
+	keyword := c.QueryParam("keyword")
+
+	// DBから名前にキーワードを含む商品一覧を返す
+	rows, err := s.db.Query(`
+			SELECT items.name, categories.name, items.image_name 
+			FROM items JOIN categories ON items.category_id = categories.id 
+			WHERE items.name LIKE '%' || ? || '%'`, keyword)
+	if err != nil {
+		c.Logger().Errorf("Failed to search items from DB in getItemsByKeyword: %v,keyword: %v", err, keyword)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to search items from DB")
+	}
+	defer rows.Close()
+
+	var keywordItems Items
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.Name, &item.Category, &item.ImageName); err != nil {
+			c.Logger().Errorf("Failed to scan items from DB in getItemsByKeyword: %v", err)
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to scan items from DB")
+		}
+		keywordItems.Items = append(keywordItems.Items, item)
+	}
+	return c.JSON(http.StatusOK, keywordItems)
+}
+
+func (s ServerImpl) getItemById(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		res := Response{Message: "Failed to get id in getItemById"}
-		return c.JSON(http.StatusBadRequest, res)
-	}
-	allItems, err := LoadItemsFromJSON()
-	if err != nil {
-		res := Response{Message: "Failed to load items.json in getItemById"}
-		return c.JSON(http.StatusInternalServerError, res)
+		c.Logger().Errorf("Failed to convert id to int in getItemById: %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest, "failed to convert id to int")
 	}
 
-	if id <= 0 || id > len(allItems.Items) {
-		res := Response{Message: "Invalid id"}
-		return c.JSON(http.StatusBadRequest, res)
-	}
+	// DBからIDに対応する商品を取得
+	row := s.db.QueryRow(`
+			SELECT items.name, categories.name, items.image_name 
+			FROM items JOIN categories ON items.category_id = categories.id 
+			WHERE items.id = ?`, id)
 
-	return c.JSON(http.StatusOK, allItems.Items[id-1])
+	var item Item
+	if err := row.Scan(&item.Name, &item.Category, &item.ImageName); err != nil {
+		if errors.Is(err, sql.ErrNoRows) { // IDに対応する商品がない場合
+			c.Logger().Errorf("Item not found in DB: id=%d", id)
+			return echo.NewHTTPError(http.StatusNotFound, "item not found")
+		}
+		c.Logger().Errorf("Failed to search item from DB in getItemById: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to search item from DB")
+	}
+	return c.JSON(http.StatusOK, item)
 }
 
 func LoadItemsFromJSON() (*Items, error) {
 	jsonFile, err := os.Open("items.json")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to open items.json: %w", err)
 	}
 	defer jsonFile.Close()
 
 	var allItems Items
 	decoder := json.NewDecoder(jsonFile)
 	if err := decoder.Decode(&allItems); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to decode items.json: %w", err)
 	}
 	return &allItems, nil
 }
@@ -159,8 +248,8 @@ func getImg(c echo.Context) error {
 	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
 
 	if !strings.HasSuffix(imgPath, ".jpg") {
-		res := Response{Message: "Image path does not end with .jpg"}
-		return c.JSON(http.StatusBadRequest, res)
+		c.Logger().Errorf("Image path does not end with .jpg, got: %s", imgPath)
+		return echo.NewHTTPError(http.StatusInternalServerError, "Image path does not end with .jpg")
 	}
 	if _, err := os.Stat(imgPath); err != nil {
 		c.Logger().Infof("Image not found: %s", imgPath)
@@ -186,12 +275,23 @@ func main() {
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 
+	// DBへの接続
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
+	if err != nil {
+		e.Logger.Infof("Failed to open DB: %v", err)
+	}
+	defer db.Close()
+
+	serverImpl := ServerImpl{db: db}
+
 	// Routes
 	e.GET("/", root)
-	e.POST("/items", addItem)
-	e.GET("/items", getAllItems)
-	e.GET("/items/:id", getItemById)
+	e.POST("/items", serverImpl.addItem)
+	e.GET("/items", serverImpl.getAllItems)
+	e.GET("/search", serverImpl.getItemsByKeyword)
+	e.GET("/items/:id", serverImpl.getItemById)
 	e.GET("/image/:imageFilename", getImg)
+
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
 }
