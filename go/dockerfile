@@ -1,8 +1,25 @@
-FROM alpine
+FROM golang:1.21-alpine
 
+# 必要なパッケージのインストール
+RUN apk add --no-cache gcc musl-dev
+
+# ユーザーとグループの追加
 RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari /path/to/db
 
-USER trainee
+WORKDIR /app
 
-CMD ["go", "version"]
+# アプリケーションのコピー
+COPY . /app/
+
+# データベースディレクトリの移動と権限の設定
+RUN mv ./db /db && chown -R trainee:mercari /db
+
+# 依存関係のインストール
+RUN go mod tidy
+
+# CGOを有効にしてアプリケーションをビルド
+ENV CGO_ENABLED=1
+RUN go build -o main ./app/main.go
+
+# アプリケーションの実行
+CMD ["./main"]
