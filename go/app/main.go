@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -11,6 +10,10 @@ import (
 	"path"
 	"strconv"
 	"strings"
+
+	"database/sql"
+
+	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -27,6 +30,7 @@ type Response struct {
 }
 
 type Item struct {
+	Id        string
 	Name      string `json:"name"`
 	Category  string `json:"category"`
 	ImageName string `json:"image_name"`
@@ -70,27 +74,15 @@ func addItem(c echo.Context) error {
 }
 
 func saveItem(name, category, fileName string) error {
-	//writing item information to JSON file
-	item := Item{Name: name, Category: category, ImageName: fileName}
 
-	items, err := readItems(ItemsPath)
+	dbCon, err := connectDB("mercari.sqlite3")
 	if err != nil {
-		err := fmt.Errorf("error while reading or unmarshaling file: %w", err)
 		return err
 	}
+	defer dbCon.Close()
 
-	items.Items = append(items.Items, item)
-
-	newData, err := json.Marshal(items)
-	if err != nil {
-		err := fmt.Errorf("error while marshaling file: %w", err)
-		return err
-	}
-
-	if err = os.WriteFile(ItemsPath, newData, 0644); err != nil {
-		err := fmt.Errorf("error while writing file: %w", err)
-		return err
-	}
+	insertItem := "insert into items (name, category, image_name) values (?, ?, ?)"
+	dbCon.Exec(insertItem, name, category, fileName)
 
 	return nil
 }
@@ -129,8 +121,9 @@ func saveImage(image *multipart.FileHeader) (string, error) {
 	return fileName, err
 }
 
+// getItem gets all the item information.
 func getItems(c echo.Context) error {
-	items, err := readItems(ItemsPath)
+	items, err := readItems()
 	if err != nil {
 		res := Response{Message: err.Error()}
 		return c.JSON(http.StatusInternalServerError, res)
@@ -139,18 +132,29 @@ func getItems(c echo.Context) error {
 	return c.JSON(http.StatusOK, items)
 }
 
-func readItems(filePath string) (Items, error) {
-	var items Items
+// readItems reads database and returns all the item information.
+func readItems() (Items, error) {
 
-	data, err := os.ReadFile(filePath)
+	dbCon, err := connectDB("mercari.sqlite3")
 	if err != nil {
-		err := fmt.Errorf("error while reading file: %w", err)
+		return Items{}, err
+	}
+	defer dbCon.Close()
+
+	selectAll := "select * from items"
+	itemRows, err := dbCon.Query(selectAll)
+	if err != nil {
 		return Items{}, err
 	}
 
-	if err = json.Unmarshal(data, &items); err != nil {
-		err := fmt.Errorf("error while unmarshaling file: %w", err)
-		return Items{}, err
+	var items Items
+	for itemRows.Next() {
+		var item Item
+		err = itemRows.Scan(&item.Id, &item.Name, &item.Category, &item.ImageName)
+		if err != nil {
+			return Items{}, err
+		}
+		items.Items = append(items.Items, item)
 	}
 
 	return items, nil
@@ -178,7 +182,7 @@ func getInfo(c echo.Context) error {
 		return err
 	}
 
-	items, err := readItems(ItemsPath)
+	items, err := readItems()
 	if err != nil {
 		err := fmt.Errorf("error while reading file: %w", err)
 		return err
@@ -191,6 +195,15 @@ func getInfo(c echo.Context) error {
 
 	item := items.Items[(itemId - 1)]
 	return c.JSON(http.StatusOK, item)
+}
+
+func connectDB(dbName string) (*sql.DB, error) {
+	dbCon, err := sql.Open("sqlite3", dbName)
+	if err != nil {
+		return nil, err
+	}
+
+	return dbCon, nil
 }
 
 func main() {
