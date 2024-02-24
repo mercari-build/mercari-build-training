@@ -1,12 +1,15 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -29,6 +32,7 @@ type Items struct {
 type Item struct {
 	Name     string `json:"name"`
 	Category string `json:"category"`
+	Image    string `json:"image_name"`
 }
 
 func root(c echo.Context) error {
@@ -40,11 +44,52 @@ func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
 	category := c.FormValue("category")
+	// get form file
+	file, err := c.FormFile("image")
+	if err != nil {
+		log.Print("画像ファイルの受け取りに失敗", err)
+		return err
+	}
+
 	c.Logger().Infof("Receive item: %s", name)
 	c.Logger().Infof("Receive item: %s", category)
+	c.Logger().Infof("Receive item: %s", file)
 
 	message := fmt.Sprintf("item received: %s", name)
 	res := Response{Message: message}
+
+	// open image file
+	src, err := file.Open()
+	if err != nil {
+		log.Print("画像ファイルの読み取りに失敗", err)
+		return err
+	}
+	defer src.Close()
+
+	// create hash
+	h := sha256.New()
+	if _, err = io.Copy(h, src); err != nil {
+		log.Print("hash生成に失敗", err)
+		return err
+	}
+	imageName := fmt.Sprintf("%x.jpg", h.Sum(nil))
+	fmt.Print(imageName)
+
+	// select directory path for new image file
+	filePath := filepath.Join("images/", imageName)
+	// destination to store image file
+	dst, err := os.Create(filePath)
+	if err != nil {
+		log.Print("新規画像ファイル作成に失敗", err)
+		return err
+	}
+	defer dst.Close()
+
+	// copy image to created image file
+	if _, err = io.Copy(dst, src); err != nil {
+		log.Print("新規画像の保存に失敗", err)
+		return err
+	}
 
 	// open json file & data
 	jsonFile, err := os.Open("items.json")
