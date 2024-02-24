@@ -206,7 +206,6 @@ func getInfo(c echo.Context) error {
 func connectDB(dbPath string) (*sql.DB, error) {
 	dbCon, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		fmt.Println("kokodesu")
 		return nil, err
 	}
 
