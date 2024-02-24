@@ -20,6 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 '''
 global variables
 database_file : sqlite3 database file location.
