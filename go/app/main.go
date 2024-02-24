@@ -183,7 +183,7 @@ func (s ServerImpl) getItemsByKeyword() echo.HandlerFunc {
 		rows, err := s.db.Query(`
 			SELECT items.name, categories.name, items.image_name 
 			FROM items JOIN categories ON items.category_id = categories.id 
-			WHERE items.name LIKE '%' || ? || '%'`, keyword)
+			WHERE items.name LIKE %?%`, keyword)
 		if err != nil {
 			c.Logger().Errorf("Failed to search items from DB in getItemsByKeyword: %v,keyword: %v", err, keyword)
 			return echo.NewHTTPError(http.StatusInternalServerError, "failed to search items from DB")
