@@ -2,11 +2,10 @@ package main
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -17,6 +16,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const ImgDir = "images"
@@ -30,9 +31,21 @@ type ItemsData struct {
 }
 
 type Item struct {
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	Category int    `json:"category"`
+	Image    string `json:"image"`
+}
+
+type ItemDisplay struct {
+	ID       int    `json:"id"`
 	Name     string `json:"name"`
 	Category string `json:"category"`
 	Image    string `json:"image"`
+}
+
+type ItemsDisplay struct {
+	Items []ItemDisplay `json:"items"`
 }
 
 func root(c echo.Context) error {
@@ -46,29 +59,8 @@ func errMessage(c echo.Context, err error, status int, message string) error {
 
 }
 
-func readFile(c echo.Context, filePath string) (ItemsData, error) {
-	var items ItemsData
-	file, err := os.Open(filePath)
-	if err != nil {
-		return items, errMessage(c, err, http.StatusBadRequest, "Unable to open the file")
-	}
-	defer file.Close()
-	jsonData, err := ioutil.ReadAll(file)
-	if err != nil {
-		return items, errMessage(c, err, http.StatusBadRequest, "Unable to read json data")
-	}
-	err = json.Unmarshal(jsonData, &items)
-	if err != nil {
-		return items, errMessage(c, err, http.StatusBadRequest, "Unable to unmarshal")
-	}
-	return items, nil
-}
-
 func addItem(c echo.Context) error {
 	var res Response
-	var items []Item
-	var itemsData ItemsData
-
 	// Get form data
 	name := c.FormValue("name")
 	category := c.FormValue("category")
@@ -82,40 +74,52 @@ func addItem(c echo.Context) error {
 		errMessage(c, err, http.StatusBadRequest, "Fail to convert image to hash string")
 	}
 
-	//Create new item
-	newItem := Item{
-		Name:     name,
-		Category: category,
-		Image:    imageName,
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	//Get categoryID
+	var categoryID int
+	if err := db.QueryRow("SELECT id FROM categories WHERE name==?", category).Scan(&categoryID); err != nil {
+		errMessage(c, err, http.StatusBadRequest, "Unable to get categoryID from categoryName")
 	}
 
 	//Print message
-	message := fmt.Sprintf("item received: %s in %s category", newItem.Name, newItem.Category)
+	message := fmt.Sprintf("item received: %s in %s category", name, category)
 	res = Response{Message: message}
 
-	if _, err := os.Stat("items.json"); err == nil {
-		//Open the exist file and get itemsdata
-		itemsData, err = readFile(c, "items.json")
-		if err != nil {
-			errMessage(c, err, http.StatusBadRequest, "Fail to read items.json")
-		}
-		items = itemsData.Items
-		items = append(items, newItem)
-
-	} else {
-		if os.IsNotExist(err) {
-			items = append(items, newItem)
-		} else {
-			errMessage(c, err, http.StatusBadRequest, "Somthing went wrong")
-		}
-
-	}
-
-	itemFile, err := os.Create("items.json")
+	// Save image file to ImgDir
+	imageFile, err := image.Open()
 	if err != nil {
-		errMessage(c, err, http.StatusBadRequest, "Fail to create items.json")
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open the image")
 	}
-	json.NewEncoder(itemFile).Encode(ItemsData{Items: items})
+	defer imageFile.Close()
+
+	// Create the file in ImgDir with the hashed name
+	savedImagePath := path.Join(ImgDir, imageName)
+	savedImageFile, err := os.Create(savedImagePath)
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to create the image file")
+	}
+	defer savedImageFile.Close()
+
+	// Copy the image data to the saved file
+	if _, err := io.Copy(savedImageFile, imageFile); err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to save the image file")
+	}
+
+	defer db.Close()
+
+	stmt, err := db.Prepare("INSERT INTO items(name,category,image_name) VALUES (?,?,?)")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(name, categoryID, imageName)
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+
 	return c.JSON(http.StatusOK, res)
 
 }
@@ -151,19 +155,70 @@ func getItem(c echo.Context) error {
 	if err != nil {
 		errMessage(c, err, http.StatusBadRequest, "Unable to conveert item_id to int")
 	}
-	itemsData, err := readFile(c, "items.json")
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
 	if err != nil {
-		return errMessage(c, err, http.StatusBadRequest, "Unable to open items.json")
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("SELECT items.id,items.name,categories.name,items.image_name FROM items LEFT JOIN categories ON items.category=categories.id")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query()
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to execute SQL statement")
+	}
+	defer rows.Close()
+
+	var itemsData ItemsDisplay
+	for rows.Next() {
+		var item ItemDisplay
+		err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image)
+		if err != nil {
+			return errMessage(c, err, http.StatusInternalServerError, "Unable to scan rows")
+		}
+		itemsData.Items = append(itemsData.Items, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return errMessage(c, err, http.StatusInternalServerError, "Error iterating over rows")
 	}
 	return c.JSON(http.StatusOK, itemsData.Items[itemID-1])
 }
 
 func getItems(c echo.Context) error {
-	itemsData, err := readFile(c, "items.json")
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
 	if err != nil {
-		return errMessage(c, err, http.StatusBadRequest, "Unable to open items.json")
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("SELECT items.id,items.name,categories.name,items.image_name FROM items LEFT JOIN categories ON items.category=categories.id")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query()
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to execute SQL statement")
+	}
+	defer rows.Close()
+
+	var itemsData ItemsDisplay
+	for rows.Next() {
+		var item ItemDisplay
+		err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image)
+		if err != nil {
+			return errMessage(c, err, http.StatusInternalServerError, "Unable to scan rows")
+		}
+		itemsData.Items = append(itemsData.Items, item)
 	}
 
+	if err := rows.Err(); err != nil {
+		return errMessage(c, err, http.StatusInternalServerError, "Error iterating over rows")
+	}
 	return c.JSON(http.StatusOK, itemsData)
 }
 
@@ -180,6 +235,69 @@ func getImg(c echo.Context) error {
 		imgPath = path.Join(ImgDir, "default.jpg")
 	}
 	return c.File(imgPath)
+}
+
+func searchItem(c echo.Context) error {
+	//Get Query param
+	keyword := c.QueryParam("keyword")
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("SELECT items.id,items.name,categories.name,items.image_name FROM items LEFT JOIN categories ON items.category==categories.name HAVING name LIKE CONCAT('%',?,'%')")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query(keyword)
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to execute SQL statement")
+	}
+	defer rows.Close()
+
+	var itemsData ItemsDisplay
+	for rows.Next() {
+		var item ItemDisplay
+		err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image)
+		if err != nil {
+			return errMessage(c, err, http.StatusInternalServerError, "Unable to scan rows")
+		}
+		itemsData.Items = append(itemsData.Items, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return errMessage(c, err, http.StatusInternalServerError, "Error iterating over rows")
+	}
+	return c.JSON(http.StatusOK, itemsData)
+}
+
+func addCategory(c echo.Context) error {
+	// Get form data
+	name := c.FormValue("name")
+	//Print message
+	message := fmt.Sprintf("category received: %s", name)
+	res := Response{Message: message}
+
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer db.Close()
+
+	stmt, err := db.Prepare("INSERT INTO categories(name) VALUES (?)")
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(name)
+	if err != nil {
+		return errMessage(c, err, http.StatusBadRequest, "Unable to execute sql command")
+	}
+
+	return c.JSON(http.StatusOK, res)
+
 }
 
 func main() {
@@ -205,6 +323,8 @@ func main() {
 	e.POST("/items", addItem)
 	e.GET("/image/:imageFilename", getImg)
 	e.GET("/items/:item_id", getItem)
+	e.GET("/search", searchItem)
+	e.POST("/categories", addCategory)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
