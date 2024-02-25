@@ -57,9 +57,9 @@ export const ItemList: React.FC<Prop> = (props) => {
               onError={(e)=>(e.currentTarget.src = placeholderImage)}
             />
             <p>
-              <span>Name: {item.name}</span>
+              <span className='name'>Name: {item.name}</span>
               <br />
-              <span>Category: {item.category_name}</span>
+              <span className='category'>Category: {item.category_name}</span>
             </p>
           </div>
         )

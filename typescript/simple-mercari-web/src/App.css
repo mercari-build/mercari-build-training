@@ -13,26 +13,43 @@
   color: white;
 }
 
-.Listing {
-  background-color: #222427;
-  min-height: 8vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: left;
-  font-size: calc(10px + 1vmin);
-  color: white;
+/* Base styles for the grid container */
+.ItemList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
 }
 
-.ItemList {
-  background-color: #222427;
-  min-height: 8vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: left;
-  font-size: calc(10px + 1vmin);
-  color: white;
+/* Updated styles for the Listing class with a prettier design */
+.Listing {
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  transition: transform 0.3s;
+}
+
+.Listing:hover {
+  transform: translateY(-5px);
+}
+
+.Listing .item-name {
+  font-weight: bold;
+  font-size: 1.2em;
+  color: #333;
+}
+
+.Listing .category {
+  color: #666;
+  margin-top: 5px;
+}
+
+.Listing .image {
+  max-width: 100%;
+  height: auto;
+  margin-top: 10px;
+  border-radius: 8px;
 }
 
 .App-link {
