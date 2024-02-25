@@ -88,6 +88,7 @@ func addItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+
 // saveItem writes the item information into the database.
 func saveItem(name, category, fileName string) error {
 
@@ -138,7 +139,9 @@ func saveImage(image *multipart.FileHeader) (string, error) {
 	return fileName, err
 }
 
+
 // getItem gets all the item information.
+
 func getItems(c echo.Context) error {
 	items, err := readItems()
 	if err != nil {
@@ -149,6 +152,7 @@ func getItems(c echo.Context) error {
 	return c.JSON(http.StatusOK, items)
 }
 
+
 // readItems reads database and returns all the item information.
 func readItems() (Items, error) {
 
@@ -157,6 +161,7 @@ func readItems() (Items, error) {
 		return Items{}, err
 	}
 	defer dbCon.Close()
+
 
 	selectAll := "select * from items"
 	itemRows, err := dbCon.Query(selectAll)
