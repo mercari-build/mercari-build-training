@@ -124,24 +124,25 @@ func searchCategoryId(category string, tx *sql.Tx) (int, error) {
 	searchForKey := "SELECT id FROM categories WHERE name = ?"
 	for {
 		rows, err := tx.Query(searchForKey, category)
-		defer rows.Close()
-		if err == nil {
-			if rows.Next() {
-				err = rows.Scan(&categoryId)
-				if err != nil {
-					return 0, err
-				}
-				break
-			} else {
-				makeNewCategory := "INSERT INTO categories (name) values (?)"
-				_, err := tx.Exec(makeNewCategory, category)
-				if err != nil {
-					return 0, err
-				}
-			}
-		} else {
+		if err != nil {
 			return 0, err
 		}
+		defer rows.Close()
+
+		if rows.Next() {
+			err = rows.Scan(&categoryId)
+			if err != nil {
+				return 0, err
+			}
+			break
+		} else {
+			makeNewCategory := "INSERT INTO categories (name) values (?)"
+			_, err := tx.Exec(makeNewCategory, category)
+			if err != nil {
+				return 0, err
+			}
+		}
+
 	}
 	return categoryId, nil
 }
@@ -182,6 +183,7 @@ func saveImage(image *multipart.FileHeader) (string, error) {
 }
 
 // getItem gets all the item information.
+
 func getItems(c echo.Context) error {
 	items, err := readItems()
 	if err != nil {
