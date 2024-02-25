@@ -30,14 +30,28 @@ type Response struct {
 }
 
 type Item struct {
-	Id        int
-	Name      string `json:"name"`
-	Category  string `json:"category"`
-	ImageName string `json:"image_name"`
+	Id        int    `db:"id"`
+	Name      string `db:"name"`
+	Category  string `db:"category"`
+	ImageName string `db:"image_name"`
 }
 
 type Items struct {
-	Items []Item `json:"items"`
+	Items []Item `db:"items"`
+}
+
+// scanRowsToItems is a method for type Items.
+// It scans *sql.rows and turns it into type Items.
+func (items *Items) ScanRowsToItems(rows *sql.Rows) error {
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.Id, &item.Name, &item.Category, &item.ImageName)
+		if err != nil {
+			return err
+		}
+		items.Items = append(items.Items, item)
+	}
+	return nil
 }
 
 func root(c echo.Context) error {
@@ -150,24 +164,39 @@ func readItems() (Items, error) {
 		return Items{}, err
 	}
 
-	var items Items
-	for itemRows.Next() {
-		var item Item
-		err = itemRows.Scan(&item.Id, &item.Name, &item.Category, &item.ImageName)
-		if err != nil {
-			return Items{}, err
-		}
-		items.Items = append(items.Items, item)
+	items := new(Items)
+	err = items.ScanRowsToItems(itemRows)
+	if err != nil {
+		return Items{}, err
 	}
 
-	return items, nil
+	return *items, nil
 }
 
-/*
-func searchItems() {
+func searchItems(c echo.Context) error {
+	keyword := c.QueryParam("keyword")
+	key := "%" + keyword + "%"
 
+	dbCon, err := connectDB("../db/mercari.sqlite3")
+	if err != nil {
+		return err
+	}
+	defer dbCon.Close()
+
+	searchForKey := "SELECT * FROM items WHERE name LIKE ?"
+	rows, err := dbCon.Query(searchForKey, key)
+	if err != nil {
+		return err
+	}
+
+	resultItems := new(Items)
+	err = resultItems.ScanRowsToItems(rows)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, resultItems)
 }
-*/
 
 // getImg gets the designated image by file name.
 func getImg(c echo.Context) error {
@@ -243,7 +272,7 @@ func main() {
 	e.GET("/items", getItems)
 	e.GET("/image/:imageFilename", getImg)
 	e.GET("/items/:id", getInfo)
-	//e.GET("/items/search", searchItems)
+	e.GET("/search", searchItems)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
