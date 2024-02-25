@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -44,6 +45,8 @@ func root(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+/*
+ */
 func getFileSha256(c echo.Context, fileType string) (string, error) {
 	fileHeader, err := c.FormFile(fileType)
 	if err != nil {
@@ -63,12 +66,6 @@ func getFileSha256(c echo.Context, fileType string) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-/*
-4-1 GET write into a database
-
- 1. open db
- 2. O(n^2). iterate over rows and colums
-*/
 func getItem(c echo.Context) error {
 	db, err := openDb()
 	if err != nil {
@@ -92,12 +89,6 @@ func getItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, items)
 }
 
-/*
-4-1 POST write into a database
-
- 1. open db
- 2. insert item. id will be autoincremented
-*/
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
@@ -145,12 +136,6 @@ func addItem(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
-/*
-4-1 POST write into a database
-
- 1. open db
- 2. query row such that matches id. id index starts from 1
-*/
 func getItemById(c echo.Context) error {
 	idStr := c.Param("itemId")
 	id, err := strconv.Atoi(idStr)
@@ -173,13 +158,51 @@ func getItemById(c echo.Context) error {
 }
 
 func getImg(c echo.Context) error {
-	// Create image path
+	db, err := openDb()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	target := c.Param("imageFilename")
+	dir, err := os.Open(ImgDir)
+	if err != nil {
+		msg := "error occured while opening image directory!"
+		return c.JSON(http.StatusBadRequest, msg)
+	}
+	defer dir.Close()
+	files, err := dir.Readdir(-1)
+	if err != nil {
+		return err // Handle error.
+	}
+	//loop entire files and compare to the target
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		filePath := filepath.Join(ImgDir, file.Name())
+		f, err := os.Open(filePath)
+		if err != nil {
+			continue
+		}
+		//do Sha-256
+		h := sha256.New()
+		if _, err := io.Copy(h, f); err != nil {
+			f.Close()
+			continue
+		}
+		f.Close() // Close the file after reading.
+
+		if hex.EncodeToString(h.Sum(nil))+".jpg" == target {
+			if !strings.HasSuffix(filePath, ".jpg") {
+				res := Response{Message: "Image path does not end with .jpg"}
+				return c.JSON(http.StatusBadRequest, res)
+			}
+			return c.File(filePath)
+		}
+	}
+
 	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
 
-	if !strings.HasSuffix(imgPath, ".jpg") {
-		res := Response{Message: "Image path does not end with .jpg"}
-		return c.JSON(http.StatusBadRequest, res)
-	}
 	if _, err := os.Stat(imgPath); err != nil {
 		c.Logger().Debugf("Image not found: %s", imgPath)
 		imgPath = path.Join(ImgDir, "default.jpg")
@@ -187,13 +210,6 @@ func getImg(c echo.Context) error {
 	return c.File(imgPath)
 }
 
-/*
-4-2 GET Search for an item
-
- 1. open DB
- 2. query DB based on keyword params
- 3. add every elements that matches conditions and returns items array
-*/
 func getSearch(c echo.Context) error {
 	keyword := c.QueryParam("keyword")
 	// in sql, % keyword % will search any
