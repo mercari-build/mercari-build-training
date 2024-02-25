@@ -163,6 +163,12 @@ func readItems() (Items, error) {
 	return items, nil
 }
 
+/*
+func searchItems() {
+
+}
+*/
+
 // getImg gets the designated image by file name.
 func getImg(c echo.Context) error {
 	// Create image path
@@ -187,18 +193,20 @@ func getInfo(c echo.Context) error {
 		return err
 	}
 
-	items, err := readItems()
+	dbCon, err := connectDB("../db/mercari.sqlite3")
 	if err != nil {
-		err := fmt.Errorf("error while reading file: %w", err)
+		return err
+	}
+	defer dbCon.Close()
+
+	var item Item
+	selectById := "SELECT * FROM items WHERE id = ?;"
+	itemRows := dbCon.QueryRow(selectById, itemId)
+	err = itemRows.Scan(&item.Id, &item.Name, &item.Category, &item.ImageName)
+	if err != nil {
 		return err
 	}
 
-	if itemId <= 0 || itemId > len(items.Items) {
-		err := fmt.Errorf("invalid ID: %w", err)
-		return err
-	}
-
-	item := items.Items[(itemId - 1)]
 	return c.JSON(http.StatusOK, item)
 }
 
@@ -235,6 +243,7 @@ func main() {
 	e.GET("/items", getItems)
 	e.GET("/image/:imageFilename", getImg)
 	e.GET("/items/:id", getInfo)
+	//e.GET("/items/search", searchItems)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
