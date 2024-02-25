@@ -91,43 +91,38 @@ func addItem(c echo.Context) error {
 	}
 	defer db.Close()
 
-	//DBに商品を追加
-	// stmt, err := db.Prepare("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)")
-	//Categoryテーブルに追加
-	stmt1, err := db.Prepare("INSERT INTO categories (name) VALUES (?) ON DUPLICATE KEY UPDATE name = VALUE(name)")
-	if err != nil {
-		res := Response{Message: "Error preparing statement for database insertion"}
-		return c.JSON(http.StatusInternalServerError, res)
-	}
-	defer stmt1.Close()
+	var category_id int
 
-	if _, err := stmt1.Exec(newItem.Category); err != nil {
-		return err
+	//categories tableにcategoryが存在しなければ追加し、categoryのidを取得
+	if err := db.QueryRow("SELECT id FROM categories WHERE name = $1", newItem.Category).Scan(&category_id); err != nil {
+		if err == sql.ErrNoRows { //QueryRow()の結果が空のとき
+			stmt1, err := db.Prepare("INSERT INTO categories (name) VALUES (?)")
+			if err != nil {
+				return err
+			}
+			defer stmt1.Close()
+			if _, err = stmt1.Exec(newItem.Category); err != nil {
+				return err
+			}
+			if err := db.QueryRow("SELECT id FROM categories WHERE name = $1", newItem.Category).Scan(&category_id); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
 	}
 
-	//Categoryテーブルからidを取得
-	row, err := db.Query("SELECT id FROM categories WHERE name LIKE ?", newItem.Category)
-	if err != nil {
-		return err
-	}
-	defer row.Close()
-
-	var category_id int	
-	if err := row.Scan(&category_id); err != nil {
-		return err
-	}
-	 
-	//itemsテーブルからitemを作成
+	//items tableへ商品を追加
 	stmt2, err := db.Prepare("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)")
 	if err != nil {
 		return err
 	}
 	defer stmt2.Close()
 
-	if _, err = stmt2.Exec(newItem.Name, row, newItem.ImageName); err != nil {
+	if _, err = stmt2.Exec(newItem.Name, category_id, newItem.ImageName); err != nil {
 		return err
 	}
-	c.Logger().Infof("Name: %s, Category: %s, ImageName: %s", name, category, newItem.ImageName)
+	c.Logger().Infof("Name: %s, Category: %s, ImageName: %s", newItem.Name, newItem.Category, newItem.ImageName)
 
 	// res := Response{Message: message}
 	return c.JSON(http.StatusOK, newItem)
@@ -222,17 +217,19 @@ func getItemByKeyword(c echo.Context) error {
 	//DBとの接続
 	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
 	if err != nil {
-		return err
+		res := Response{Message: "Error connecting to the database"}
+    return c.JSON(http.StatusInternalServerError, res)
 	}
 	defer db.Close()
 
-	//keywordを取得
+	// クエリパラメータを受け取る
 	keyword := c.QueryParam("keyword")
 
-	//dbからデータ取得
-	rows, err := db.Query("SELECT name, category, image_name FROM items WHERE name LIKE '%' || ? || '%'", keyword)
+	// データの読み込み
+	rows, err := db.Query("SELECT name, category, image_name FROM items  WHERE name LIKE '%' || ? || '%'", keyword)
 	if err != nil {
-		return err
+		res := Response{Message: "Error querying items from the database"}
+		return c.JSON(http.StatusInternalServerError, res)
 	}
 	defer rows.Close()
 
@@ -241,15 +238,16 @@ func getItemByKeyword(c echo.Context) error {
 	for rows.Next() {
 		var item Item
 		err := rows.Scan(&item.Name, &item.Category, &item.ImageName)
-
 		if err != nil {
-			return err
+			res := Response{Message: "Error scanning rows"}
+			return c.JSON(http.StatusInternalServerError, res)
 		}
 		items.Items = append(items.Items, item)
 	}
-	return c.JSON(http.StatusOK, items)
 
-}
+	// ログとJSONレスポンスの作成
+	c.Logger().Info("Retrieved items")
+	return c.JSON(http.StatusOK, items)}
 
 
 func main() {
