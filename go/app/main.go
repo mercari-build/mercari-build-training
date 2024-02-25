@@ -21,8 +21,9 @@ import (
 )
 
 const (
-	ImgDir    = "images"
-	ItemsPath = "items.json"
+	ImgDir             = "images"
+	ItemsPath          = "items.json"
+	ItemJoinCategories = " JOIN categories ON items.category_id = categories.id "
 )
 
 type Response struct {
@@ -30,7 +31,6 @@ type Response struct {
 }
 
 type Item struct {
-	Id        int    `db:"id"`
 	Name      string `db:"name"`
 	Category  string `db:"category"`
 	ImageName string `db:"image_name"`
@@ -41,11 +41,11 @@ type Items struct {
 }
 
 // scanRowsToItems is a method for type Items.
-// It scans *sql.rows and turns it into type Items.
+// It scans *sql.rows and turns it into type Items that has item name and category name.
 func (items *Items) ScanRowsToItems(rows *sql.Rows) error {
 	for rows.Next() {
 		var item Item
-		err := rows.Scan(&item.Id, &item.Name, &item.Category, &item.ImageName)
+		err := rows.Scan(&item.Name, &item.Category)
 		if err != nil {
 			return err
 		}
@@ -97,10 +97,53 @@ func saveItem(name, category, fileName string) error {
 	}
 	defer dbCon.Close()
 
-	insertItem := "insert into items (name, category, image_name) values (?, ?, ?)"
-	dbCon.Exec(insertItem, name, category, fileName)
+	// Transaction starts.
+	tx, _ := dbCon.Begin()
+
+	categoryId, err := searchCategoryId(category, tx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	insertItem := "INSERT INTO items (name, image_name, category_id) VALUES (?, ?, ?)"
+	_, err = tx.Exec(insertItem, name, fileName, categoryId)
+	if err != nil {
+		tx.Rollback()
+	} else {
+		tx.Commit()
+	}
 
 	return nil
+}
+
+// searchCategoryId look for category ID, if it doesn't exist, register a new category.
+func searchCategoryId(category string, tx *sql.Tx) (int, error) {
+	var categoryId int
+
+	searchForKey := "SELECT id FROM categories WHERE name = ?"
+	for {
+		rows, err := tx.Query(searchForKey, category)
+		defer rows.Close()
+		if err == nil {
+			if rows.Next() {
+				err = rows.Scan(&categoryId)
+				if err != nil {
+					return 0, err
+				}
+				break
+			} else {
+				makeNewCategory := "INSERT INTO categories (name) values (?)"
+				_, err := tx.Exec(makeNewCategory, category)
+				if err != nil {
+					return 0, err
+				}
+			}
+		} else {
+			return 0, err
+		}
+	}
+	return categoryId, nil
 }
 
 // saveImage hashes the image, saves it, and returns its file name.
@@ -158,7 +201,7 @@ func readItems() (Items, error) {
 	}
 	defer dbCon.Close()
 
-	selectAll := "select * from items"
+	selectAll := "SELECT name, category, image_name FROM items"
 	itemRows, err := dbCon.Query(selectAll)
 	if err != nil {
 		return Items{}, err
@@ -183,7 +226,7 @@ func searchItems(c echo.Context) error {
 	}
 	defer dbCon.Close()
 
-	searchForKey := "SELECT * FROM items WHERE name LIKE ?"
+	searchForKey := "SELECT items.name, categories.name FROM items" + ItemJoinCategories + "WHERE name LIKE ?"
 	rows, err := dbCon.Query(searchForKey, key)
 	if err != nil {
 		return err
@@ -215,7 +258,7 @@ func getImg(c echo.Context) error {
 }
 
 // getInfo gets information of the designeted item by id.
-func getInfo(c echo.Context) error {
+func getInfoById(c echo.Context) error {
 	itemId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		err := fmt.Errorf("invalid ID: %w", err)
@@ -229,9 +272,9 @@ func getInfo(c echo.Context) error {
 	defer dbCon.Close()
 
 	var item Item
-	selectById := "SELECT * FROM items WHERE id = ?;"
-	itemRows := dbCon.QueryRow(selectById, itemId)
-	err = itemRows.Scan(&item.Id, &item.Name, &item.Category, &item.ImageName)
+	selectById := "SELECT items.name, categories.name, items.image_name FROM items" + ItemJoinCategories + "WHERE items.id = ?"
+	rows := dbCon.QueryRow(selectById, itemId)
+	err = rows.Scan(&item.Name, &item.Category, &item.ImageName)
 	if err != nil {
 		return err
 	}
@@ -271,7 +314,7 @@ func main() {
 	e.POST("/items", addItem)
 	e.GET("/items", getItems)
 	e.GET("/image/:imageFilename", getImg)
-	e.GET("/items/:id", getInfo)
+	e.GET("/items/:id", getInfoById)
 	e.GET("/search", searchItems)
 
 	// Start server
