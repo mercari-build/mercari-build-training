@@ -6,9 +6,10 @@ package main
 
 func getAllDB() (Items, error) {
 	var items Items
-	query := `SELECT items.id,items.name,categories.name AS category,items.image_name
+	query := `SELECT items.id, items.name, items.category_id, categories.name AS category, items.image_name
 	FROM items
-	JOIN categories ON items.category_id=categories.id`
+	JOIN categories ON items.category_id = categories.id`
+
 	rows, err := db.Query(query)
 	if err != nil {
 		return items, err
@@ -16,7 +17,7 @@ func getAllDB() (Items, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var item Item
-		err = rows.Scan(&item.ID, &item.Name, &item.Category, &item.ImageName)
+		err = rows.Scan(&item.ID, &item.Name, &item.CategoryID, &item.Category, &item.ImageName)
 		if err != nil {
 			return items, err
 		}
@@ -26,7 +27,7 @@ func getAllDB() (Items, error) {
 }
 
 func addItemToDB(item Item) (int64, error) {
-	query := `INSERT INTO items(name,category_id,image_name)VALUES(?,?,?)`
+	query := `INSERT INTO items (name, category_id, image_name) VALUES (?,?,?);`
 	result, err := db.Exec(query, item.Name, item.CategoryID, item.ImageName)
 	if err != nil {
 		return 0, err
@@ -40,7 +41,7 @@ func addItemToDB(item Item) (int64, error) {
 
 func readKeywordDB(keyword string) (Items, error) {
 	var items Items
-	query := `SELECT items.id,items.name,categories.name AS category,items.image_name
+	query := `SELECT items.id,items.name,items.category_id,categories.name AS category,items.image_name
 	FROM items
 	JOIN categories ON items.category_id=categories.id
 	WHERE items.name LIKE ?`
@@ -51,7 +52,7 @@ func readKeywordDB(keyword string) (Items, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var item Item
-		err = rows.Scan(&item.ID, &item.Name, &item.Category, &item.ImageName)
+		err = rows.Scan(&item.ID, &item.Name, &item.CategoryID, &item.Category, &item.ImageName)
 		if err != nil {
 			return items, err
 		}

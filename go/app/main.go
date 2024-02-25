@@ -22,7 +22,7 @@ import (
 var db *sql.DB
 
 const (
-	ImgDir = "images"
+	ImgDir = "./images"
 )
 
 type Response struct {
@@ -66,12 +66,21 @@ func readKeywordItem(c echo.Context) error {
 func createItemDB(c echo.Context) error {
 	item, err := createNewItem(c)
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "category_id") {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"message": err.Error(),
+			})
+		}
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"message": "Internal Server Error",
+		})
 	}
 	c.Logger().Infof("Receive item: %s", item.Name)
 	inserted_id, err := addItemToDB(item)
 	if err != nil {
-		return err
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"message": "Failed to insert item into database",
+		})
 	}
 	message := fmt.Sprintf("item received: %s and registered to database id:%d", item.Name, inserted_id)
 	res := Response{Message: message}
@@ -87,7 +96,7 @@ func getImg(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, res)
 	}
 	if _, err := os.Stat(imgPath); err != nil {
-		c.Logger().Errorf("Image not found: %s", imgPath)
+		c.Logger().Errorf("Image not found: %s%s", imgPath, imgPath)
 		imgPath = path.Join(ImgDir, "default.jpg")
 	}
 	return c.File(imgPath)
@@ -95,7 +104,7 @@ func getImg(c echo.Context) error {
 
 func main() {
 	var err error
-	db, err = sql.Open("sqlite3", "../../db/mercari.sqlite3")
+	db, err = sql.Open("sqlite3", "/root/database/mercari.sqlite3")
 	if err != nil {
 		log.Fatal(err)
 	}

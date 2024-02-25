@@ -1,8 +1,37 @@
-FROM alpine
+#stage build
+FROM golang:alpine as builder
 
-RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari /path/to/db
+RUN apk update && apk add --no-cache gcc musl-dev
 
-USER trainee
+WORKDIR /go/src/app
 
-CMD ["go", "version"]
+COPY go.mod go.sum ./
+
+RUN go mod download
+
+COPY database /go/src/app/database
+
+COPY images /go/src/app/images
+
+COPY app/ .
+
+RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o main .
+
+#stage execute
+FROM alpine:latest
+
+RUN apk update && apk add --no-cache libc6-compat
+
+RUN apk add --no-cache curl
+
+WORKDIR /root/
+
+COPY --from=builder /go/src/app/main .
+
+COPY --from=builder /go/src/app/database ./database
+
+COPY --from=builder /go/src/app/images ./images
+
+EXPOSE 9000
+
+CMD ["./main"]

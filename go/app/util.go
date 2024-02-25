@@ -47,7 +47,7 @@ func createNewItem(c echo.Context) (Item, error) {
 		return item, err
 	}
 	if !categoryExist {
-		return item, fmt.Errorf("category_id %d does not exitst", categoryID)
+		return item, fmt.Errorf("category_id %d does not exist", categoryID)
 	}
 	image, err := c.FormFile("image")
 	if err != nil {
