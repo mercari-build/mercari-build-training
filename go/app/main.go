@@ -20,7 +20,8 @@ import (
 
 const (
 	ImgDir = "images"
-	DbPath = "../db/mercari.sqlite3"
+	// DbPath = "../db/mercari.sqlite3"  // For running locally
+	DbPath = "db/mercari.sqlite3" // For running in docker container
 )
 
 type Response struct {
@@ -293,6 +294,36 @@ func search(c echo.Context) error {
 	return c.JSON(http.StatusOK, list)
 }
 
+// Show the item assigned to the id in the list
+func getItemByIdDatabase(c echo.Context) error {
+	id, _ := strconv.Atoi(c.Param("id"))
+	
+	// Connect to the database
+	db, err := sql.Open("sqlite3", DbPath)
+	if err != nil {
+		return errorHandler(c, err, "Error: sql.Open")
+	}
+	defer db.Close()
+
+	// Get the item list based on the keyword
+	cmd := "SELECT i.name, c.name, i.image_name FROM items AS i INNER JOIN categories AS c ON i.category_id=c.id WHERE i.id=?"
+	row := db.QueryRow(cmd, id)
+    if err != nil {
+		return errorHandler(c, err, "Error: Database Query")
+    }
+
+	// Store in the Item struct
+	var item Item
+	err = row.Scan(&item.Name, &item.Category, &item.Image)
+	if err == sql.ErrNoRows {
+		return errorHandler(c, err, "Error: id is not found")
+	} else if err != nil {
+		return errorHandler(c, err, "Error: row.Scan")
+	}
+
+	return c.JSON(http.StatusOK, item)
+}
+
 // **************************************************************************
 
 func main() {
@@ -319,7 +350,8 @@ func main() {
 	e.POST("/items", addItemDatabase)
 	e.GET("/items", getItemDatabase)
 	e.GET("/image/:imageFilename", getImg)
-	e.GET("/items/:id", getItemById)
+	// e.GET("/items/:id", getItemById)
+	e.GET("/items/:id", getItemByIdDatabase)
 	e.GET("/search", search)
 
 	// Start server
