@@ -137,29 +137,18 @@ func saveItem(name, category, fileName string) error {
 func checkCategoryId(category string, tx *sql.Tx) (int, error) {
 	var categoryId int
 
-	const searchForKey = "SELECT id FROM categories WHERE name = ?"
-	for {
-		rows, err := tx.Query(searchForKey, category)
+	const findCategoryId = "SELECT id FROM categories WHERE name = ?"
+	rows := tx.QueryRow(findCategoryId, categoryId)
+
+	err := rows.Scan(&categoryId)
+	if err != nil {
+		makeNewCategory := "INSERT INTO categories (name) values (?)"
+		_, err := tx.Exec(makeNewCategory, category)
 		if err != nil {
 			return 0, err
 		}
-		defer rows.Close()
-
-		if rows.Next() {
-			err = rows.Scan(&categoryId)
-			if err != nil {
-				return 0, err
-			}
-			break
-		} else {
-			makeNewCategory := "INSERT INTO categories (name) values (?)"
-			_, err := tx.Exec(makeNewCategory, category)
-			if err != nil {
-				return 0, err
-			}
-		}
-
 	}
+
 	return categoryId, nil
 }
 
