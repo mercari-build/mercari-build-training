@@ -1,8 +1,22 @@
-FROM alpine
 
-RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari /path/to/db
+# FROM python:3.13.0a4-alpine3.19
+FROM python:3.11-alpine
 
-USER trainee
+WORKDIR /app
 
-CMD ["python", "-V"]
+RUN apk update \
+    && apk add --no-cache gcc libc-dev cargo
+
+COPY python/requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY db/ /app/db/
+COPY python/ /app/python/
+
+EXPOSE 9000
+
+ENV DB_PATH=/app/db/items.db
+
+CMD ["uvicorn", "python.main:app", "--host", "0.0.0.0", "--port", "9000"]
+
+# docker build -t build2024/app:latest -f python/dockerfile .
