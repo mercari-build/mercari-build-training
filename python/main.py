@@ -1,16 +1,26 @@
 import os
 import logging
 import pathlib
+import uvicorn
 from fastapi import FastAPI, HTTPException, Form, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional
-import json
+from typing import Optional, List, Dict
+from databases import Database
+from pydantic import BaseModel
 import hashlib
+
+# DATABASE URL
+# DATABASE_URL = "sqlite:////Users/tomoka/Build/mercari-build-training/db/mercari.sqlite3"
+DATABASE_URL = "sqlite:////Users/tomoka/Build/mercari-build-training/db/items.db"
+# データベース接続の初期化
+database = Database(DATABASE_URL)
 
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
+
+
 
 # 画像を保存するディレクトリを確認（存在しなければ作成）
 images_dir = "images"
@@ -32,84 +42,70 @@ app.add_middleware(
 def root():
     return {"message": "Hello, world!"}
 
-# アイテム追加エンドポイント
-@app.post("/items")
-async def add_item(name: str = Form(...), category: str = Form(...), image: Optional[UploadFile] = None):
-    # アイテム情報のログ出力
-    logger.info(f"Received item: {name}, Category: {category}")
+@app.on_event("startup")
+async def startup_event():
+    await database.connect()
 
-    # 画像ファイルがある場合は処理
-    image_name = ""
-    if image:
-        # 画像の内容を読み取り
-        contents = await image.read()
-        # 画像のハッシュ値を計算してファイル名を生成
-        hash_name = hashlib.sha256(contents).hexdigest()
-        image_name = f"{hash_name}.jpg"
-        image_path = os.path.join(images_dir, image_name)
-        # 画像をファイルに保存
-        with open(image_path, "wb") as file:
-            file.write(contents)
-        logger.info(f"Image saved: {image_name}")
+@app.on_event("shutdown")
+async def shutdown_event():
+    await database.disconnect()
 
-    # 新しいアイテムIDの決定
-    new_item_id = 1
-    try:
-        with open("items.json", "r") as file:
-            data = json.load(file)
-            if data["items"]:
-                new_item_id = max(item["item_id"] for item in data["items"]) + 1
-    except FileNotFoundError:
-        raise HTTPException(
-            status_code=404, detail="'items.json' not found"
-        )
+# # 以降のエンドポイントは、SQLiteデータベースとのインタラクションに更新する必要があります。
+# # 以下は、jsonファイルを使用した以前の実装の例です。
 
+# # アイテムゲット（この部分をSQLiteデータベースからデータを取得するように更新する必要があります）
+# @app.get("/items")
+# async def get_items():
+#     query = "SELECT * FROM items"
+#     items = await database.fetch_all(query=query)
+#     return {"items": items}
 
-    # アイテムデータの作成
-    item_data = {"item_id": new_item_id, "name": name, "category": category, "image_name": image_name}
-    data["items"].append(item_data)
+# # 画像取得エンドポイント
+# @app.get("/image/{image_name}")
+# async def get_image(image_name: str):
+#     image_path = pathlib.Path(images_dir) / image_name
+#     if not image_name.endswith(".jpg"):
+#         raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
+#     if not image_path.exists():
+#         logger.debug(f"Image not found: {image_path}")
+#         image_path = pathlib.Path(images_dir) / "default.jpg"
+#     return FileResponse(image_path)
 
-    with open("items.json", "w") as file:
-        json.dump(data, file, indent=4)
+# # 特定のアイテムを取得するエンドポイント（この部分もデータベースからデータを取得するように更新する必要があります）
+# @app.get("/items/{item_id}")
+# async def get_item(item_id: int):
+#     query = "SELECT * FROM items WHERE id = :item_id"
+#     item = await database.fetch_one(query=query, values={"item_id": item_id})
+#     if item:
+#         return item
+#     else:
+#         raise HTTPException(status_code=404, detail="Item not found")
 
-    logger.info(f"Item added: {name}, Category: {category}, Image Name: {image_name}, Item ID: {new_item_id}")
-    return {"message": "Item added successfully", "item_id": new_item_id}
+# # キーワード検索エンドポイント（データベースを使用した実装例）
+# @app.get("/search")
+# async def search_items(keyword: Optional[str] = None) -> Dict[str, List[Dict]]:
+#     if not keyword:
+#         return {"items": []}
+#     query = "SELECT * FROM items WHERE name LIKE :keyword"
+#     items = await database.fetch_all(query=query, values={"keyword": f"%{keyword}%"})
+#     return {"items": items}
 
-# アイテムゲット
-@app.get("/items")
-async def get_items():
-    try:
-        with open("items.json", "r") as file:
-            data = json.load(file)
-            return data
-    except FileNotFoundError:
-        # return {"detail": "Items not found."}
-        raise HTTPException(
-            status_code=404, detail="'items.json' not found"
-        )
+# @app.post("/items")
+# async def add_item(name: str = Form(...), category: str = Form(...), image: Optional[UploadFile] = File(None)):
+#     image_name = ""
+#     if image:
+#         contents = await image.read()
+#         hash_name = hashlib.sha256(contents).hexdigest()  # hashlibが定義されているため、この行は正しく動作します。
+#         image_name = f"{hash_name}.jpg"
+#         image_path = os.path.join(images_dir, image_name)
+#         with open(image_path, "wb") as file:
+#             file.write(contents)
 
-# 画像取得エンドポイント
-@app.get("/image/{image_name}")
-async def get_image(image_name: str):
-    image_path = pathlib.Path(images_dir) / image_name
-    if not image_name.endswith(".jpg"):
-        raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
-    if not image_path.exists():
-        logger.debug(f"Image not found: {image_path}")
-        image_path = pathlib.Path(images_dir) / "default.jpg"
-    return FileResponse(image_path)
+    
+#     # データベースへのアイテム追加
+#     query = "INSERT INTO items (name, category, image_name) VALUES (:name, :category, :image_name)"
+#     values = {"name": name, "category": category, "image_name": image_name}
+#     last_record_id = await database.execute(query, values=values)
+    
+#     return {"id": last_record_id, "name": name, "category": category, "image_name": image_name}
 
-# 特定のアイテムを取得するエンドポイント
-@app.get("/items/{item_id}")
-async def get_item(item_id: int):
-    try:
-        with open("items.json", "r") as file:
-            data = json.load(file)
-            # item_idに一致する商品を検索
-            item = next((item for item in data["items"] if item["item_id"] == item_id), None)
-            if item:
-                return item
-            else:
-                raise HTTPException(status_code=404, detail="Item not found")
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="Items file not found")
