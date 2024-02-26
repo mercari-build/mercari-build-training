@@ -16,6 +16,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -99,7 +100,7 @@ func addItem(c echo.Context) error {
 	}
 	defer db.Close()
 
-	stmt, err := db.Prepare("INSERT INTO items (name, category, image_name) VALUES (?,?,?)")
+	stmt, err := db.Prepare("INSERT INTO ITEMS (name, category, image_name) VALUES (?,?,?)")
 	if err != nil {
 		log.Print("INSERTクエリ失敗")
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
