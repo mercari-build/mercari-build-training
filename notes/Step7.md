@@ -45,7 +45,7 @@ Output:
 ```
 Then the API is running successfully:
 ```shell
-curl -X POST \
+$ curl -X POST \
   --url 'http://0.0.0.0:9000/items' \
   -F 'name=sofa' \
   -F 'category=furniture' \

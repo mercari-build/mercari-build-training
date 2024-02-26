@@ -21,19 +21,19 @@ Change the path of the docker file
 
 Pull the image.
 ```shell
-`docker pull ghcr.io/dinaelin-yip/mercari-build-training:Step6_CI`
+$ docker pull ghcr.io/dinaelin-yip/mercari-build-training:Step6_CI
 ```
 Run the image.
 ```shell
-`docker run -d -p 9000:9000 ghcr.io/dinaelin-yip/mercari-build-training:Step6_CI`
+$ docker run -d -p 9000:9000 ghcr.io/dinaelin-yip/mercari-build-training:Step6_CI
 ```
 Output:
 ```shell
-`INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)`
+INFO:     Uvicorn running on http://0.0.0.0:9000 (Press CTRL+C to quit)
 ```
 Then the API is running successfully:
 ```shell
-curl -X POST \
+$ curl -X POST \
   --url 'http://0.0.0.0:9000/items' \
   -F 'name=sofa' \
   -F 'category=furniture' \
