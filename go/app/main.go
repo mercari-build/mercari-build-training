@@ -21,9 +21,8 @@ import (
 )
 
 const (
-	ImgDir             = "images"
-	DBPath             = "../db/mercari.sqlite3"
-	ItemJoinCategories = " JOIN categories ON items.category_id = categories.id "
+	ImgDir = "images"
+	DBPath = "../db/mercari.sqlite3"
 )
 
 type Response struct {
@@ -115,7 +114,7 @@ func saveItem(name, category, fileName string) error {
 		return err
 	}
 
-	insertItem := "INSERT INTO items (name, image_name, category_id) VALUES (?, ?, ?)"
+	const insertItem = "INSERT INTO items (name, image_name, category_id) VALUES (?, ?, ?)"
 	_, err = tx.Exec(insertItem, name, fileName, categoryId)
 	if err != nil {
 		tx.Rollback()
@@ -135,7 +134,7 @@ func saveItem(name, category, fileName string) error {
 func searchCategoryId(category string, tx *sql.Tx) (int, error) {
 	var categoryId int
 
-	searchForKey := "SELECT id FROM categories WHERE name = ?"
+	const searchForKey = "SELECT id FROM categories WHERE name = ?"
 	for {
 		rows, err := tx.Query(searchForKey, category)
 		if err != nil {
@@ -196,7 +195,7 @@ func saveImage(image *multipart.FileHeader) (string, error) {
 	return fileName, err
 }
 
-// getItem gets all the item information.
+// getItems gets all the item information.
 func getItems(c echo.Context) error {
 	items, err := readItems()
 	if err != nil {
@@ -217,8 +216,8 @@ func readItems() (Items, error) {
 	}
 	defer dbCon.Close()
 
-	selectAll := "SELECT items.name, categories.name FROM items" + ItemJoinCategories
-	rows, err := dbCon.Query(selectAll)
+	const selectAllItems = "SELECT items.name, categories.name FROM items JOIN categories ON items.category_id = categories.id"
+	rows, err := dbCon.Query(selectAllItems)
 	if err != nil {
 		return Items{}, err
 	}
@@ -244,7 +243,7 @@ func searchItems(c echo.Context) error {
 	}
 	defer dbCon.Close()
 
-	searchWithKey := "SELECT items.name, categories.name FROM items" + ItemJoinCategories + "WHERE items.name LIKE ?"
+	const searchWithKey = "SELECT items.name, categories.name FROM items JOIN categories ON items.category_id = categories.id WHERE items.name LIKE ?"
 	rows, err := dbCon.Query(searchWithKey, key)
 	if err != nil {
 		c.Logger().Errorf("Error while searching with keyword: %s", err)
@@ -297,7 +296,7 @@ func getInfoById(c echo.Context) error {
 	defer dbCon.Close()
 
 	var item Item
-	selectById := "SELECT items.name, categories.name, items.image_name FROM items" + ItemJoinCategories + "WHERE items.id = ?"
+	selectById := "SELECT items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.id WHERE items.id = ?"
 	rows := dbCon.QueryRow(selectById, itemId)
 	err = rows.Scan(&item.Name, &item.Category, &item.ImageName)
 	if err != nil {
