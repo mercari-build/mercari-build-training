@@ -48,20 +48,24 @@ func addItem(c echo.Context) error {
 	category := c.FormValue("category")
 	image, err := c.FormFile("image")
 	if err != nil {
-		return err
+		c.Logger().Errorf("Error while retrieving image: %v", err)
+		res := Response{Message: "Error while retrieving image"}
+		return echo.NewHTTPError(http.StatusBadRequest, res)
 	}
 
 	c.Logger().Infof("Receive item: %s, Category: %s", name, category)
 
 	fileName, err := saveImage(image)
 	if err != nil {
-		res := Response{Message: err.Error()}
-		return c.JSON(http.StatusInternalServerError, res)
+		c.Logger().Errorf("Error while hashing and saving image: %v", err)
+		res := Response{Message: "Error while hashing and saving image"}
+		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
 	if err := saveItem(name, category, fileName); err != nil {
-		res := Response{Message: err.Error()}
-		return c.JSON(http.StatusInternalServerError, res)
+		c.Logger().Errorf("Error while saving item information: %v", err)
+		res := Response{Message: "Error while saving item information"}
+		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
 	message := fmt.Sprintf("item received: %s", name)
@@ -136,8 +140,9 @@ func saveImage(image *multipart.FileHeader) (string, error) {
 func getItems(c echo.Context) error {
 	items, err := readItems(ItemsPath)
 	if err != nil {
-		res := Response{Message: err.Error()}
-		return c.JSON(http.StatusInternalServerError, res)
+		c.Logger().Errorf("Error while reading item information: %v", err)
+		res := Response{Message: "Error while reading item information"}
+		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
 	return c.JSON(http.StatusOK, items)
@@ -181,19 +186,22 @@ func getImg(c echo.Context) error {
 func getInfo(c echo.Context) error {
 	itemId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		err := fmt.Errorf("invalid ID: %w", err)
-		return err
+		c.Logger().Errorf("Invalid ID: %v", err)
+		res := Response{Message: "Invalid ID"}
+		return echo.NewHTTPError(http.StatusBadRequest, res)
 	}
 
 	items, err := readItems(ItemsPath)
 	if err != nil {
-		err := fmt.Errorf("error while reading file: %w", err)
-		return err
+		c.Logger().Errorf("Error while reading item information: %v", err)
+		res := Response{Message: "Error while reading item information"}
+		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
 	if itemId <= 0 || itemId > len(items.Items) {
-		err := fmt.Errorf("invalid ID: %w", err)
-		return err
+		c.Logger().Errorf("Invalid ID: %v", err)
+		res := Response{Message: "Invalid ID"}
+		return echo.NewHTTPError(http.StatusBadRequest, res)
 	}
 
 	item := items.Items[(itemId - 1)]
