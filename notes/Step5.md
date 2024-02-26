@@ -5,6 +5,7 @@
 ## 3. Get Docker Image
 
 * Make sure you understand the following commands and when to use them.
+
 A: Here areSome common Docker comands.
 Get the currently installed version of docker:
 ```shell
