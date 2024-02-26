@@ -1,7 +1,9 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException
+import hashlib
+import json
+from fastapi import FastAPI, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -23,11 +25,46 @@ app.add_middleware(
 def root():
     return {"message": "Hello, world!"}
 
-
 @app.post("/items")
-def add_item(name: str = Form(...)):
+def add_item(name: str = Form(...), category: str=Form(...), image: UploadFile = Form(...)):
     logger.info(f"Receive item: {name}")
-    return {"message": f"item received: {name}"}
+    logger.info(f"Receive item: {category}")
+    logger.info(f"Receive item: {image}")
+
+    image_name = image.filename
+    hashed_image_name = get_hash(image_name)
+    save_image(image, hashed_image_name)
+
+    message = {
+        "items":[
+            {
+                "name": name,
+                "category": category,
+                "image_name": hashed_image_name
+            }
+        ]
+    }
+
+    return message
+
+def get_hash(image):
+    hash = hashlib.sha256(image.encode()).hexdigest()
+    return hash+".jpg"
+
+def save_image(image,jpg_hashed_image_name):
+    imagefile = image.file.read()
+    image = images / jpg_hashed_image_name
+    with open(image, 'wb') as f:
+        f.write(imagefile)
+    return
+
+
+@app.get("/items")
+def get_item():
+    f = open("items.json")
+    data = json.load(f)
+
+    return data
 
 
 @app.get("/image/{image_name}")
