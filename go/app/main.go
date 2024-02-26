@@ -65,7 +65,7 @@ func addItem(c echo.Context) error {
 	category := c.FormValue("category")
 	image, err := c.FormFile("image")
 	if err != nil {
-		c.Logger().Errorf("Error while retrieving image: %s", err)
+		c.Logger().Errorf("Error while retrieving image: %w", err)
 		res := Response{Message: "Error while retrieving image"}
 		return echo.NewHTTPError(http.StatusBadRequest, res)
 	}
@@ -74,13 +74,13 @@ func addItem(c echo.Context) error {
 
 	fileName, err := saveImage(image)
 	if err != nil {
-		c.Logger().Errorf("Error while hashing and saving image: %s", err)
+		c.Logger().Errorf("Error while hashing and saving image: %w", err)
 		res := Response{Message: "Error while hashing and saving image"}
 		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
 	if err := saveItem(name, category, fileName); err != nil {
-		c.Logger().Errorf("Error while saving item information: %s", err)
+		c.Logger().Errorf("Error while saving item information: %w", err)
 		res := Response{Message: "Error while saving item information"}
 		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
@@ -103,26 +103,29 @@ func saveItem(name, category, fileName string) error {
 	// Transaction starts.
 	tx, err := dbCon.Begin()
 	if err != nil {
-		err = fmt.Errorf("error while beginning transaction: %s", err)
+		err = fmt.Errorf("error while beginning transaction: %w", err)
 		return err
 	}
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			log.Printf("error while rolling back transaction: %w", err)
+		}
+	}()
 
-	categoryId, err := searchCategoryId(category, tx)
+	categoryId, err := checkCategoryId(category, tx)
 	if err != nil {
-		tx.Rollback()
-		err = fmt.Errorf("error while searching for category id: %s", err)
+		err = fmt.Errorf("error while searching for category id: %w", err)
 		return err
 	}
 
 	const insertItem = "INSERT INTO items (name, image_name, category_id) VALUES (?, ?, ?)"
 	_, err = tx.Exec(insertItem, name, fileName, categoryId)
 	if err != nil {
-		tx.Rollback()
-		err = fmt.Errorf("error while adding a new item: %s", err)
+		err = fmt.Errorf("error while adding a new item: %w", err)
 		return err
 	} else {
 		if err := tx.Commit(); err != nil {
-			err = fmt.Errorf("error while commiting transaction: %s", err)
+			err = fmt.Errorf("error while commiting transaction: %w", err)
 			return err
 		}
 	}
@@ -130,8 +133,8 @@ func saveItem(name, category, fileName string) error {
 	return nil
 }
 
-// searchCategoryId look for category ID, if it doesn't exist, register a new category.
-func searchCategoryId(category string, tx *sql.Tx) (int, error) {
+// checkCategoryId look for category ID, if it doesn't exist, register a new category.
+func checkCategoryId(category string, tx *sql.Tx) (int, error) {
 	var categoryId int
 
 	const searchForKey = "SELECT id FROM categories WHERE name = ?"
@@ -199,7 +202,7 @@ func saveImage(image *multipart.FileHeader) (string, error) {
 func getItems(c echo.Context) error {
 	items, err := readItems()
 	if err != nil {
-		c.Logger().Errorf("Error while reading item information: %s", err)
+		c.Logger().Errorf("Error while reading item information: %w", err)
 		res := Response{Message: "Error while reading item information"}
 		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
@@ -237,7 +240,7 @@ func searchItems(c echo.Context) error {
 
 	dbCon, err := connectDB(DBPath)
 	if err != nil {
-		c.Logger().Errorf("Error while connecting to database: %s", err)
+		c.Logger().Errorf("Error while connecting to database: %w", err)
 		res := Response{Message: "Error while connecting to database"}
 		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
@@ -246,7 +249,7 @@ func searchItems(c echo.Context) error {
 	const searchWithKey = "SELECT items.name, categories.name FROM items JOIN categories ON items.category_id = categories.id WHERE items.name LIKE ?"
 	rows, err := dbCon.Query(searchWithKey, key)
 	if err != nil {
-		c.Logger().Errorf("Error while searching with keyword: %s", err)
+		c.Logger().Errorf("Error while searching with keyword: %w", err)
 		res := Response{Message: "Error while searching with keyword"}
 		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
@@ -254,7 +257,7 @@ func searchItems(c echo.Context) error {
 	resultItems := new(Items)
 	err = resultItems.ScanRowsToItems(rows)
 	if err != nil {
-		c.Logger().Errorf("Error while scanning rows to items: %s", err)
+		c.Logger().Errorf("Error while scanning rows to items: %w", err)
 		res := Response{Message: "Error while scanning rows to items"}
 		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
@@ -282,14 +285,14 @@ func getImg(c echo.Context) error {
 func getInfoById(c echo.Context) error {
 	itemId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.Logger().Errorf("Invalid ID: %s", err)
+		c.Logger().Errorf("Invalid ID: %w", err)
 		res := Response{Message: "Invalid ID"}
 		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
 	dbCon, err := connectDB(DBPath)
 	if err != nil {
-		c.Logger().Errorf("Error while connecting to database: %s", err)
+		c.Logger().Errorf("Error while connecting to database: %w", err)
 		res := Response{Message: "DError while connecting to database"}
 		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
@@ -300,7 +303,7 @@ func getInfoById(c echo.Context) error {
 	rows := dbCon.QueryRow(selectById, itemId)
 	err = rows.Scan(&item.Name, &item.Category, &item.ImageName)
 	if err != nil {
-		c.Logger().Errorf("Error while searching item with ID: %s", err)
+		c.Logger().Errorf("Error while searching item with ID: %w", err)
 		res := Response{Message: "Error while searching item with ID"}
 		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
