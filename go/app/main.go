@@ -85,7 +85,7 @@ func addItem(c echo.Context) error {
 		errMessage(c, err, http.StatusBadRequest, "Unable to get categoryID from categoryName")
 	}
 
-	//Print message
+	
 	message := fmt.Sprintf("item received: %s in %s category", name, category)
 	res = Response{Message: message}
 
