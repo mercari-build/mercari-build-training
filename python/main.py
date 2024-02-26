@@ -1,11 +1,10 @@
 import os
+import json
 import logging
 import pathlib
-import json
 import hashlib
-
-from fastapi import FastAPI, Form, UploadFile, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Form, UploadFile, HTTPException, File
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -65,8 +64,8 @@ async def add_item(name: str = Form(...), category: str=Form(...), image: Upload
 def get_items():
     return json_load
 
-@app.get("/items/{items_id}")
-def get_items(items_id:int):
+""" @app.get("/items/{items_id}")
+def get_items(items_id:int): """
 
 @app.get("/image/{image_name}")
 async def get_image(image_name):
