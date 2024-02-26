@@ -1,1 +1,8 @@
-{"items": [{"name": "jacket", "category": "fashion"}]}
+{
+    "items": [
+        {
+            "name": "jacket",
+            "category": "fashion"
+        }
+    ]
+}

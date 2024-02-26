@@ -23,65 +23,54 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-items_json = pathlib.Path(__file__).parent.resolve() / "items.json"
+#items_json = pathlib.Path(__file__).parent.resolve() / "items.json"
 
-def save_item(item):
-    with open(items_json, "r+") as f:
-        json.dump(item, f, indent=4)
-
-def load_item():
-    if items_json.exists():
-        with open(items.json,"r") as f:
-            return json.load(f)
-    return{"item": []}
-
-def save_image(file,filename):
-    with open(images / filename, "wb") as image:
-        image.write(file)
+#モード
+#r:読み込み（デフォルト）
+#w:書き込み
+#a:追記
+#r+:読み込みと書き込み
 
 @app.get("/")
-def root():
+async def root():
     return {"message": "Hello, world!"}
 
-items_list=[]
 @app.post("/items")
-def add_item(name: str = Form(...), category:str=Form(...), image:UpladFile = File(...)):
-    logger.info(f"Receive item: {name}, category: {category}, image: {image}")
-    item={"name": name, "category": category,"image_name": image_filename}
-    save_item(item)
-
+async def add_item(name: str = Form(...), category: str=Form(...), image: UploadFile= File(...)):
+    logger.info(f"Receive item: {name},{category},image:{image.filename}")
     
-    file_content = image.file.read()
-    hash_value = hashlib.sha256(file_content).hexdigest()
-
+    images=pathlib.Path(__file__).parent/"python"/"images"
+    #アップロードされたファイルの内容を非同期で読み込む
+    contents= await image.read()
+    hash_sha256=hashlib.sha256(contents).hexdigest()
+    image_filename=f"{hash_sha256}.jpg"
+    image_path=images/image_filename
+    with open(image_path,"wb") as f:
+        f.write(contents)
+        
+    #loadでjsonファイルをPythonのデータ構造に変換する
+    with open("items.json","r") as f:
+        json_load=json.load(f)
     
-    image_filename = f"{hash_value}.jpg"
-    save_image(file_content, image_filename)
-
+    new_item={"items": [{"name": name, "category": category,"image_name": image_filename}]}
+    json_load.append(new_item)
+    #書き込みモードにしてnew_itemをitems.jsonに追加する
+    with open("items.json","w") as f:
+        json_dump=json.dump(json_load, f,indent=4)
     
-    new_item = {"name": name, "category": category, "image": image_filename}
 
-    
-    items_data = load_items_from_json()
-    existing_items = items_data.get("items", [])
-
-    
-    existing_items.append(new_item)
-    items_data["items"] = existing_items
-
-   
-    save_items_to_json(items_data)
-
-    return {"message": f"item received: {name},category:{category}","image_name": image_filename}
-
-
+    return {"message": f"item received: {name},{category},{image}"}
 
 @app.get("/items")
 def get_items():
-    return FileResponse(items_json)
+    return json_load
+
+@app.get("/items/{items_id}")
+def get_items(items_id:int):
 
 @app.get("/image/{image_name}")
 async def get_image(image_name):
+    #image path
     image = images / image_name
 
     if not image_name.endswith(".jpg"):
@@ -92,15 +81,3 @@ async def get_image(image_name):
         image = images / "default.jpg"
 
     return FileResponse(image)
-
-@app.get("/items/{item_id}")
-def get_item(item_id: int= Path(..., title="The ID of the item to get")):
-    items_data=load_item()
-     existing_items = items_data.get("items", [])
-
-    if item_id < len(existing_items):
-        item = existing_items[item_id-1]
-        return item
-
-@app.get("/search")
-def search_item():
