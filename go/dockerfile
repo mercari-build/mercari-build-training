@@ -13,7 +13,7 @@ COPY . /app/
 
 # データベースディレクトリの移動と権限の設定
 RUN mv db /db && chown -R trainee:mercari /db
-RUN mv images /images && chown -R trainee:mercari /images
+# RUN mv images /images && chown -R trainee:mercari /images
 
 # 依存関係のインストール
 RUN go mod tidy
