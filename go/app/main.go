@@ -22,7 +22,7 @@ import (
 
 const (
 	ImgDir             = "images"
-	ItemsPath          = "items.json"
+	DBPath             = "../db/mercari.sqlite3"
 	ItemJoinCategories = " JOIN categories ON items.category_id = categories.id "
 )
 
@@ -31,13 +31,13 @@ type Response struct {
 }
 
 type Item struct {
-	Name      string `db:"name"`
-	Category  string `db:"category"`
-	ImageName string `db:"image_name"`
+	Name      string `json:"name"`
+	Category  string `json:"category"`
+	ImageName string `json:"image_name,omitempty"`
 }
 
 type Items struct {
-	Items []Item `db:"items"`
+	Items []Item `json:"items"`
 }
 
 // scanRowsToItems is a method for type Items.
@@ -66,20 +66,24 @@ func addItem(c echo.Context) error {
 	category := c.FormValue("category")
 	image, err := c.FormFile("image")
 	if err != nil {
-		return err
+		c.Logger().Errorf("Error while retrieving image: %s", err)
+		res := Response{Message: "Error while retrieving image"}
+		return echo.NewHTTPError(http.StatusBadRequest, res)
 	}
 
 	c.Logger().Infof("Receive item: %s, Category: %s", name, category)
 
 	fileName, err := saveImage(image)
 	if err != nil {
-		res := Response{Message: err.Error()}
-		return c.JSON(http.StatusInternalServerError, res)
+		c.Logger().Errorf("Error while hashing and saving image: %s", err)
+		res := Response{Message: "Error while hashing and saving image"}
+		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
 	if err := saveItem(name, category, fileName); err != nil {
-		res := Response{Message: err.Error()}
-		return c.JSON(http.StatusInternalServerError, res)
+		c.Logger().Errorf("Error while saving item information: %s", err)
+		res := Response{Message: "Error while saving item information"}
+		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
 	message := fmt.Sprintf("item received: %s", name)
@@ -91,18 +95,23 @@ func addItem(c echo.Context) error {
 // saveItem writes the item information into the database.
 func saveItem(name, category, fileName string) error {
 
-	dbCon, err := connectDB("../db/mercari.sqlite3")
+	dbCon, err := connectDB(DBPath)
 	if err != nil {
 		return err
 	}
 	defer dbCon.Close()
 
 	// Transaction starts.
-	tx, _ := dbCon.Begin()
+	tx, err := dbCon.Begin()
+	if err != nil {
+		err = fmt.Errorf("error while beginning transaction: %s", err)
+		return err
+	}
 
 	categoryId, err := searchCategoryId(category, tx)
 	if err != nil {
 		tx.Rollback()
+		err = fmt.Errorf("error while searching for category id: %s", err)
 		return err
 	}
 
@@ -110,8 +119,13 @@ func saveItem(name, category, fileName string) error {
 	_, err = tx.Exec(insertItem, name, fileName, categoryId)
 	if err != nil {
 		tx.Rollback()
+		err = fmt.Errorf("error while adding a new item: %s", err)
+		return err
 	} else {
-		tx.Commit()
+		if err := tx.Commit(); err != nil {
+			err = fmt.Errorf("error while commiting transaction: %s", err)
+			return err
+		}
 	}
 
 	return nil
@@ -183,12 +197,12 @@ func saveImage(image *multipart.FileHeader) (string, error) {
 }
 
 // getItem gets all the item information.
-
 func getItems(c echo.Context) error {
 	items, err := readItems()
 	if err != nil {
-		res := Response{Message: err.Error()}
-		return c.JSON(http.StatusInternalServerError, res)
+		c.Logger().Errorf("Error while reading item information: %s", err)
+		res := Response{Message: "Error while reading item information"}
+		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
 	return c.JSON(http.StatusOK, items)
@@ -197,20 +211,20 @@ func getItems(c echo.Context) error {
 // readItems reads database and returns all the item information.
 func readItems() (Items, error) {
 
-	dbCon, err := connectDB("../db/mercari.sqlite3")
+	dbCon, err := connectDB(DBPath)
 	if err != nil {
 		return Items{}, err
 	}
 	defer dbCon.Close()
 
-	selectAll := "SELECT name, category, image_name FROM items"
-	itemRows, err := dbCon.Query(selectAll)
+	selectAll := "SELECT items.name, categories.name FROM items" + ItemJoinCategories
+	rows, err := dbCon.Query(selectAll)
 	if err != nil {
 		return Items{}, err
 	}
 
 	items := new(Items)
-	err = items.ScanRowsToItems(itemRows)
+	err = items.ScanRowsToItems(rows)
 	if err != nil {
 		return Items{}, err
 	}
@@ -222,22 +236,28 @@ func searchItems(c echo.Context) error {
 	keyword := c.QueryParam("keyword")
 	key := "%" + keyword + "%"
 
-	dbCon, err := connectDB("../db/mercari.sqlite3")
+	dbCon, err := connectDB(DBPath)
 	if err != nil {
-		return err
+		c.Logger().Errorf("Error while connecting to database: %s", err)
+		res := Response{Message: "Error while connecting to database"}
+		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 	defer dbCon.Close()
 
-	searchForKey := "SELECT items.name, categories.name FROM items" + ItemJoinCategories + "WHERE name LIKE ?"
-	rows, err := dbCon.Query(searchForKey, key)
+	searchWithKey := "SELECT items.name, categories.name FROM items" + ItemJoinCategories + "WHERE items.name LIKE ?"
+	rows, err := dbCon.Query(searchWithKey, key)
 	if err != nil {
-		return err
+		c.Logger().Errorf("Error while searching with keyword: %s", err)
+		res := Response{Message: "Error while searching with keyword"}
+		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
 	resultItems := new(Items)
 	err = resultItems.ScanRowsToItems(rows)
 	if err != nil {
-		return err
+		c.Logger().Errorf("Error while scanning rows to items: %s", err)
+		res := Response{Message: "Error while scanning rows to items"}
+		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
 	return c.JSON(http.StatusOK, resultItems)
@@ -259,17 +279,20 @@ func getImg(c echo.Context) error {
 	return c.File(imgPath)
 }
 
-// getInfo gets information of the designeted item by id.
+// getInfo gets detailed information of the designeted item by id.
 func getInfoById(c echo.Context) error {
 	itemId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		err := fmt.Errorf("invalid ID: %w", err)
-		return err
+		c.Logger().Errorf("Invalid ID: %s", err)
+		res := Response{Message: "Invalid ID"}
+		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
-	dbCon, err := connectDB("../db/mercari.sqlite3")
+	dbCon, err := connectDB(DBPath)
 	if err != nil {
-		return err
+		c.Logger().Errorf("Error while connecting to database: %s", err)
+		res := Response{Message: "DError while connecting to database"}
+		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 	defer dbCon.Close()
 
@@ -278,7 +301,9 @@ func getInfoById(c echo.Context) error {
 	rows := dbCon.QueryRow(selectById, itemId)
 	err = rows.Scan(&item.Name, &item.Category, &item.ImageName)
 	if err != nil {
-		return err
+		c.Logger().Errorf("Error while searching item with ID: %s", err)
+		res := Response{Message: "Error while searching item with ID"}
+		return echo.NewHTTPError(http.StatusInternalServerError, res)
 	}
 
 	return c.JSON(http.StatusOK, item)
