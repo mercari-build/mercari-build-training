@@ -65,6 +65,7 @@ func addItem(c echo.Context) error {
 	category := c.FormValue("category")
 	image, err := c.FormFile("image")
 	if err != nil {
+
 		c.Logger().Errorf("Error while retrieving image: %w", err)
 		res := Response{Message: "Error while retrieving image"}
 		return echo.NewHTTPError(http.StatusBadRequest, res)
