@@ -31,7 +31,7 @@ export const ItemList: React.FC<Prop> = (props) => {
       .then(response => response.json())
       .then(data => {
         console.log('GET success:', data);
-        setItems(data.items);
+        setItems(data);
         onLoadCompleted && onLoadCompleted();
       })
       .catch(error => {
