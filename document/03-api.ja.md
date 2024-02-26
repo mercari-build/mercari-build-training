@@ -13,6 +13,19 @@
 * (EN) [HTTP response status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
 * (EN) [HTTP request methods](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods)
 
+## curlをインストール
+### 1. curlをインストールする
+もしcurlがインストールされていなければ、curlコマンドを使用するとcommand not foundエラーが返ってきます。
+その場合、curlをインストールする必要があります。
+このcurlのインストール方法は、macOS、Linux、Windows Subsystem for Linux (WSL)で使用できます。
+```shell
+$ brew install curl
+```
+### 2. curlのバージョンをチェックする
+```shell
+$ curl　--version
+```
+
 ### GETリクエスト
 
 サービスをローカルで立ち上げると、ブラウザで `http://127.0.0.1:9000` からサービスにアクセスすることができるようになりました。

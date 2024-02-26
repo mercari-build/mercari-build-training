@@ -13,6 +13,19 @@
 * (EN) [HTTP response status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
 * (EN) [HTTP request methods](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods)
 
+##  Install curl
+Check if you can see command not found　error on your console.
+You need to install curl.
+This how to install curl be used on macOS and Linux and Windows Subsystem for Linux (WSL). 
+### 1. How to install curl
+```shell
+$ brew install curl
+```
+### 2. Check the curl version
+```shell
+$ curl　--version
+```
+
 ### GET request
 
 In step2, you ran a service on your local server where you accessed the endpoint from `http://127.0.0.1:9000` using your browser.
