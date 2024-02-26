@@ -2,10 +2,10 @@ package main
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -20,6 +20,7 @@ import (
 
 const (
 	ImgDir = "images"
+	dbPath = "../sqlite3/mercari.sqlite3"
 )
 
 type Response struct {
@@ -74,7 +75,6 @@ func addItem(c echo.Context) error {
 		return err
 	}
 	imageName := fmt.Sprintf("%x.jpg", h.Sum(nil))
-	fmt.Print(imageName)
 
 	// select directory path for new image file
 	filePath := filepath.Join("images/", imageName)
@@ -91,61 +91,68 @@ func addItem(c echo.Context) error {
 		log.Print("新規画像の保存に失敗", err)
 		return err
 	}
+	// connect to db
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		log.Print("db接続に失敗")
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	defer db.Close()
 
-	// open json file & data
-	jsonFile, err := os.Open("items.json")
+	stmt, err := db.Prepare("INSERT INTO items (name, category, image_name) VALUES (?,?,?)")
 	if err != nil {
-		log.Print("JSONファイルを開けません", err)
-		return err
+		log.Print("INSERTクエリ失敗")
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-	defer jsonFile.Close()
-
-	jsonData, err := ioutil.ReadAll(jsonFile)
+	_, err = stmt.Exec(name, category, imageName)
 	if err != nil {
-		log.Print("JSONデータを読み込めません", err)
-		return err
+		log.Print("INSERT失敗")
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-	// convert json into go format
-	var items Items
-	err = json.Unmarshal(jsonData, &items)
-	if err != nil {
-		log.Print("GOへの変換に失敗", err)
-		return err
-	}
-	// add new item
-	newItem := Item{Name: name, Category: category}
-	items.Items = append(items.Items, newItem)
-
-	// convert go format into json
-	updatedJson, err := json.Marshal(&items)
-	if err != nil {
-		log.Print("JSONデータ変換に失敗", err)
-		return err
-	}
-	// output as json file
-	err = ioutil.WriteFile("items.json", updatedJson, 0644)
-	if err != nil {
-		log.Print("JSONファイル出力に失敗", err)
-		return err
-	}
+	log.Print("INSERTに成功")
 	return c.JSON(http.StatusOK, res)
 }
 
 func getItems(c echo.Context) error {
-	jsonFile, err := os.Open("items.json")
+	// connect to db
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		log.Print("JSONファイルを開けません", err)
+		log.Print("db接続に失敗")
 		return err
 	}
-	defer jsonFile.Close()
-	itemsData := Items{}
-	err = json.NewDecoder(jsonFile).Decode(&itemsData)
+	defer db.Close()
+	// get data from db
+	rows, err := db.Query("SELECT name, category, image_name FROM items")
 	if err != nil {
-		log.Print("JSONファイルからの変換に失敗", err)
-		return err
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, itemsData)
+	items := Items{}
+
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.Name, &item.Category, &item.Image)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+		items.Items = append(items.Items, item)
+	}
+	return c.JSON(http.StatusOK, items)
+
+	// jsonFile, err := os.Open("items.json")
+	// if err != nil {
+	// 	log.Print("JSONファイルを開けません", err)
+	// 	return err
+	// }
+	// defer jsonFile.Close()
+	// itemsData := Items{}
+	// err = json.NewDecoder(jsonFile).Decode(&itemsData)
+	// if err != nil {
+	// 	log.Print("JSONファイルからの変換に失敗", err)
+	// 	return err
+	// }
+
+	// return c.JSON(http.StatusOK, itemsData)
 }
 
 func getItemById(c echo.Context) error {

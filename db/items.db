@@ -1,0 +1,1 @@
+CREATE TABLE ITEMS(id INT PRIMARY KEY, name string, category string, image_name string);
