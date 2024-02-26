@@ -1,14 +1,20 @@
-FROM FROM python:3.9-slim
+FROM 3.13.0a4-alpine3.19
 
-WORKDIR /python
+WORKDIR /app
 
-RUN addgroup -S mercari && adduser -S trainee -G mercari
-RUN python -m venv .venv
-RUN source .venv/bin/activate
-RUN pip install -r requirements.txt
+RUN apk update \
+    && apk add --no-cache gcc libc-dev
+    
 
-EXPOSE 9006
+COPY python/requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-USER trainee
 
-CMD ["python", "-V"]
+COPY db/ app/db
+COPY python/ app/python
+
+EXPOSE 9000
+
+ENV DB_PATH=/app/db/items.db
+
+CMD ["uvicorn", "python.main:app", "--host", "0.0.0.0", "--port", "9000"]
