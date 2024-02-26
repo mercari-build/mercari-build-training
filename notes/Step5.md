@@ -1,7 +1,5 @@
 # STEP5: Run the application in a virtual environment
 
-## 2. Run Docker commands
-
 ## 3. Get Docker Image
 
 * Make sure you understand the following commands and when to use them.
@@ -13,11 +11,11 @@ $ docker –version
 ```
 Pull images from the docker repository:
 ```shell
-$ docker pull < image_name >
+$ docker pull <image_name>
 ```
 Create a container from an image:
 ```shell
-$ docker run -it -d < image_name >
+$ docker run -it -d <image_name>
 ```
 List all the locally stored docker images:
 ```shell
@@ -25,7 +23,7 @@ $ docker images
 ```
 Delete unnecessary images: (very useful)
 ```shell
-$ docker rmi -f < image_id >
+$ docker rmi -f <image_id>
 ```
 
 ## 5. Modify Dockerfile
@@ -61,7 +59,7 @@ I think that the path may be wrong. But I have no idea how to check the file str
 
 To check the file structure in the block by
 ```shell
-$ dive < image_id or image_name >
+$ dive <image_id or image_name >
 ```
 
 For example, after creating the image `build2024/app:latest`, roll to the Filetree app and check it.
