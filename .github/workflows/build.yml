@@ -13,6 +13,7 @@ jobs:
      contents: read
      packages: write
     steps:
+    
     # Checkout repository
     - name: Checkout
       uses: actions/checkout@v3
