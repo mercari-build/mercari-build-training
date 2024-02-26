@@ -28,7 +28,9 @@ Docker Compose version v2.24.5-desktop.1
 ## 3. Docker Compose Tutorial
 
 * How many services are defined in the docker-compose file in the tutorial? What exactly do these services do?
-A:
+> A `web` service uses an image that's built from the Dockerfile in the current directory. It then binds the container and the host machine to the exposed port, 8000. This example service uses the default port for the Flask web server, 5000.
+> The `redis` service uses a public Redis image pulled from the Docker Hub registry.
+(Copy from references)
 ```shell
 services:
   web:
@@ -38,13 +40,9 @@ services:
   redis:
     image: "redis:alpine"
 ```
-A `web` service uses an image that's built from the Dockerfile in the current directory. It then binds the container and the host machine to the exposed port, 8000. This example service uses the default port for the Flask web server, 5000.
-The `redis` service uses a public Redis image pulled from the Docker Hub registry.
-(Copy from references)
 
 * web service and redis services get docker images with different methods. When running `docker-compose up`, check how where each image id downloaded.
-A:
-To list local images,
+> To list local images,
 ```shell
 docker image ls
 ```

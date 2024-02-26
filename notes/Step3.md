@@ -35,15 +35,15 @@ POST is more secure, as data is included in the body of the request, not in the 
 
 > Because the item is unprocessable without necessary input in a POST request.
 
-  * What is the **HTTP Status Code** when you receive these responses?
+* What is the **HTTP Status Code** when you receive these responses?
     
-    > Wikipedia definition: Status codes are issued by a server in response to a client's request made to the server.
+> Wikipedia definition: Status codes are issued by a server in response to a client's request made to the server.
 
-  * What do different types of status code mean?
+* What do different types of status code mean?
 
-    > `200` stands for success.
-    `422` represents that although the request format is correct, the request is unprocessable on account of some semantic mistakes.
-    `405` represents that the request method is not allowed.
+> `200` stands for success.
+`422` represents that although the request format is correct, the request is unprocessable on account of some semantic mistakes.
+`405` represents that the request method is not allowed.
 
 ## 2. List a new item
 
@@ -63,34 +63,32 @@ The struture of items.json is like:
 ```
 
 Each item in `items` has one number id as key, and a dict as value.
+
 When a new item is added, a new id would be assigned to it, and `cur_max_id` would add 1.
 
 ## 4. Add an image to an item
 
 * What is hashing?
 
-  A:
-
-  Hashing means that transferring the input into a string with static length by a hashing function. Using hashes as filenames avoids some security issues such as predicting filenames or overwriting existing files.
+> Hashing means that transferring the input into a string with static length by a hashing function. Using hashes as filenames avoids some security issues such as predicting filenames or overwriting existing files.
 
 * What other hashing functions are out there except for sha256?
   
-  A:
-
-  MD5, SHA-1 Family, RIPEMD.
+> MD5, SHA-1 Family, RIPEMD.
 
 ## 6. (Optional) Understand Loggers
 
 * What is log level?
 
-  Google definition: A log level is set up as an indicator within your log management system that captures the importance and urgency of all entries within the logs.
+> Google definition: A log level is set up as an indicator within your log management system that captures the importance and urgency of all entries within the logs.
 
 * On a web server, what log levels should be displayed in a production environment?
   INFO, WARN, ERROR and FATAL.
 
-A:
+> INFO provides information of basic system activities.
 
-  INFO provides information of basic system activities.
-  WARN provides information of potentially harmful events.
-  ERROR provides information of errors and exceptions that may interrupt the normal flow of the application.
-  FATAL provides information of very serious error events that may cause the application to terminate.
+> WARN provides information of potentially harmful events.
+
+> ERROR provides information of errors and exceptions that may interrupt the normal flow of the application.
+
+> FATAL provides information of very serious error events that may cause the application to terminate.
