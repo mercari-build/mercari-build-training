@@ -54,10 +54,10 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
     if items_file.exists():
         with open(items_file, "r", encoding="utf-8") as file:
             data = json.load(file)
-            # ここで全アイテムの情報を含むレスポンスを返します
+            # ここで全アイテムの情報を含むレスポンスを返す
             return {"items": data["items"]}
     else:
-        # アイテムファイルが存在しない場合（通常はあり得ないが、念のため）
+        # アイテムファイルが存在しない場合
         return {"items": [new_item]}
 
 @app.get("/items")
