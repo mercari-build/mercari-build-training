@@ -18,7 +18,7 @@ npm start
 Without connecting to the backend api service, I could still input information of new items on the opened website `http://localhost:3000/`, but nothing happens.
 
 Apparently the code in `python/main.py`
-```shell
+```python
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 ```
 makes sense.
@@ -29,12 +29,12 @@ I added a `cat` to the item list, with category `pet`.
 ## 2. Show item images
 
 In `python/main.py`, mount the static file service on the path `/static` of React application.
-```shell
+```python
 app.mount("/static", StaticFiles(directory="images", html=True), name="static")
 ```
 
 In `ItemList.tsx`, use
-```shell
+```tsx
 <img src={`${server}/static/${item.image_name}`} />
 ```
 to fetch images from the static folder.

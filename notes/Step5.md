@@ -59,16 +59,16 @@ I think that the path may be wrong. But I have no idea how to check the file str
 
 To check the file structure in the block by
 ```shell
-$ dive <image_id or image_name >
+$ dive <image_id or image_name>
 ```
 
 For example, after creating the image `build2024/app:latest`, roll to the Filetree app and check it.
 
 What's more, after executing `CMD` in `dockerfile`, the path is where `python.py` is. Thus, the original path code
-```shell
+```python
 path = pathlib.Path(__file__).parent.resolve()
 ```
 is changed into
-```shell
+```python
 path = pathlib.Path(__file__).parent.parent.resolve()
 ```

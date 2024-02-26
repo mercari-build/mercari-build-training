@@ -31,7 +31,7 @@ Docker Compose version v2.24.5-desktop.1
 > A `web` service uses an image that's built from the Dockerfile in the current directory. It then binds the container and the host machine to the exposed port, 8000. This example service uses the default port for the Flask web server, 5000.
 > The `redis` service uses a public Redis image pulled from the Docker Hub registry.
 (Copy from references)
-```shell
+```dockerfile
 services:
   web:
     build: .
@@ -44,7 +44,7 @@ services:
 * web service and redis services get docker images with different methods. When running `docker-compose up`, check how where each image id downloaded.
 > To list local images,
 ```shell
-docker image ls
+$ docker image ls
 ```
 
 * In docker-compose, you can connect to different services from a service. How does the web service resolve the name for the redis service and connect to it?
