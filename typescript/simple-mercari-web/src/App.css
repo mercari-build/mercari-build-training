@@ -25,18 +25,25 @@
 }
 
 .ItemList {
-  background-color: #222427;
+  background-color: #38484d;
   min-height: 8vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: left;
-  font-size: calc(10px + 1vmin);
-  color: white;
+  justify-content: flex-start;
+  font-size: calc(20px + 1vmin);
+  color: rgb(199, 193, 186);
 }
 
 .App-link {
   color: #61dafb;
+}
+
+.Container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  padding: 10px;
 }
 
 @keyframes App-logo-spin {

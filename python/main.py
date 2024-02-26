@@ -8,6 +8,7 @@ import json
 from fastapi import FastAPI, Form, HTTPException, UploadFile, Query
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 # os.chdir('/Users/xiaotongye/Programs/mercari-build-training/python')
 path = pathlib.Path(__file__).parent.parent.resolve()
@@ -25,6 +26,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
+app.mount("/static", StaticFiles(directory="images", html=True), name="static")
 
 # sql_file = path / "mercari.sqlite3"
 

@@ -45,21 +45,40 @@ export const ItemList: React.FC<Prop> = (props) => {
     }
   }, [reload]);
 
+  // return (
+  //   <div>
+  //     {items.map((item) => {
+  //       return (
+  //         <div key={item.id} className='ItemList'>
+  //           {/* TODO: Task 1: Replace the placeholder image with the item image */}
+  //           {/* <img src={placeholderImage} /> */}
+  //           <img src={`${server}/static/${item.image_name}`} />
+            
+  //           <p>
+  //             <span>Name: {item.name}</span>
+  //             <br />
+  //             <span>Category: {item.category}</span>
+  //           </p>
+  //         </div>
+  //       )
+  //     })}
+  //   </div>
+  // )
+
   return (
-    <div>
-      {items.map((item) => {
-        return (
-          <div key={item.id} className='ItemList'>
-            {/* TODO: Task 1: Replace the placeholder image with the item image */}
-            <img src={placeholderImage} />
-            <p>
-              <span>Name: {item.name}</span>
-              <br />
-              <span>Category: {item.category}</span>
-            </p>
-          </div>
-        )
-      })}
+    <div className="Container">
+      {items.map((item) => (
+        <div key={item.id} className='ItemList'>
+          <img src={`${server}/static/${item.image_name}`} alt={item.name} />
+          <p>
+            <span>Name: {item.name}</span>
+            <br />
+            <span>Category: {item.category}</span>
+          </p>
+        </div>
+      ))}
     </div>
-  )
+  );
+  
+
 };
