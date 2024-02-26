@@ -173,4 +173,4 @@ Image not found: <image path>
 
 ### Next
 
-[STEP5: データベース](04-database.ja.md)
+[STEP4: データベース](04-database.ja.md)
