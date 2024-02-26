@@ -1,14 +1,19 @@
 import os
 import logging
 import pathlib
+import json
 from fastapi import FastAPI, Form, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
 logger.level = logging.INFO
-images = pathlib.Path(__file__).parent.resolve() / "images"
+
+# JSONファイルのパスを設定
+items_file = pathlib.Path(__file__).parent.resolve() / "items.json"
+
+# CORS設定
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
     CORSMiddleware,
@@ -18,28 +23,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
 
-
 @app.post("/items")
-def add_item(name: str = Form(...)):
-    logger.info(f"Receive item: {name}")
+def add_item(name: str = Form(...), category: str = Form(...)):
+    new_item = {"name": name, "category": category}
+    if items_file.exists():
+        with open(items_file, "r+", encoding="utf-8") as file:
+            data = json.load(file)
+            data['items'].append(new_item)
+            file.seek(0)
+            file.truncate()  
+            json.dump(data, file, indent=4)
+    else:
+        with open(items_file, "w", encoding="utf-8") as file:
+            json.dump({"items": [new_item]}, file, indent=4)
+    logger.info(f"Item added: {name}")
     return {"message": f"item received: {name}"}
 
-
-@app.get("/image/{image_name}")
-async def get_image(image_name):
-    # Create image path
-    image = images / image_name
-
-    if not image_name.endswith(".jpg"):
-        raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
-
-    if not image.exists():
-        logger.debug(f"Image not found: {image}")
-        image = images / "default.jpg"
-
-    return FileResponse(image)
+@app.get("/items")
+def get_items():
+    if items_file.exists():
+        with open(items_file, "r", encoding="utf-8") as file:
+            data = json.load(file)
+            return JSONResponse(content=data)
+    else:
+        return JSONResponse(content={"items": []})
