@@ -28,8 +28,10 @@ func root(c echo.Context) error {
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
+	category := c.FormValue("category")
 	c.Logger().Infof("Receive item: %s", name)
 
+	message := fmt.Sprintf("item received: %s", name)
 	message := fmt.Sprintf("item received: %s", name)
 	res := Response{Message: message}
 
