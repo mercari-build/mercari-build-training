@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"io"
@@ -14,10 +15,11 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Item struct {
-	ID string `json: "id"`
+	ID int `json: "id"`
 	Name     string  `json:"name"`
 	Category string  `json:"category"`
 	ImageName string `json:"image_name"`
@@ -47,7 +49,6 @@ func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
 	category := c.FormValue("category")
-
 	// 画像ファイル取得
 	imageFile, err := c.FormFile("image")
 
@@ -82,62 +83,81 @@ func addItem(c echo.Context) error {
         ImageName: hash + ".jpg", 
     }
 
-	jsonFile, err := os.Open("items.json")
+	//DBに接続
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
+	if err != nil {
+		res := Response{Message: "Error Connecting to database"}
+		return c.JSON(http.StatusInternalServerError, res)
+	}
+	defer db.Close()
+
+	var category_id int
+
+	//categories tableにcategoryが存在しなければ追加し、categoryのidを取得
+	if err := db.QueryRow("SELECT id FROM categories WHERE name = $1", newItem.Category).Scan(&category_id); err != nil {
+		if err == sql.ErrNoRows { 
+			//QueryRow()の結果が空のとき
+			stmt1, err := db.Prepare("INSERT INTO categories (name) VALUES (?)")
+			if err != nil {
+				return err
+			}
+			defer stmt1.Close()
+			if _, err = stmt1.Exec(newItem.Category); err != nil {
+				return err
+			}
+			if err := db.QueryRow("SELECT id FROM categories WHERE name = $1", newItem.Category).Scan(&category_id); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	//items tableへ商品を追加
+	stmt2, err := db.Prepare("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)")
 	if err != nil {
 		return err
 	}
-	defer jsonFile.Close()
+	defer stmt2.Close()
 
-	var items Items
-	jsonData, err := io.ReadAll(jsonFile)
-	if err != nil {
+	if _, err = stmt2.Exec(newItem.Name, category_id, newItem.ImageName); err != nil {
 		return err
 	}
-	json.Unmarshal(jsonData, &items)
+	c.Logger().Infof("Name: %s, Category: %s, ImageName: %s", newItem.Name, newItem.Category, newItem.ImageName)
 
-	items.Items = append(items.Items, newItem)
-
-	jsonFile, err = os.Create("items.json")
-	if err != nil {
-		return err
-	}
-	defer jsonFile.Close()
-
-	encoder := json.NewEncoder(jsonFile)
-	err = encoder.Encode(items)
-	if err != nil {
-		return err
-	}
-
-	c.Logger().Infof("Name: %s, Category: %s, ImageName: %s", name, category, newItem.ImageName)
+	// res := Response{Message: message}
 	return c.JSON(http.StatusOK, newItem)
 }
 
 func getAllItem(c echo.Context) error {
-	//JSONファイルを開く
-	jsonFile, err :=os.Open("items.json")
-    if err != nil {
-        // ファイルが開けない場合はエラーレスポンスを返す
-        return c.JSON(http.StatusInternalServerError, Response{Message: "Failed to open items.json"})
-    }
-    defer jsonFile.Close()
-    // ファイルの内容を読み込む
-    jsonData, err := io.ReadAll(jsonFile)
-    if err != nil {
-        // 読み込みに失敗した場合はエラーレスポンスを返す
-        return c.JSON(http.StatusInternalServerError, Response{Message: "Failed to read items.json"})
-    }
+	//db接続
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
 
-    // 読み込んだJSONデータをItems構造体にデコードする
-    var items Items
-    err = json.Unmarshal(jsonData, &items)
-    if err != nil {
-        // デコードに失敗した場合はエラーレスポンスを返す
-        return c.JSON(http.StatusInternalServerError, Response{Message: "Failed to decode items.json"})
-    }
+	//itemsからデータ取得
+	rows, err := db.Query("SELECT name, category, image_name FROM items")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
 
-    // デコードしたデータをレスポンスとして返す
-    return c.JSON(http.StatusOK, items)
+	var items Items
+
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.Name, &item.Category, &item.ImageName)
+
+		if err != nil {
+			return err
+		}
+		items.Items = append(items.Items, item)
+	}
+
+	c.Logger().Info("Retrieved items")
+	return c.JSON(http.StatusOK, items)
 }
 
 func getImg(c echo.Context) error {
@@ -158,7 +178,7 @@ func getImg(c echo.Context) error {
 func getItemById(c echo.Context) error {
     // paramsからidを取得
     idStr := c.Param("id")
-	_, err := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(idStr)
     if err != nil {
         return c.JSON(http.StatusBadRequest, "Invalid ID")
     }
@@ -185,13 +205,49 @@ func getItemById(c echo.Context) error {
 
     // 指定されたidに一致するアイテムを探す
     for _, item := range items.Items {
-        if item.ID == idStr {
+        if item.ID == id {
             return c.JSON(http.StatusOK, item)
         }
     }
 
     // アイテムが見つからない場合は404エラーを返す
     return c.JSON(http.StatusNotFound, "Item not found")
+}
+
+func getItemByKeyword(c echo.Context) error {
+	//DBとの接続
+	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
+	if err != nil {
+		res := Response{Message: "Error connecting to the database"}
+    	return c.JSON(http.StatusInternalServerError, res)
+	}
+	defer db.Close()
+
+	// クエリパラメータを受け取る
+	keyword := c.QueryParam("keyword")
+
+	// データの読み込み
+	rows, err := db.Query("SELECT items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.id WHERE items.name LIKE ?", keyword)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	var items Items
+
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.Name, &item.Category, &item.ImageName)
+		if err != nil {
+			res := Response{Message: "Error scanning rows"}
+			return c.JSON(http.StatusInternalServerError, res)
+		}
+		items.Items = append(items.Items, item)
+	}
+
+	// ログとJSONレスポンスの作成
+	c.Logger().Info("Retrieved items")
+	return c.JSON(http.StatusOK, items)
 }
 
 
@@ -218,6 +274,7 @@ func main() {
 	e.GET("/image/:imageFilename", getImg)
 	e.GET("/items", getAllItem)
 	e.GET("/items/:id", getItemById)
+	e.GET("/search", getItemByKeyword)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
