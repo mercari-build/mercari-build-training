@@ -17,12 +17,11 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 	_ "modernc.org/sqlite"
-	// _ "github.com/mattn/go-sqlite3"
 )
 
 const (
 	ImgDir = "images"
-	dbPath = "../sqlite3/mercari.sqlite3"
+	dbPath = "../../sqlite3/mercari.sqlite3"
 )
 
 type Response struct {
@@ -111,7 +110,6 @@ func addItem(c echo.Context) error {
 		log.Print("INSERT失敗")
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-	log.Print("INSERTに成功")
 
 	return c.JSON(http.StatusOK, res)
 
