@@ -74,6 +74,16 @@ def get_items():
         items = json.load(f)
     return items
 
+@app.get("/items/{item_id}")
+def get_item_id(item_id: int):
+    with open("items.json", "r") as f:
+        data = json.load(f)
+    
+    if 0 <= item_id < len(data["items"]):
+        return data["items"][item_id]
+    else:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
 @app.get("/image/{image_name}")
 async def get_image(image_name):
     #image path
