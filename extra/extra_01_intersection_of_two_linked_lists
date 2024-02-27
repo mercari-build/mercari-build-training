@@ -11,9 +11,9 @@ class Step1:
         appeared = set()
         while headA:
             appeared.add(headA)
-            headA.next
+            headA = headA.next
         while headB:
             if headB in appeared:
                 return headB
-            headB.next
+            headB = headB.next
         return None
