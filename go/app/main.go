@@ -16,7 +16,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
+	// _ "github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -93,7 +94,7 @@ func addItem(c echo.Context) error {
 		return err
 	}
 	// connect to db
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		log.Print("db接続に失敗")
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -111,7 +112,9 @@ func addItem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	log.Print("INSERTに成功")
+
 	return c.JSON(http.StatusOK, res)
+
 }
 
 func getItems(c echo.Context) error {
