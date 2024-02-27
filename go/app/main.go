@@ -172,7 +172,7 @@ func getImg(c echo.Context) error {
 	defer dir.Close()
 	files, err := dir.Readdir(-1)
 	if err != nil {
-		return err // Handle error.
+		return err
 	}
 	//loop entire files and compare to the target
 	for _, file := range files {
@@ -190,7 +190,7 @@ func getImg(c echo.Context) error {
 			f.Close()
 			continue
 		}
-		f.Close() // Close the file after reading.
+		f.Close()
 
 		if hex.EncodeToString(h.Sum(nil))+".jpg" == target {
 			if !strings.HasSuffix(filePath, ".jpg") {
