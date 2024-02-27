@@ -1,0 +1,35 @@
+#!/bin/sh
+if git rev-parse --verify HEAD >/dev/null 2>&1
+then
+	against=HEAD
+else
+	# Initial commit: diff against an empty tree object
+	against=$(git hash-object -t tree /dev/null)
+fi
+
+# Change delimiteir to only LF
+IFS=$'\n'
+
+# Get target files
+files=`git diff --cached --name-only --diff-filter=d $against`;
+
+# Loop for each file name
+detected=false
+for file in $files
+do
+  lines=`git diff --cached --diff-filter=d "$file" | grep "^+[^+]"`
+  for line in $lines
+  do
+    if [[ $line =~ ^.*app\.slack\.com.*$|^.*@mercari.*$ ]]; then
+      echo ".git/hooks/pre-commit : $file --> ${BASH_REMATCH[0]}"
+      detected=true
+    fi
+  done
+done
+
+if $detected; then
+  echo "Private info is detected. Please remove it."
+  exit 1
+else
+  exit 0
+fi
