@@ -1,0 +1,26 @@
+-------------------------------------------------------------------------------->8
+-------------------------------------------------------------------------------->8
+[2024-02-26T00:32:08.646375786Z][wsl-keepalive][I] unmounting old bind mounts
+[2024-02-26T00:32:08.647087701Z][wsl-keepalive][I] reading mountinfo
+[2024-02-26T00:32:08.647397883Z][wsl-keepalive][I] unmounted old bind mounts
+-------------------------------------------------------------------------------->8
+-------------------------------------------------------------------------------->8
+[2024-02-26T00:32:08.974387800Z][wsl-keepalive][I] setting up
+[2024-02-26T00:32:08.974748268Z][wsl-keepalive][I] reading mountinfo
+[2024-02-26T00:32:08.975184664Z][wsl-keepalive][I] creating bind mount /isocache
+[2024-02-26T00:32:08.975520366Z][wsl-keepalive][I] creating bind mount /data
+[2024-02-26T00:32:08.975765667Z][wsl-keepalive][I] waiting for signal
+-------------------------------------------------------------------------------->8
+-------------------------------------------------------------------------------->8
+[2024-02-26T19:43:32.483194195Z][wsl-keepalive][I] setting up
+[2024-02-26T19:43:32.484127873Z][wsl-keepalive][I] reading mountinfo
+[2024-02-26T19:43:32.484514662Z][wsl-keepalive][I] creating bind mount /isocache
+[2024-02-26T19:43:32.484612847Z][wsl-keepalive][I] creating bind mount /data
+[2024-02-26T19:43:32.484656421Z][wsl-keepalive][I] waiting for signal
+-------------------------------------------------------------------------------->8
+-------------------------------------------------------------------------------->8
+[2024-02-27T10:22:33.042650114Z][wsl-keepalive][I] setting up
+[2024-02-27T10:22:33.044314809Z][wsl-keepalive][I] reading mountinfo
+[2024-02-27T10:22:33.044702488Z][wsl-keepalive][I] creating bind mount /isocache
+[2024-02-27T10:22:33.045229461Z][wsl-keepalive][I] creating bind mount /data
+[2024-02-27T10:22:33.045300319Z][wsl-keepalive][I] waiting for signal
