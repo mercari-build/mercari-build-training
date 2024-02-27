@@ -1,7 +1,6 @@
 # 時間計算量 O(n^2)、空間計算量 O(n)
 class Step1:
     def findDisappearedNumbers(self, nums: List[int]) -> List[int]:
-        found = False
         ans = []
         for i in range(1, len(nums)+1):
             # in は線形探索
