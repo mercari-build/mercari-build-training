@@ -119,7 +119,7 @@ func addItem(c echo.Context) error {
 
 func getItems(c echo.Context) error {
 	// connect to db
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		log.Print("db接続に失敗")
 		return err
