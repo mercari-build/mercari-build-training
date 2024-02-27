@@ -51,4 +51,41 @@ $ docker image ls
 
 ## 4. Run frontend and API using Docker Compose
 
-In `App.css`, change `.ItemList{}` part.
+First, reconstruct two images from the very start.
+
+At the root path of the git folder, construct `build2024/app:latest` with `python/dockerfile`.
+```shell
+$ docker build -t build2024/app:latest -f python/dockerfile .
+```
+
+Run it. 
+```shell
+$ docker run -p 9000:9000 build2024/app:latest
+```
+
+Enter directory `typescript/simple-mercari-web`, construct `build2024/web:latest` with `dockerfile`. This is necessary because command `RUN npm install` requires that `package.json` exists.
+```shell
+$ docker build -t build2024/web:latest -f dockerfile .
+```
+
+Run it. No issues.
+```shell
+$ docker run -p 3000:3000 build2024/web:latest
+```
+
+However, in the root directory, execute
+```shell
+$ docker-compose up
+```
+
+I could use `GET` method but I couldn't use `PORT` method to upload items.
+When the `PORT` api starts, the debug information is like:
+```shell
+app-1  | DEBUG:multipart.multipart:Calling on_part_begin with no data
+app-1  | DEBUG:multipart.multipart:Calling on_header_field with data[42:61]
+...
+app-1  | DEBUG:multipart.multipart:Calling on_part_end with no data
+app-1  | DEBUG:multipart.multipart:Calling on_end with no data
+```
+I guess that it may be the problem with path, so I want to print the path. However, after I edit `python/main.py` and rebuild the two docker images once again, `docker-compose up` still runs tha old version of `python/main.py`.
+The image `build2024/app:latest` contains 3 folders, `/db`, `/image` and `/python`.

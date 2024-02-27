@@ -1,7 +1,14 @@
 FROM node:20-alpine
+
 WORKDIR /app
 
-RUN addgroup -S mercari && adduser -S trainee -G mercari
-USER trainee
+COPY package.json . 
+COPY package-lock.json . 
+RUN npm install
+COPY . .
 
-CMD ["node", "-v"]
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["npm", "start"]

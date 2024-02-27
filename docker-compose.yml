@@ -1,0 +1,28 @@
+version: "2.4"
+services:
+  app:
+    # dockerfile path
+    build: 
+      context: ./python
+      dockerfile: dockerfile
+    # image: build2024/app:latest
+    ports:
+    # the host's port 9000 will be mapped to the container's port 9000
+      - "9000:9000"
+    environment:
+    # environment variable
+      - FRONT_URL=http://localhost:3000
+    # volumes:
+    # # the file on the host will be mapped to the container's
+    #   - "../db/mercari.sqlite3:/app/data/mercari.sqlite3:z"
+  
+  web:
+    build:
+      context: ./typescript/simple-mercari-web
+      dockerfile: dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:9000
+    depends_on:
+      - app

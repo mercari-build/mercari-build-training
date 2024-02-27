@@ -5,7 +5,7 @@ import logging
 import pathlib
 import hashlib
 import json
-from fastapi import FastAPI, Form, HTTPException, UploadFile, Query
+from fastapi import FastAPI, Form, File, HTTPException, UploadFile, Query
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -93,7 +93,7 @@ async def start_connection():
         )
     ''')
     sql_connect.commit()
-    print('666')
+    print('555')
 
 async def close_connection():
     if sql_connect:
@@ -136,8 +136,7 @@ def get_items():
 @app.get("/items/{item_id}")
 def get_item(item_id: int):
     logger.info(f"Searching for the item with id: {item_id}")
-    
-    print(sql_connect)       
+     
     sql_cur = sql_connect.cursor()
 
     try:
@@ -178,15 +177,16 @@ def get_category_id(category, sql_cur):
 
 # 4-1 Add a new item to the items table
 @app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = Form(...)):
+def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
     logger.info(f"Receive item: {name}")
 
     # preprocess the image file
     try:
         img_bytes = image.file.read()
-        print(img_bytes)
+        # print(img_bytes)
         img_name = hashlib.sha256(img_bytes).hexdigest() + os.path.splitext(image.filename)[1]
         img_path = images_dir / img_name
+        print('img_path=', img_path)
         # Here, the img path must be pathlib.Path instead of a str!!
         img_path.write_bytes(img_bytes)
     except:

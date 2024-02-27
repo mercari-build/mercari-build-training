@@ -1,12 +1,19 @@
-FROM python:3.9-slim
+FROM python:3.9.6-alpine
 
 WORKDIR /app
 
-COPY db/ /app/db
-COPY python/ /app/python
-COPY images/ /app/images
+COPY python/requirements.txt /app/requirements.txt
+RUN pip3 install -r /app/requirements.txt
 
-RUN pip3 install -r /app/python/requirements.txt
+# The command here is different from that in alpine
+# RUN addgroup -S mercari && adduser -S trainee -G mercari
+# # Give user trainee the  right to write
+# RUN chown -R trainee:mercari /app
+# USER trainee
+
+COPY db /app/db
+COPY python/main.py /app/python/main.py
+COPY images /app/images
 
 EXPOSE 9000
 

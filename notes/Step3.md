@@ -49,7 +49,7 @@ POST is more secure, as data is included in the body of the request, not in the 
 
 The struture of items.json is like:
 
-```shell
+```json
 {
   "items": {
     "1": {
