@@ -6,6 +6,10 @@ from fastapi import FastAPI, Form, HTTPException, File, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import hashlib
+import sqlite3
+from sqlite3 import Connection
+from typing import List
+
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -27,6 +31,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+DATABASE_URL = "../db/mercari.sqlite3"
+
+def get_db_connection() -> Connection:
+    conn = sqlite3.connect(DATABASE_URL)
+    conn.row_factory = sqlite3.Row  
+    return conn
+
+
 @app.post("/items")
 async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
     # 画像ファイルをSHA256でハッシュ化して保存
@@ -37,48 +49,41 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
     with open(image_path, "wb") as f:
         f.write(content)
 
-    new_item = {"name": name, "category": category, "image_name": image_filename}
-    if items_file.exists():
-        with open(items_file, "r+", encoding="utf-8") as file:
-            data = json.load(file)
-            new_item["id"] = len(data["items"]) + 1  
-            data['items'].append(new_item)
-            file.seek(0)
-            file.truncate()
-            json.dump(data, file, indent=4)
-    else:
-        with open(items_file, "w", encoding="utf-8") as file:
-            json.dump({"items": [new_item]}, file, indent=4)
-    logger.info(f"Item added: {name}")
+    # 新しい商品情報をデータベースに挿入
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
+                (name, category, image_filename))
+    conn.commit()
+    item_id = cur.lastrowid
+    conn.close()
 
-    if items_file.exists():
-        with open(items_file, "r", encoding="utf-8") as file:
-            data = json.load(file)
-            # ここで全アイテムの情報を含むレスポンスを返す
-            return {"items": data["items"]}
-    else:
-        # アイテムファイルが存在しない場合
-        return {"items": [new_item]}
+    logger.info(f"Item added: {name}")
+    return {"id": item_id, "name": name, "category": category, "image_name": image_filename}
+
 
 @app.get("/items")
 def get_items():
-    if items_file.exists():
-        with open(items_file, "r", encoding="utf-8") as file:
-            data = json.load(file)
-            return JSONResponse(content=data)
-    else:
-        return JSONResponse(content={"items": []})
+    conn = get_db_connection()
+    items = conn.execute("SELECT * FROM items").fetchall()
+    conn.close()
+    return {"items": [dict(item) for item in items]}
+
 
 @app.get("/items/{item_id}")
 def get_item(item_id: int):
-    if items_file.exists():
-        with open(items_file, "r", encoding="utf-8") as file:
-            data = json.load(file)
-            items = data["items"]
-            item = next((item for item in items if item["id"] == item_id), None)
-            if item:
-                return item
-            else:
-                raise HTTPException(status_code=404, detail="Item not found")
+    conn = get_db_connection()
+    item = conn.execute("SELECT * FROM items WHERE id = ?", (item_id,)).fetchone()
+    conn.close()
+    if item:
+        return dict(item)
     else:
         raise HTTPException(status_code=404, detail="Item not found")
+
+@app.get("/search")
+def search_items(keyword: str):
+    conn = get_db_connection()
+    # キーワードを含む商品を検索（大文字小文字を区別しないためにLOWER関数を使用）
+    items = conn.execute("SELECT * FROM items WHERE LOWER(name) LIKE LOWER(?)", (f"%{keyword}%",)).fetchall()
+    conn.close()
+    return {"items": [dict(item) for item in items]}
