@@ -1,1 +1,4 @@
 CREATE TABLE ITEMS(id INT PRIMARY KEY, name string, category string, image_name string);
+
+CREATE TABLE category(id INT PRIMARY KEY, name string);
+CREATE TABLE ITEMS(id INT PRIMARY KEY, name string, category_id string, image_name string, foreign key(category_id) references category(id));

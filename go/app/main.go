@@ -110,9 +110,7 @@ func addItem(c echo.Context) error {
 		log.Print("INSERT失敗")
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-
 	return c.JSON(http.StatusOK, res)
-
 }
 
 func getItems(c echo.Context) error {
@@ -124,7 +122,7 @@ func getItems(c echo.Context) error {
 	}
 	defer db.Close()
 	// get data from db
-	rows, err := db.Query("SELECT name, category, image_name FROM items")
+	rows, err := db.Query("SELECT ITEMS.name, category.name, ITEMS.image_name FROM ITEMS INNER JOIN category on ITEMS.category_id = category.id")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
