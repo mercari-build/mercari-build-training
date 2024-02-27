@@ -140,21 +140,6 @@ func getItems(c echo.Context) error {
 		items.Items = append(items.Items, item)
 	}
 	return c.JSON(http.StatusOK, items)
-
-	// jsonFile, err := os.Open("items.json")
-	// if err != nil {
-	// 	log.Print("JSONファイルを開けません", err)
-	// 	return err
-	// }
-	// defer jsonFile.Close()
-	// itemsData := Items{}
-	// err = json.NewDecoder(jsonFile).Decode(&itemsData)
-	// if err != nil {
-	// 	log.Print("JSONファイルからの変換に失敗", err)
-	// 	return err
-	// }
-
-	// return c.JSON(http.StatusOK, itemsData)
 }
 
 func getItemById(c echo.Context) error {
