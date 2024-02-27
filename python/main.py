@@ -38,7 +38,7 @@ async def root():
 async def add_item(name: str = Form(...), category: str=Form(...), image: UploadFile= File(...)):
     logger.info(f"Receive item: {name},{category},image:{image.filename}")
     
-    images=pathlib.Path(__file__).parent/"python"/"images"
+    images = pathlib.Path(__file__).parent.resolve() /"images"
     #アップロードされたファイルの内容を非同期で読み込む
     contents= await image.read()
     hash_sha256=hashlib.sha256(contents).hexdigest()
@@ -48,24 +48,31 @@ async def add_item(name: str = Form(...), category: str=Form(...), image: Upload
         f.write(contents)
         
     #loadでjsonファイルをPythonのデータ構造に変換する
-    with open("items.json","r") as f:
-        json_load=json.load(f)
+    
+    #書き込みモードにしてnew_itemをitems.jsonに追加する
     
     new_item={"items": [{"name": name, "category": category,"image_name": image_filename}]}
-    json_load.append(new_item)
-    #書き込みモードにしてnew_itemをitems.jsonに追加する
-    with open("items.json","w") as f:
-        json_dump=json.dump(json_load, f,indent=4)
-    
+    loading_json(new_item)
 
     return {"message": f"item received: {name},{category},{image}"}
 
+def loading_json(new_item):
+    with open("items.json","r") as f:
+        json_load=json.load(f)
+    
+    json_load["items"].append(new_item)
+
+
+    with open("items.json","w") as f:
+        json_dump=json.dump(json_load, f,indent=4)
+
+
+
 @app.get("/items")
 def get_items():
-    return json_load
-
-""" @app.get("/items/{items_id}")
-def get_items(items_id:int): """
+    with open("items.json", "r") as f:
+        items = json.load(f)
+    return items
 
 @app.get("/image/{image_name}")
 async def get_image(image_name):
