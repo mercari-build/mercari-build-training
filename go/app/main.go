@@ -159,6 +159,36 @@ func getItemById(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusOK, itemsData.Items[id-1])
+}
+
+func searchItem(c echo.Context) error {
+	keyword := c.QueryParam("keyword")
+
+	// connect to db
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		log.Print("db接続に失敗")
+		return err
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT name, category, image_name FROM ITEMS WHERE name LIKE ?", "%"+keyword+"%")
+	if err != nil {
+		log.Print("クエリ失敗")
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	items := Items{}
+
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.Name, &item.Category, &item.Image)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+		items.Items = append(items.Items, item)
+	}
+	return c.JSON(http.StatusOK, items)
 
 }
 
@@ -200,6 +230,7 @@ func main() {
 	e.GET("/items", getItems)
 	e.GET("/items/:id", getItemById)
 	e.GET("/image/:imageFilename", getImg)
+	e.GET("/search", searchItem)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
