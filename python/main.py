@@ -12,7 +12,7 @@ app = FastAPI()
 logger = logging.getLogger("uvicorn")
 logger.level = logging.DEBUG
 images = pathlib.Path(__file__).parent.resolve() / "images"
-db_path = pathlib.Path(__file__).parent.resolve() / "/Users/yurainagaki/mercari/mercari-build-training/db/items.db"
+db_path = os.getenv("DB_PATH", str(pathlib.Path(__file__).parent.resolve() / "db/items.db"))
 items_file = pathlib.Path(__file__).parent.resolve() / "items.json"
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
