@@ -1,7 +1,4 @@
-DROP TABLE IF EXISTS items;
-DROP TABLE IF EXISTS categories;
-
-CREATE TABLE items (
+CREATE TABLE IF NOT EXISTS items (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     category_id	INTEGER NOT NULL,
@@ -9,7 +6,7 @@ CREATE TABLE items (
     FOREIGN KEY(category_id) REFERENCES categories(id)
 );
 
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL
 );

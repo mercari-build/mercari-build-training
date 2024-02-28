@@ -7,6 +7,7 @@ import (
 	"path"
 	"strings"
 	"io"
+	"io/ioutil"
 	"encoding/json"
 	"crypto/sha256"
 	"strconv"
@@ -49,7 +50,7 @@ func root(c echo.Context) error {
  **/
 func errorHandler(c echo.Context, err error, message string) error {
 	c.Logger().Errorf("Error: ", err)
-	res := Response{Message: message}
+	res := Response{Message: message + ": " + err.Error()}
 	return c.JSON(http.StatusInternalServerError, res)
 }
 
@@ -346,6 +347,36 @@ func main() {
 		AllowOrigins: []string{frontURL},
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
+
+	// Create database tables if not exists
+	db, err := sql.Open("sqlite3", DbPath)
+    if err != nil {
+        fmt.Println(err)
+        return 
+    }
+	defer db.Close()
+
+	// Read schema from items.db
+	sqlCommands, err := ioutil.ReadFile("db/items.db")
+    if err != nil {
+        fmt.Println("Error reading SQL file:", err)
+        return 
+    }
+    // Split SQL commands by semicolon
+    commands := strings.Split(string(sqlCommands), ";")
+
+    // Execute SQL commands
+    for _, cmd := range commands {
+        cmd = strings.TrimSpace(cmd)
+        if cmd == "" {
+            continue
+        }
+        _, err := db.Exec(cmd)
+        if err != nil {
+            fmt.Println("Error executing SQL command:", err)
+            return 
+        }
+    }
 
 	// Routes
 	e.GET("/", root)
