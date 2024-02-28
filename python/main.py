@@ -18,7 +18,8 @@ def root():
 
 # データベース接続関数
 def get_db_connection():
-    conn = sqlite3.connect("db/mercari.sqlite3")
+    db_path = "/Users/tomoka/Build/mercari-build-training/db/items.db"
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -29,18 +30,41 @@ class Item(BaseModel):
     image_name: str
 
 # 商品情報を保存するエンドポイント
+# @app.post("/items/")
+# async def create_item(item: Item, file: UploadFile = File(...)):
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     file_location = f"images/{file.filename}"
+#     with open(file_location, "wb+") as file_object:
+#         file_object.write(file.file.read())
+#     cursor.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
+#                    (item.name, item.category, file_location))
+#     conn.commit()
+#     conn.close()
+#     return {"name": item.name, "category": item.category, "image_name": file.filename}
+
+#test
 @app.post("/items/")
-async def create_item(item: Item, file: UploadFile = File(...)):
+async def create_item(item: Item, file: UploadFile = None):
     conn = get_db_connection()
     cursor = conn.cursor()
-    file_location = f"images/{file.filename}"
-    with open(file_location, "wb+") as file_object:
-        file_object.write(file.file.read())
+
+    if file:
+        file_location = f"images/{file.filename}"
+        with open(file_location, "wb+") as file_object:
+            file_object.write(file.file.read())
+        image_name = file.filename
+    else:
+        # ファイルが提供されなかった場合のデフォルトの画像名や処理をここに記述
+        file_location = "aaaaaaaaa"  # デフォルトの画像パス
+        image_name = "default.jpg"  # デフォルトの画像名
+
     cursor.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
-                   (item.name, item.category, file.filename))
+                   (item.name, item.category, file_location))
     conn.commit()
     conn.close()
-    return {"name": item.name, "category": item.category, "image_name": file.filename}
+    return {"name": item.name, "category": item.category, "image_name": image_name}
+
 
 # 保存された商品情報を取得するエンドポイント
 @app.get("/items/", response_model=List[Item])
@@ -67,7 +91,7 @@ app.add_middleware(
 )
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=9000)
 
 
 
