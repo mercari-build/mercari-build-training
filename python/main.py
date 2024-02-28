@@ -19,7 +19,8 @@ def root():
 # データベース接続関数
 def get_db_connection():
     db_path = "/Users/tomoka/Build/mercari-build-training/db/mercari.sqlite3"
-    # db_path = "/Users/tomoka/Build/mercari-build-training/db/mercari2.sqlite3"
+    #まず、ここでは.sqlite3に接続する。
+    #先に、ターミナルで、.sqlite3に紐づけられたitems.sqlとcategories.sqlがあることを前提にする。
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
@@ -30,45 +31,50 @@ class Item(BaseModel):
     category: str
     image_name: str
 
-# 商品情報を保存するエンドポイント
-# @app.post("/items/")
-# async def create_item(item: Item, file: UploadFile = File(...)):
-#     conn = get_db_connection()
-#     cursor = conn.cursor()
-#     file_location = f"images/{file.filename}"
-#     with open(file_location, "wb+") as file_object:
-#         file_object.write(file.file.read())
-#     cursor.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
-#                    (item.name, item.category, file_location))
-#     conn.commit()
-#     conn.close()
-#     return {"name": item.name, "category": item.category, "image_name": file.filename}
-
-#test
 @app.post("/items")
 async def add_item(name: str = Form(...), category: str = Form(...), image: Optional[UploadFile] = None):
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # category idの選択
+    cursor.execute("SELECT id FROM categories WHERE name = ?", (name,))
+    category = cursor.fetchone()
+    # return {"category": category}
+
+    if not category:
+        cursor.execute("INSERT INTO categories (name) VALUES (?)", (name,))
+        conn.commit()
+        category_id = cursor.lastrowid
+    else:
+        category_id = category[0]
 
     if image:
         file_location = f"images/{image.filename}"
         with open(file_location, "wb+") as file_object:
             file_object.write(image.file.read())
         image_name = image.filename
-        cursor.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
-                   (name, category, image_name))
+        # cursor.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
+        #            (name, category, image_name))
+        # category id の変更点
+        cursor.execute("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
+                   (name, category_id, image_name))
     else:
         # ファイルが提供されなかった場合のデフォルトの画像名や処理をここに記述
         # file_location = "aaaaaaaaa"  # デフォルトの画像パスは存在しないため、適切な値に修正する必要がある
         image_name = "No image"  # デフォルトの画像名
-        cursor.execute("INSERT INTO items (name, category) VALUES (?, ?)",
-                       (name, category))
+        # cursor.execute("INSERT INTO items (name, category) VALUES (?, ?)",
+        #                (name, category))
+        # category id の変更点
+        cursor.execute("INSERT INTO items (name, category_id) VALUES (?, ?)",
+                       (name, category_id))
 
     # cursor.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
     #                (name, category, image_name))
     conn.commit()
     conn.close()
-    return {"name": name, "category": category, "image_name": image_name}
+    # return {"name": name, "category": category, "image_name": image_name}
+    # category id の変更点
+    return {"name": name, "category_id": category_id, "image_name": image_name}
 # async def create_item(item: Item, file: UploadFile = None):
 #     conn = get_db_connection()
 #     cursor = conn.cursor()
