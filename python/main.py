@@ -114,6 +114,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/search")
+def search_item(keyword: str):
+    conn = get_db_connection()
+    items = conn.execute("SELECT name, category, image_name FROM items WHERE name LIKE ?", ('%' + keyword + '%',)).fetchall()
+    conn.close()
+    
+    # データベースから取得したRowオブジェクトを辞書リストに変換
+    items_list = [dict(item) for item in items]
+    
+    return {"items": items_list}
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=9000)
 
