@@ -24,7 +24,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-#create database
 def create_table():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -51,7 +50,6 @@ create_table()
 def root():
     return {"message": "Hello, world!"}
 
-
 @app.post("/items")
 async def add_item(name: str = Form(...), category_name: str = Form(...),image: UploadFile = File(...)):
     contents = await image.read()
@@ -73,15 +71,37 @@ async def add_item(name: str = Form(...), category_name: str = Form(...),image: 
     else:
         category_id = category[0]
     
-    cursor.execute("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)", (name, category_name, image_filename))
+    cursor.execute("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)", (name, category_id, image_filename))
     conn.commit()
     conn.close()
 
-    item = {"name": name, "category_id": category_name,"image_name": image_filename}
+    item = {"name": name, "category_id": category_id,"image_name": image_filename}
     logger.info(f"Receive item: {item}")
 
     # save_item(item)
     return {"message": f"Item received: {item}","image_name": image_filename}
+
+@app.get("/categories")
+def get_categories():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name FROM categories")
+    categories = [{"id": row[0], "name": row[1]} for row in cursor.fetchall()]
+    conn.close()
+    return {"categories": categories}
+
+@app.get("/items")
+def get_items():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("""
+    SELECT items.id, items.name, categories.name AS category_name, items.image_name
+    FROM items
+    JOIN categories ON items.category_id = categories.id
+    """)
+    items = [{"id": row[0], "name": row[1], "category_name": row[2], "image_name": row[3]} for row in cursor.fetchall()]
+    conn.close()
+    return {"items": items}
 
 
 @app.get("/items/{item_id}")
@@ -100,19 +120,7 @@ def get_items(item_id: int):
 
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
-    return {"id": item_id, "name": item[0], "category_name": item[1], "image_name": item[2]}
-
-def load_items():
-    if items_file.exists():
-        with open(items_file, "r", encoding="utf-8") as file:
-            try:
-                data = json.load(file)
-                return data["items"]
-            except json.JSONDecodeError:
-                print("Error decoding JSON")
-                return []
-    else:
-        return []
+    return {"id": item_id, "name": item[1], "category_name": item[2], "image_name": item[3]}
 
 @app.get("/search")
 async def search_items(keyword: str):
@@ -125,8 +133,6 @@ async def search_items(keyword: str):
     items = [{"id": row[0], "name": row[1], "category_name": row[2], "image_name": row[3]} for row in cursor.fetchall()]
     conn.close()
     return JSONResponse(content={"items": items})
-    
-
 
 @app.get("/image/{image_name}")
 async def get_image(image_name):
@@ -143,5 +149,6 @@ async def get_image(image_name):
         return FileResponse(image)
     
     return FileResponse(image)
+
 
 #uvicorn main:app --reload --log-level debug --port NUMBEROFPORT
