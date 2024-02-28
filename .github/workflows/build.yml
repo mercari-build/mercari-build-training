@@ -42,5 +42,5 @@ jobs:
         context: ./python
         file: ./python/Dockerfile
         push: true
-        tags: build2024/app:latest
+        tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
