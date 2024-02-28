@@ -78,9 +78,9 @@ def get_items_from_database():
     return {"items": items_list}
 
     
-#STEP3-2, 3-4, 4-1
+#STEP3-2, 3-4, 4-1, 4-3
 @app.post("/items")
-def add_item(name: str = Form(...), category_id: int = Form(...), image: UploadFile = File(...)):
+def add_item(name: str = Form(...), category_name: str = Form(...), image: UploadFile = File(...)):
     #STEP4-1
 
     image_filename = get_image_filename(image)
@@ -88,12 +88,22 @@ def add_item(name: str = Form(...), category_id: int = Form(...), image: UploadF
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
+    cursor.execute ("SELECT id FROM categories WHERE name = ?", (category_name,)) 
+    category_row = cursor.fetchone()
+
+    if category_row == None:
+        cursor.execute("INSERT INTO categories (name) VALUES (?)", (category_name,))
+        conn.commit
+        category_id = cursor.lastrowid
+    else:
+        category_id = category_row[0]
+
     cursor.execute ("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",(name, category_id, image_filename))
 
     conn.commit()
     conn.close()
 
-    return {"message": f"Item added: {name}, {category_id}, {image_filename}"}
+    return {"message": f"Item added: {name}, {category_name}, {image_filename}"}
 
 #STEP3-4
 def get_image_filename(image):
@@ -145,14 +155,14 @@ def get_item_information(item_id: int):
     else:
         return{"detail": "Item not found"}
     
-#STEP4-2
+#STEP4-2,4-3
 @app.get("/search")
 def search_items(keyword: str):
     print(keyword)
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
-    res = cursor.execute("SELECT items.id, items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.id WHERE items.name LIKE ?", [keyword])
+    res = cursor.execute("SELECT items.id, items.name, categories.name, items.image_name FROM items INNER JOIN categories ON items.category_id = categories.id WHERE items.name LIKE ?", ("%" + keyword + "%",))
 
     found_items = res.fetchall()
     cursor.close()
