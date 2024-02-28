@@ -1,6 +1,5 @@
 import os
 import sqlite3
-import json
 import logging
 import pathlib
 import hashlib
