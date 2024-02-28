@@ -1,8 +1,29 @@
-FROM alpine
+# Use an official Golang runtime as a parent image
+FROM golang:latest
 
-RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari /path/to/db
+# Set the working directory in the container
+WORKDIR /app
 
-USER trainee
+# Copy the current directory contents into the container at /app
+COPY go.mod go.sum ./
 
-CMD ["go", "version"]
+# Define environment variable
+ENV NAME build2024/app
+
+# Download go modules inside the image
+RUN go mod download
+
+# Copy the source code of your API
+RUN mkdir -p images db
+COPY app/main.go ./
+COPY db/ ./db/
+COPY images/ ./images/
+
+# Compile the application
+RUN CGO_ENABLED=1 GOOS=linux go build -o /docker-gs-ping main.go
+
+# Document the port that the application is going to listen to
+EXPOSE 9000
+
+# Run
+CMD ["/docker-gs-ping"]
