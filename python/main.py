@@ -59,17 +59,10 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Opti
         cursor.execute("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
                    (name, category_id, image_name))
     else:
-        # ファイルが提供されなかった場合のデフォルトの画像名や処理をここに記述
-        # file_location = "aaaaaaaaa"  # デフォルトの画像パスは存在しないため、適切な値に修正する必要がある
         image_name = "No image"  # デフォルトの画像名
-        # cursor.execute("INSERT INTO items (name, category) VALUES (?, ?)",
-        #                (name, category))
-        # category id の変更点
         cursor.execute("INSERT INTO items (name, category_id) VALUES (?, ?)",
                        (name, category_id))
 
-    # cursor.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
-    #                (name, category, image_name))
     conn.commit()
     conn.close()
     # return {"name": name, "category": category, "image_name": image_name}
@@ -113,7 +106,7 @@ def search_item(keyword: str):
     # categoriesから引っ張ってくる場合
     # LIKEを使うと似ている単語が収集される
     # categories = conn.execute("SELECT id FROM categories WHERE name LIKE ?", ('%' + keyword + '%',)).fetchall()
-    categories = conn.execute("SELECT id FROM categories WHERE name = ?", (keyword,)).fetchall()
+    categories = conn.execute("SELECT id, name FROM categories WHERE name = ?", (keyword,)).fetchall()
 
     conn.close()
     categories_list = [dict(category) for category in categories]
