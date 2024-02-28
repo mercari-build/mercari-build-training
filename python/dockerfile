@@ -10,8 +10,8 @@ RUN apk update \
 COPY python/requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ./db/ /app/db/
-COPY ./python/ /app/python/
+COPY db/ /app/db/
+COPY python/ /app/python/
 
 EXPOSE 9000
 
