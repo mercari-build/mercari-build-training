@@ -1,10 +1,10 @@
 import os
 import logging
 import uvicorn
-from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
+from typing import List, Optional
 import sqlite3
 from pydantic import BaseModel
 
@@ -18,8 +18,8 @@ def root():
 
 # データベース接続関数
 def get_db_connection():
-    # db_path = "/Users/tomoka/Build/mercari-build-training/db/mercari.sqlite3"
-    db_path = "/Users/tomoka/Build/mercari-build-training/db/mercari2.sqlite3"
+    db_path = "/Users/tomoka/Build/mercari-build-training/db/mercari.sqlite3"
+    # db_path = "/Users/tomoka/Build/mercari-build-training/db/mercari2.sqlite3"
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
@@ -45,26 +45,49 @@ class Item(BaseModel):
 #     return {"name": item.name, "category": item.category, "image_name": file.filename}
 
 #test
-@app.post("/items/")
-async def create_item(item: Item, file: UploadFile = None):
+@app.post("/items")
+async def add_item(name: str = Form(...), category: str = Form(...), image: Optional[UploadFile] = None):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    if file:
-        file_location = f"images/{file.filename}"
+    if image:
+        file_location = f"images/{image.filename}"
         with open(file_location, "wb+") as file_object:
-            file_object.write(file.file.read())
-        image_name = file.filename
+            file_object.write(image.file.read())
+        image_name = image.filename
+        cursor.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
+                   (name, category, image_name))
     else:
         # ファイルが提供されなかった場合のデフォルトの画像名や処理をここに記述
-        file_location = "aaaaaaaaa"  # デフォルトの画像パス
-        image_name = "default.jpg"  # デフォルトの画像名
+        # file_location = "aaaaaaaaa"  # デフォルトの画像パスは存在しないため、適切な値に修正する必要がある
+        image_name = "No image"  # デフォルトの画像名
+        cursor.execute("INSERT INTO items (name, category) VALUES (?, ?)",
+                       (name, category))
 
-    cursor.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
-                   (item.name, item.category, file_location))
+    # cursor.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
+    #                (name, category, image_name))
     conn.commit()
     conn.close()
-    return {"name": item.name, "category": item.category, "image_name": image_name}
+    return {"name": name, "category": category, "image_name": image_name}
+# async def create_item(item: Item, file: UploadFile = None):
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+
+#     if file:
+#         file_location = f"images/{file.filename}"
+#         with open(file_location, "wb+") as file_object:
+#             file_object.write(file.file.read())
+#         image_name = file.filename
+#     else:
+#         # ファイルが提供されなかった場合のデフォルトの画像名や処理をここに記述
+#         file_location = "aaaaaaaaa"  # デフォルトの画像パス
+#         image_name = "default.jpg"  # デフォルトの画像名
+
+#     cursor.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
+#                    (item.name, item.category, file_location))
+#     conn.commit()
+#     conn.close()
+#     return {"name": item.name, "category": item.category, "image_name": image_name}
 
 
 # 保存された商品情報を取得するエンドポイント
