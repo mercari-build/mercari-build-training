@@ -1,8 +1,13 @@
-FROM alpine
+FROM python:3.10-alpine
 
 RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari /path/to/db
+RUN chown -R trainee:mercari /db
 
-USER trainee
+WORKDIR /app
+COPY ./app/
+RUN mv app/db
+USER hanamoriguchi
 
-CMD ["python", "-V"]
+RUN pip install -r requirements.txt
+
+CMD /home/hanamoriguchi/.local/bin/uvicorn main:app --reload --port 9000
