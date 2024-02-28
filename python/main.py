@@ -3,15 +3,40 @@ import os
 import logging
 import pathlib
 
-#step3-2
-import json
-
 #STEP3-4
 import hashlib
 
+#STEP4-1
+from flask import Flask
+import sqlite3
+
+app = Flask(__name__)
+DATABASE = '/Users/niheimoeka/mercari-build-training/db/mercari.sqlite3'
+
+
+def create_table():
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS categories (
+                   id INTEGER PRIMARY KEY,
+                   category_name TEXT NOT NULL)''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS items (
+                   id INTEGER PRIMARY KEY, 
+                   name TEXT NOT NULL,
+                   category_id INTEGER NOT NULL,
+                   image_name TEXT NOT NULL,
+                   FOREIGN KEY (category_id) REFERENCES categories(id))''' )
+
+    conn.commit()
+    conn.close()
+    print("Tables created")
+
+#STEP4-1
 from fastapi import FastAPI, Form, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+
+create_table()
 
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
@@ -26,48 +51,49 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+
+
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
 
-#STEP3-3
+#STEP3-3, 4-1
 @app.get("/items")
-def get_item():
-    with open("items.json", "r") as file:
-        item_data = json.load(file)
-    logger.info(f"Receive items: {item_data}")
-    return item_data
+def get_items_from_database():
+
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM items")
+    items = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    items_list = [{"id": row[0], "name": row[1], "category": row[2], "image_name": row[3]} for row in items]
+
+    print("Items list", items_list)
+
+    return {"items": items_list}
 
     
-#STEP3-2,3-4
+#STEP3-2, 3-4, 4-1
 @app.post("/items")
-def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
+def add_item(name: str = Form(...), category_id: int = Form(...), image: UploadFile = File(...)):
+    #STEP4-1
+
     image_filename = get_image_filename(image)
-    new_item = {"name": name, "category": category, "image": image_filename}
-    items_file = "items.json"
 
-    #open the json file, create a new file if it doen't exist
-    if os.path.exists(items_file):
-        with open("items.json", "r") as file:
-            item_data = json.load(file)
-            item_list = item_data.get("items",[])
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
 
-    else:
-        item_list = []
+    cursor.execute ("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",(name, category_id, image_filename))
 
-    #add information to the list
-    if "items" in item_data.keys():
-        item_list.append(new_item)
-    else:
-        item_list.append([])
+    conn.commit()
+    conn.close()
 
-    #write to the json file
-    with open(items_file, "w") as file:
-        json.dump({"items": item_list}, file)
-
-    logger.info(f"Receive item: {name}, {category}")
-    
-    return {"message": f"Item received: {name}, {category},{image_filename}"}
+    return {"message": f"Item added: {name}, {category_id}, {image_filename}"}
 
 #STEP3-4
 def get_image_filename(image):
@@ -100,15 +126,42 @@ async def get_image(image_name):
 
     return FileResponse(image)
 
-#STEP3-5
+#STEP3-5, 4-1, 4-3
 @app.get("/items/{item_id}")
 def get_item_information(item_id: int):
-    with open("items.json", "r") as file:
-        item_data = json.load(file)
 
-    if 1<= item_id <= len(item_data[("items")]):
-        item = item_data["items"][item_id - 1]
-        logger.info(f"Receive item: {item}")
-        return item
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+
+    cursor.execute ("SELECT items.id, items.name, categories.name as category, items.image_name FROM items JOIN categories ON items.category_id = categories.id WHERE items.id = ?", (item_id,))
+    result = cursor.fetchone()
+
+    conn.commit()
+    conn.close()
+    
+
+    if result:
+        return {"id": result["id"], "name": result["name"], "category": result["category"], "image_name": result["image_name"]}
     else:
-        raise HTTPException(status_code=404, detail="Item not found")
+        return{"detail": "Item not found"}
+    
+#STEP4-2
+@app.get("/search")
+def search_items(keyword: str):
+    print(keyword)
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+
+    res = cursor.execute("SELECT items.id, items.name, categories.name, items.image_name FROM items JOIN categories ON items.category_id = categories.id WHERE items.name LIKE ?", [keyword])
+
+    found_items = res.fetchall()
+    cursor.close()
+    conn.close()
+
+    print("Search results", found_items)
+    return found_items
+
+ 
+
+
+
