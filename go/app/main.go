@@ -120,6 +120,10 @@ func addItem(c echo.Context) error {
 	// Response
 	message := fmt.Sprintf("item received: %s", name)
 	res := Response{Message: message}
+  
+	// http.StatusCreated(201) is also good choice.StatusOK
+  // but in that case, you need to implement and return a URL
+  //   that returns information on the posted item.
 	return c.JSON(http.StatusOK, res)
 }
 
@@ -334,12 +338,12 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Logger.SetLevel(log.INFO)
 
-	front_url := os.Getenv("FRONT_URL")
-	if front_url == "" {
-		front_url = "http://localhost:3000"
+	frontURL := os.Getenv("FRONT_URL")
+	if frontURL == "" {
+		frontURL = "http://localhost:3000"
 	}
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{front_url},
+		AllowOrigins: []string{frontURL},
 		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
 	}))
 

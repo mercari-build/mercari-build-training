@@ -25,14 +25,14 @@ npm start
 Run the backend servers in Python/Go as described in Step3.
 This simple web application allows you to do two things
 - Add a new item (Listing)
-- View the list of itemas (ItemList)
+- View the list of items (ItemList)
 
 These functionalities are carved out as components called `src/components/Listing` and `src/components/ItemList`, and called from the main `App.tsx`.
 
 :pushpin: Sample code is in React but the knowledge of React is not necessary.
 
 ### (Optional) Task 1: Add a new item
-Use the listing form to add a new item. In this screen, you can input name, category and a image for a new item.
+Use the listing form to add a new item. In this screen, you can input name, category and an image for a new item.
 
 If your API from STEP3 only accepts name and category, modify `typescript/simple-mercari-web/src/components/Listing/Listing.tsx` and delete the image field.
 
@@ -74,4 +74,4 @@ Current `ItemList` shows one column of items sequentially. Use the following ref
 
 ### Next
 
-[STEP6: Run frontend and API using docker-compose](08-docker-compose.en.md)
+[STEP8: Run frontend and API using docker-compose](08-docker-compose.en.md)
