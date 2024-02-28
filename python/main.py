@@ -18,7 +18,8 @@ def root():
 
 # データベース接続関数
 def get_db_connection():
-    db_path = "/Users/tomoka/Build/mercari-build-training/db/items.db"
+    # db_path = "/Users/tomoka/Build/mercari-build-training/db/mercari.sqlite3"
+    db_path = "/Users/tomoka/Build/mercari-build-training/db/mercari2.sqlite3"
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
