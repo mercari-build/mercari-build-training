@@ -6,7 +6,7 @@ WORKDIR /app
 RUN apk update \
     && apk add --no-cache gcc libc-dev cargo
 
-COPY python/requirements.txt requirements.txt
+COPY ./python/requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./db/ /app/db/

@@ -35,7 +35,7 @@ export const Listing: React.FC<Prop> = (props) => {
     event.preventDefault()
     const data = new FormData()
     data.append('name', values.name)
-    data.append('category', values.category)
+    data.append('category_name', values.category)
     data.append('image', values.image)
 
     fetch(server.concat('/items'), {
