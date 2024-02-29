@@ -22,7 +22,8 @@ import (
 
 const (
 	ImgDir = "images"
-	dbPath = "../db/mercari.sqlite3"
+	//dbPath = "../db/mercari.sqlite3"
+	dbPath = "/app/db/mercari.sqlite3"
 )
 
 type Item struct {

@@ -4,7 +4,7 @@ FROM golang:1.22.0-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache gcc musl-dev
+RUN apk add --no-cache git sqlite-dev gcc musl-dev
 
 COPY db/ ./db/
 COPY go/ ./go/
@@ -13,6 +13,8 @@ WORKDIR /app/go
 
 RUN go mod tidy
 RUN go build -o ./mercari-build-training ./app/*.go
+
+RUN sqlite3 /app/db/mercari.sqlite3 < /app/db/init.sql
 
 RUN addgroup -S mercari && adduser -S trainee -G mercari
 
