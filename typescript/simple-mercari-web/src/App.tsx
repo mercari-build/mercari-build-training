@@ -7,10 +7,10 @@ function App() {
   // reload ItemList after Listing complete
   const [reload, setReload] = useState(true);
   return (
-    <div>
+    <body>
       <header className='Title'>
         <p>
-          <b>Simple Mercari</b>
+          <b>MY FIRST WEBPAGE</b>
         </p>
       </header>
       <div>
@@ -19,7 +19,7 @@ function App() {
       <div>
         <ItemList reload={reload} onLoadCompleted={() => setReload(false)} />
       </div>
-    </div>
+    </body>
   )
 }
 

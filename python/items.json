@@ -1,20 +1,29 @@
 {
     "items": [
         {
-            "id" : 1,
-            "name": "jacket",
-            "category": "fashion"
-        },
-        {
-            "id" : 2,
             "name": "mango",
-            "category": "fruit"
+            "category": "fruit",
+            "image": "279ce18a01c54ed7ee857fbf7f2ecd760c4b8ccfd08035a7149198285a08395b.jpg"
         },
         {
-            "id" : 3,
-            "name": "jacket",
-            "category": "fashion",
-            "image": "ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg"
+            "name": "banana",
+            "category": "fruit",
+            "image": "e5599776f4161fc8796944ee10f3497ef2090ff90aab548d24c70999fa2ff977.jpg"
+        },
+        {
+            "name": "lychee",
+            "category": "fruit",
+            "image": "409fa81cd7f88dba1213856f40edfc45bc8dd9f7322cfca11d44a1258149031e.jpg"
+        },
+        {
+            "name": "strawberry",
+            "category": "fruit",
+            "image": "85e96ac6cdb8150c542f4bad37af42898c83df82ff8a7034a4ac6ae7205f0773.jpg"
+        },
+        {
+            "name": "books",
+            "category": "study",
+            "image": "02a04bea9df71ce5a9c7c17a65d8a2fb62d67f11e9521931dd780ff27dee722d.jpg"
         }
     ]
 }

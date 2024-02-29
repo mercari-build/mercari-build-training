@@ -7,6 +7,7 @@ import hashlib
 from typing import List, Optional
 from fastapi.responses import FileResponse 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 
 app = FastAPI()
@@ -15,15 +16,16 @@ logger = logging.getLogger("uvicorn")
 logger.level = logging.INFO
 images = pathlib.Path(__file__).parent.resolve() / "images"
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
+allow_credentials=True,
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
-
+app.mount("/static", StaticFiles(directory="images", html=True), name="static")
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
