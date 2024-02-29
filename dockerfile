@@ -4,7 +4,7 @@ FROM golang:1.22.0-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache gcc musl-dev sqlite3
+RUN apk add --no-cache git sqlite-dev gcc musl-dev
 
 COPY db/ ./db/
 COPY go/ ./go/
