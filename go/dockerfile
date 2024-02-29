@@ -5,7 +5,7 @@ RUN addgroup -S mercari && adduser -S trainee -G mercari
 
 
 RUN apk add --no-cache gcc musl-dev
-RUN CGO_ENABLED=1 go build -o ./mercari-build-training ./app/*.go
+# RUN CGO_ENABLED=1 go build -o ./mercari-build-training ./app/*.go
 
 USER trainee
 
