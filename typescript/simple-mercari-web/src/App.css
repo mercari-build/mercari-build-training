@@ -1,44 +1,35 @@
+:root {
+  /* Color scheme */
+  --background-color: #222427;
+  --link-color: #61dafb;
+  --text-color: white;
+  
+  /* Font sizing */
+  --base-font-size: 10px;
+  --dynamic-font-size: 1vmin;
+}
+
 .App {
   text-align: center;
 }
 
-.Title {
-  background-color: #222427;
+/* Shared styles for Title, Listing, and ItemList */
+.Title, .Listing, .ItemList {
+  background-color: var(--background-color);
   min-height: 8vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: left;
-  font-size: calc(10px + 1vmin);
-  color: white;
-}
-
-.Listing {
-  background-color: #222427;
-  min-height: 8vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: left;
-  font-size: calc(10px + 1vmin);
-  color: white;
-}
-
-.ItemList {
-  background-color: #222427;
-  min-height: 8vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: left;
-  font-size: calc(10px + 1vmin);
-  color: white;
+  font-size: calc(var(--base-font-size) + var(--dynamic-font-size));
+  color: var(--text-color);
 }
 
 .App-link {
-  color: #61dafb;
+  color: var(--link-color);
 }
 
+/* Animation for App logo */
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
