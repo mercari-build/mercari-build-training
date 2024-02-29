@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/sha256"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -142,21 +141,38 @@ func getItems(c echo.Context) error {
 
 func getItemById(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("id"))
-	file, err := os.Open("items.json")
-	if err != nil {
-		c.Logger().Errorf("Error opening file: %s", err)
-		res := Response{Message: "Error opening file"}
-		return c.JSON(http.StatusInternalServerError, res)
-	}
-	defer file.Close()
 
-	itemsData := Items{}
-	err = json.NewDecoder(file).Decode(&itemsData)
+	// connect to db
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
-		log.Print("JSONファイルからの変換に失敗", err)
+		log.Print("db接続に失敗")
 		return err
 	}
-	return c.JSON(http.StatusOK, itemsData.Items[id-1])
+	defer db.Close()
+	// get data from db
+	rows, err := db.Query("SELECT ITEMS.name, category.name, ITEMS.image_name FROM ITEMS INNER JOIN category on ITEMS.category_id = category.id")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	items := Items{}
+
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.Name, &item.Category, &item.Image)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+		items.Items = append(items.Items, item)
+	}
+
+	// check if id is safe number
+	if id > len(items.Items) || id <= 0 {
+		log.Print("指定されたidが不正な値です")
+		return err
+	}
+	selectedItemById := items.Items[id-1]
+
+	return c.JSON(http.StatusOK, selectedItemById)
 }
 
 func searchItem(c echo.Context) error {
