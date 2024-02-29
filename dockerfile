@@ -14,7 +14,7 @@ WORKDIR /app/go
 RUN go mod tidy
 RUN go build -o ./mercari-build-training ./app/*.go
 
-RUN sqlite3 /app/db/mercari.sqlite3 < /app/db/items.db
+RUN sqlite3 /app/db/mercari.sqlite3 < /app/db/init.sql
 
 RUN addgroup -S mercari && adduser -S trainee -G mercari
 
