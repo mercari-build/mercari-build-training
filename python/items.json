@@ -1,0 +1,26 @@
+[
+  {
+    "name": "jacket",
+    "category": "fashion",
+    "image": ""
+  },
+  {
+    "name": "skirt",
+    "category": "clothing",
+    "image": ""
+  },
+  [
+    {
+      "name": "jacket",
+      "category": "fashion",
+      "image": "a725539af644f9dc1a39bc67780c2bafa6504a6c14a82cd9542a62513464fbd1.jpg"
+    }
+  ],
+  [
+    {
+      "name": "jacket",
+      "category": "fashion",
+      "image": "a725539af644f9dc1a39bc67780c2bafa6504a6c14a82cd9542a62513464fbd1.jpg"
+    }
+  ]
+]

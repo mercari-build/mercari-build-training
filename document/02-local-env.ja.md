@@ -30,6 +30,7 @@ Pythonでは、`requirements.txt`というファイルに依存しているラ�
 
 ```shell
 $ cd python
+
 $ pip install -r requirements.txt
 ```
 
