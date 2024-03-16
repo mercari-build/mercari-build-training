@@ -1,8 +1,15 @@
-FROM alpine
+FROM python:3.10-alpine
 
-RUN addgroup -S mercari && adduser -S trainee -G mercari
-# RUN chown -R trainee:mercari /path/to/db
+WORKDIR /mercari-build-training/python
 
-USER trainee
+COPY requirements.txt ./
 
-CMD ["python", "-V"]
+RUN apk add --no-cache curl
+
+RUN pip install -r requirements.txt
+
+COPY . .
+
+EXPOSE 9000
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000"]

@@ -7,28 +7,27 @@ import pathlib
 import hashlib
 
 #STEP4-1
-from flask import Flask
 import sqlite3
 
-app = Flask(__name__)
-DATABASE = '/Users/niheimoeka/mercari-build-training/db/mercari.sqlite3'
+
+DATABASE = 'mercari.sqlite3'
 
 
 def create_table():
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS categories (
+    con = sqlite3.connect(DATABASE)
+    cur = con.cursor()
+    cur.execute('''CREATE TABLE IF NOT EXISTS categories (
                    id INTEGER PRIMARY KEY,
-                   category_name TEXT NOT NULL)''')
-    cursor.execute('''CREATE TABLE IF NOT EXISTS items (
+                   name TEXT NOT NULL)''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS items (
                    id INTEGER PRIMARY KEY, 
                    name TEXT NOT NULL,
                    category_id INTEGER NOT NULL,
                    image_name TEXT NOT NULL,
                    FOREIGN KEY (category_id) REFERENCES categories(id))''' )
 
-    conn.commit()
-    conn.close()
+    con.commit()
+    con.close()
     print("Tables created")
 
 #STEP4-1
@@ -62,20 +61,28 @@ def root():
 @app.get("/items")
 def get_items_from_database():
 
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
+    con = sqlite3.connect(DATABASE)
+    cur = con.cursor()
 
-    cursor.execute("SELECT * FROM items")
-    items = cursor.fetchall()
+    cur.execute("SELECT name, category_id, image_name FROM items")
+    items = cur.fetchall()
 
-    cursor.close()
-    conn.close()
+    cur.close()
+    con.close()
 
-    items_list = [{"id": row[0], "name": row[1], "category": row[2], "image_name": row[3]} for row in items]
+    items_list = [{"name": name, "category": get_category_name(category_id), "image_name": image_name} for name, category_id, image_name in items]
 
     print("Items list", items_list)
 
     return {"items": items_list}
+
+def get_category_name(category_id):
+    con = sqlite3.connect('mercari.sqlite3')
+    cur = con.cursor()
+    cur.execute('SELECT name FROM categories WHERE id =?', (category_id,))
+    category_name = cur.fetchone()[0]
+    con.close()
+    return category_name
 
     
 #STEP3-2, 3-4, 4-1, 4-3
@@ -85,23 +92,23 @@ def add_item(name: str = Form(...), category_name: str = Form(...), image: Uploa
 
     image_filename = get_image_filename(image)
 
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
+    con = sqlite3.connect(DATABASE)
+    cur = con.cursor()
 
-    cursor.execute ("SELECT id FROM categories WHERE name = ?", (category_name,)) 
-    category_row = cursor.fetchone()
+    cur.execute ("SELECT id FROM categories WHERE name = ?", (category_name,)) 
+    category_row = cur.fetchone()
 
     if category_row == None:
-        cursor.execute("INSERT INTO categories (name) VALUES (?)", (category_name,))
-        conn.commit
-        category_id = cursor.lastrowid
+        cur.execute("INSERT INTO categories (name) VALUES (?)", (category_name,))
+        con.commit()
+        category_id = cur.lastrowid
     else:
         category_id = category_row[0]
 
-    cursor.execute ("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",(name, category_id, image_filename))
+    cur.execute ("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",(name, category_id, image_filename))
 
-    conn.commit()
-    conn.close()
+    con.commit()
+    con.close()
 
     return {"message": f"Item added: {name}, {category_name}, {image_filename}"}
 
@@ -140,14 +147,14 @@ async def get_image(image_name):
 @app.get("/items/{item_id}")
 def get_item_information(item_id: int):
 
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
+    con = sqlite3.connect(DATABASE)
+    cur = con.cursor()
 
-    cursor.execute ("SELECT items.id, items.name, categories.name as category, items.image_name FROM items JOIN categories ON items.category_id = categories.id WHERE items.id = ?", (item_id,))
-    result = cursor.fetchone()
+    cur.execute ("SELECT items.id, items.name, categories.name as category, items.image_name FROM items INNER JOIN categories ON items.category_id = categories.id WHERE items.id = ?", (item_id,))
+    result = cur.fetchone()
 
-    conn.commit()
-    conn.close()
+    con.commit()
+    con.close()
     
 
     if result:
@@ -159,14 +166,14 @@ def get_item_information(item_id: int):
 @app.get("/search")
 def search_items(keyword: str):
     print(keyword)
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
+    con = sqlite3.connect(DATABASE)
+    cur = con.cursor()
 
-    res = cursor.execute("SELECT items.id, items.name, categories.name, items.image_name FROM items INNER JOIN categories ON items.category_id = categories.id WHERE items.name LIKE ?", ("%" + keyword + "%",))
+    res = cur.execute("SELECT items.id, items.name, categories.name, items.image_name FROM items INNER JOIN categories ON items.category_id = categories.id WHERE items.name LIKE ?", ("%" + keyword + "%",))
 
     found_items = res.fetchall()
-    cursor.close()
-    conn.close()
+    cur.close()
+    con.close()
 
     print("Search results", found_items)
     return found_items
