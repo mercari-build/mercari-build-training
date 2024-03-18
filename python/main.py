@@ -3,10 +3,8 @@ import os
 import logging
 import pathlib
 
-#STEP3-4
 import hashlib
 
-#STEP4-1
 import sqlite3
 
 
@@ -88,8 +86,8 @@ def get_category_name(category_id):
 #STEP3-2, 3-4, 4-1, 4-3
 @app.post("/items")
 def add_item(name: str = Form(...), category_name: str = Form(...), image: UploadFile = File(...)):
-    #STEP4-1
 
+    #STEP4-1
     image_filename = get_image_filename(image)
 
     con = sqlite3.connect(DATABASE)
