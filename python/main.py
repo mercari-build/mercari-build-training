@@ -1,3 +1,4 @@
+#THIS IS FOR TEST OF CI
 
 import os
 import logging
@@ -5,6 +6,7 @@ import pathlib
 
 import hashlib
 
+#STEP4-1
 import sqlite3
 
 
