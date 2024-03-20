@@ -1,0 +1,20 @@
+{
+    "items": [
+        {
+            "id" : 1,
+            "name": "jacket",
+            "category": "fashion"
+        },
+        {
+            "id" : 2,
+            "name": "mango",
+            "category": "fruit"
+        },
+        {
+            "id" : 3,
+            "name": "jacket",
+            "category": "fashion",
+            "image": "ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg"
+        }
+    ]
+}
