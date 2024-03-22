@@ -63,6 +63,7 @@ func errMessage(c echo.Context, err error, status int, message string) error {
 func addItem(c echo.Context) error {
 	var res Response
 	
+	
 	name := c.FormValue("name")
 	category := c.FormValue("category")
 	image, err := c.FormFile("image")
