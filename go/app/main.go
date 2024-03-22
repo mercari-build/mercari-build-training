@@ -20,7 +20,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const ImgDir = "images"
+const ImgDir = "../images"
+const dbPath="../db/mercari.sqlite3"
 
 type Response struct {
 	Message string `json:"message"`
@@ -61,7 +62,8 @@ func errMessage(c echo.Context, err error, status int, message string) error {
 
 func addItem(c echo.Context) error {
 	var res Response
-	// Get form data
+	
+
 	name := c.FormValue("name")
 	category := c.FormValue("category")
 	image, err := c.FormFile("image")
@@ -74,17 +76,17 @@ func addItem(c echo.Context) error {
 		errMessage(c, err, http.StatusBadRequest, "Fail to convert image to hash string")
 	}
 
-	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
 	}
-	//Get categoryID
+
 	var categoryID int
 	if err := db.QueryRow("SELECT id FROM categories WHERE name==?", category).Scan(&categoryID); err != nil {
 		errMessage(c, err, http.StatusBadRequest, "Unable to get categoryID from categoryName")
 	}
 
-	//Print message
+	
 	message := fmt.Sprintf("item received: %s in %s category", name, category)
 	res = Response{Message: message}
 
@@ -155,7 +157,7 @@ func getItem(c echo.Context) error {
 	if err != nil {
 		errMessage(c, err, http.StatusBadRequest, "Unable to conveert item_id to int")
 	}
-	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
 	}
@@ -189,7 +191,7 @@ func getItem(c echo.Context) error {
 }
 
 func getItems(c echo.Context) error {
-	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
 	}
@@ -240,7 +242,7 @@ func getImg(c echo.Context) error {
 func searchItem(c echo.Context) error {
 	//Get Query param
 	keyword := c.QueryParam("keyword")
-	db, err := sql.Open("sqlite3", "../db/mercari.sqlite3")
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
 	}
@@ -280,7 +282,7 @@ func addCategory(c echo.Context) error {
 	message := fmt.Sprintf("category received: %s", name)
 	res := Response{Message: message}
 
-	db, err := sql.Open("sqlite3", "/db/mercari.sqlite3")
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return errMessage(c, err, http.StatusBadRequest, "Unable to open database")
 	}
