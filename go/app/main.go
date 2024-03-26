@@ -123,8 +123,8 @@ func addItem(c echo.Context) error {
 	res := Response{Message: message}
   
 	// http.StatusCreated(201) is also good choice.StatusOK
-  // but in that case, you need to implement and return a URL
-  //   that returns information on the posted item.
+  	// but in that case, you need to implement and return a URL
+  	// that returns information on the posted item.
 	return c.JSON(http.StatusOK, res)
 }
 
@@ -139,13 +139,21 @@ func getItem(c echo.Context) error {
 }
 
 func getImg(c echo.Context) error {
-	// Create image path
-	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
+	imgPath := c.Param("imageFilename")
 
 	if !strings.HasSuffix(imgPath, ".jpg") {
 		res := Response{Message: "Image path does not end with .jpg"}
 		return c.JSON(http.StatusBadRequest, res)
 	}
+
+	// Hash image name
+	h := sha256.New()
+	h.Write([]byte(strings.Split(imgPath, ".")[0]))
+	imgPath = fmt.Sprintf("%x", h.Sum(nil)) + ".jpg"
+
+	// Create image path
+	imgPath = path.Join(ImgDir, imgPath)
+
 	if _, err := os.Stat(imgPath); err != nil {
 		c.Logger().SetLevel(log.DEBUG)  // set the log level
 		c.Logger().Debugf("Image not found: %s", imgPath)
@@ -191,6 +199,7 @@ func storeInItemStruct(c echo.Context, rows *sql.Rows) (ItemList, error) {
  * Insert a new item on the two tables in the database
  * items: (id, name, category_id, image_name)
  * categories: (id, name)
+ * curl -X POST --url http://localhost:9000/items -F name=jacket -F category=fashion -F image=@images/jacket.jpg
  */
 func addItemDatabase(c echo.Context) error {
 	// Get form data
@@ -198,12 +207,35 @@ func addItemDatabase(c echo.Context) error {
 	c.Logger().Infof("Receive item: %s", name)
 	category := c.FormValue("category")
 	c.Logger().Infof("Receive category: %s", category)
-	image := c.FormValue("image")
+	image, _ := c.FormFile("image")
+	image_name := image.Filename
+
+	// Open file for reading
+	imageFile, err := image.Open()
+	if err != nil {
+		return errorHandler(c, err, "Error: opening an image file")
+	}
+	defer imageFile.Close()
 
 	// Hash image name
+	image_name = strings.Replace(image_name, "@images/", "", 1)
 	h := sha256.New()
-	h.Write([]byte(strings.Split(image, ".")[0]))
-	image = fmt.Sprintf("%x", h.Sum(nil)) + ".jpg"
+	h.Write([]byte(strings.Split(image_name, ".")[0]))
+	image_name = fmt.Sprintf("%x", h.Sum(nil)) + ".jpg"
+
+	// Create image file
+	fmt.Println("image_path: ", path.Join(ImgDir, image_name))
+	storedImageFile, err := os.Create(path.Join(ImgDir, image_name))
+	if err != nil {
+		return errorHandler(c, err, "Error: creating an image file")
+	}
+	defer storedImageFile.Close()
+
+	// Copy image to file
+	_, err = io.Copy(storedImageFile, imageFile); 
+	if err != nil {
+		return errorHandler(c, err, "Error: copying the image file")
+	}
 
 	// Connect to the database
 	db, err := sql.Open("sqlite3", DbPath)
@@ -233,7 +265,7 @@ func addItemDatabase(c echo.Context) error {
 
 	// Insert the new item to the database
 	cmd := "INSERT INTO items (name, category_id, image_name) VALUES ($1, $2, $3)"
-	_, err = db.Exec(cmd, name, category_id, image)
+	_, err = db.Exec(cmd, name, category_id, image_name)
 	if err != nil {
 		return errorHandler(c, err, "Error: db.Exec")
 	}
