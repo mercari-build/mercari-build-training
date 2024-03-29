@@ -1,10 +1,11 @@
 import uvicorn
-from fastapi import FastAPI, HTTPException, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException, File, UploadFile, Form, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import json
 import hashlib
 import os
+import sqlite3
 
 class Item(BaseModel):
     name: str
@@ -38,32 +39,38 @@ def root():
     return {"message": "Hello, world!"}
 
 @app.post("/items")
-async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
-    # Hash the image content
-    content = await image.read()
-    sha256_hash = hashlib.sha256(content).hexdigest()
-    image_filename = f"{sha256_hash}.jpg"
-    image_path = os.path.join('images', image_filename)
+def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
+    conn = sqlite3.connect('mercari.sqlite3')  
+    cur = conn.cursor() 
+    # Execute SQL query to insert the new item
+    cur.execute("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)", (name, category, image_name))
+    conn.commit() 
+    conn.close()  
+    return {"message": "Item added successfully"}  
 
-    # Save the image file
-    with open(image_path, 'wb') as f:
-        f.write(content)
+@app.get("/items")
+def get_items():
+    conn = sqlite3.connect('mercari.sqlite3')
+    cur = conn.cursor()  
+    cur.execute("""
+        SELECT items.id, items.name, categories.name AS category_name, items.image_name
+        FROM items
+        JOIN categories ON items.category_id = categories.id
+    """)
+    items = cur.fetchall()
+    conn.close()
+    return {"items": [{"id": item[0], "name": item[1], "category": item[2], "image_name": item[3]} for item in items]}
 
-    # Add the item with the image reference
-    item = {"name": name, "category": category, "image_name": image_filename}
-    if any(i["name"] == item["name"] for i in items):
-        raise HTTPException(status_code=400, detail="Item already exists")
-    items.append(item)
-    save_items()
-    return {"message": f"Item received: {name}", "item": item}
-
-@app.get("/items/{item_id}")
-def get_item(item_id: int):
-    if item_id < 0 or item_id >= len(items):
-        raise HTTPException(status_code=404, detail="Item not found")
-    
-    return items[item_id]
-
+@app.get("/search")
+def search_items(keyword: str = Query(None, title="Search keyword")):
+    conn = sqlite3.connect('mercari.sqlite3')
+    cur = conn.cursor()
+    # Use the LIKE operator in SQL for pattern matching
+    cur.execute("SELECT * FROM items WHERE name LIKE ?", ('%' + keyword + '%',))
+    items = cur.fetchall()
+    conn.close()
+    items_list = [{'id': item[0], 'name': item[1], 'category': item[2], 'image_name': item[3]} for item in items]
+    return {"items": items_list}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=9000)
