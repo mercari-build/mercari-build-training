@@ -1,6 +1,6 @@
 # Build@Mercari Training Program 
 
-This is @<your github id>'s build training repository.
+This is @vyshnaviprabha29's build training repository.
 
 Build trainingの前半では個人で課題に取り組んでもらい、Web開発の基礎知識をつけていただきます。
 ドキュメントには詳細なやり方は記載しません。自身で検索したり、リファレンスを確認したり、チームメイトと協力して各課題をクリアしましょう。
@@ -36,7 +36,7 @@ The following icons indicate pointers for
   /[EN](document/07-frontend.en.md))
 - [ ] **STEP8** (Stretch)  Run multi service ([JA](document/08-docker-compose.ja.md)
   /[EN](document/08-docker-compose.en.md))
-- [ ] **Extra1** Data structure and algorithm ([JA](document/extra-01-algorithm-and-data-structure.ja.md)/[EN](document%2Fextra-01-algorithm-and-data-structure.en.md))
+- [ ] **Extra1** Data structure and algorithm (TBU)
 - [ ] **EXTRA2** (Stretch)  Data Analysis ([Link](document/extra-02-data-analysis.md))
 
 ### Other documents
