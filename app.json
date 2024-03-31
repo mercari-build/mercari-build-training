@@ -1,0 +1,154 @@
+{
+  "beforeUninstall": [
+    {
+      "args": "-k -u",
+      "description": "Removing VM and images",
+      "exe": "InstallerCli.exe",
+      "kind": "exec",
+      "optional": false,
+      "timeoutMs": 60000
+    },
+    {
+      "args": "-l",
+      "description": "List processes locking Docker Desktop resources",
+      "exe": "InstallerCli.exe",
+      "kind": "killLockingProcesses",
+      "optional": false
+    }
+  ],
+  "beforeUpdate": [
+    {
+      "args": "-k -p",
+      "description": "Stopping VM and preparing for update",
+      "exe": "InstallerCli.exe",
+      "kind": "exec",
+      "optional": false,
+      "timeoutMs": 60000
+    },
+    {
+      "args": "-l",
+      "description": "List processes locking Docker Desktop resources",
+      "exe": "InstallerCli.exe",
+      "kind": "killLockingProcesses",
+      "optional": false
+    }
+  ],
+  "channel": "main",
+  "channelUrl": "https://desktop-stage.docker.com/win/main/amd64/appcast.xml",
+  "components": [
+    {
+      "description": "Create docker-users group",
+      "groupDescription": "Users of Docker Desktop",
+      "groupName": "docker-users",
+      "kind": "group",
+      "optional": false
+    },
+    {
+      "description": "Add user to docker-users group",
+      "groupName": "docker-users",
+      "kind": "addToGroup",
+      "optional": false
+    },
+    {
+      "backendMode": "wsl-2",
+      "description": "Use WSL 2 instead of Hyper-V (recommended)",
+      "features": [
+        "VirtualMachinePlatform",
+        "Microsoft-Windows-Subsystem-Linux"
+      ],
+      "ignoreMissing": true,
+      "kind": "enableFeatures",
+      "optional": true,
+      "osCondition": "[BuildNumber] >= 19044"
+    },
+    {
+      "backendMode": "hyper-v",
+      "description": "Enable Hyper-V Windows Features",
+      "features": [
+        "*Hyper-V*",
+        "Containers"
+      ],
+      "ignoreMissing": true,
+      "kind": "enableFeatures",
+      "optional": false,
+      "osCondition": "[EditionID] != Home && [EditionID] != HomeEval && [EditionID] != Core && [EditionID] != CoreN && [EditionID] != CoreSingleLanguage && [EditionID] != CoreCountrySpecific && [BuildNumber] >= 19044"
+    },
+    {
+      "dependsOn": "all",
+      "description": "Run backend service",
+      "displayName": "Docker Desktop Service",
+      "exe": "com.docker.service",
+      "kind": "service",
+      "name": "com.docker.service",
+      "optional": false,
+      "runAs": "LocalSystem"
+    },
+    {
+      "appUserModelId": "Docker.DockerForWindows.Settings",
+      "dependsOn": [
+        "Docker Desktop.exe"
+      ],
+      "description": "Add shortcut to start menu",
+      "exe": "Docker Desktop.exe",
+      "kind": "shortcut",
+      "location": "[StartMenu]",
+      "name": "Docker Desktop",
+      "optional": false
+    },
+    {
+      "appUserModelId": "Docker.DockerForWindows.Settings",
+      "dependsOn": [
+        "Docker Desktop.exe"
+      ],
+      "description": "Add shortcut to desktop",
+      "exe": "Docker Desktop.exe",
+      "kind": "shortcut",
+      "location": "[Desktop]",
+      "name": "Docker Desktop",
+      "optional": true
+    },
+    {
+      "dependsOn": [
+        "Docker Desktop.exe"
+      ],
+      "description": "Automatically start on logon",
+      "exe": "Docker Desktop.exe",
+      "kind": "autostart",
+      "optional": false
+    },
+    {
+      "basePathKind": "INSTALLDIR",
+      "description": "Add binaries to path",
+      "dir": "resources/bin",
+      "kind": "path",
+      "optional": false
+    },
+    {
+      "args": "-i",
+      "description": "Install Docker CLI plugins",
+      "exe": "InstallerCli.exe",
+      "kind": "exec",
+      "optional": false,
+      "timeoutMs": -1
+    }
+  ],
+  "humanVersion": "4.27.2",
+  "prerequisites": [
+    {
+      "errorMessage": "We've detected that you have an incompatible version of Windows.\n\nDocker Desktop requires Windows 10 Pro/Enterprise/Home version 19044 or above.\n\nTo continue with the installation, upgrade Windows to a supported version and then re-run the installer.",
+      "expression": "( [EditionID] != Home && [EditionID] != HomeEval && [EditionID] != Core && [EditionID] != CoreN && [EditionID] != CoreSingleLanguage && [EditionID] != CoreCountrySpecific && [BuildNumber] >= 19044 ) || ( [BuildNumber] >= 19044 )",
+      "kind": "osversion"
+    },
+    {
+      "errorMessage": "Docker Desktop requires the Server service to be enabled.",
+      "kind": "service",
+      "name": "LanmanServer"
+    },
+    {
+      "errorMessage": "Docker Desktop requires the Workstation service to be enabled.",
+      "kind": "service",
+      "name": "LanmanWorkstation"
+    }
+  ],
+  "version": "137060"
+}
