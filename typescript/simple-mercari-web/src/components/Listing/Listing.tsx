@@ -64,5 +64,3 @@ export const Listing: React.FC<Prop> = (props) => {
     </div>
   );
 }
-
-#No change
