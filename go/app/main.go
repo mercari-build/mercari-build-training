@@ -2,10 +2,9 @@ package main
 
 import (
 	"crypto/sha256"
-	"encoding/json"
+	"database/sql"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -16,10 +15,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	_ "modernc.org/sqlite"
 )
 
 const (
 	ImgDir = "images"
+	dbPath = "../../sqlite3/mercari.sqlite3"
 )
 
 type Response struct {
@@ -74,7 +75,6 @@ func addItem(c echo.Context) error {
 		return err
 	}
 	imageName := fmt.Sprintf("%x.jpg", h.Sum(nil))
-	fmt.Print(imageName)
 
 	// select directory path for new image file
 	filePath := filepath.Join("images/", imageName)
@@ -91,80 +91,118 @@ func addItem(c echo.Context) error {
 		log.Print("新規画像の保存に失敗", err)
 		return err
 	}
+	// connect to db
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		log.Print("db接続に失敗")
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	defer db.Close()
 
-	// open json file & data
-	jsonFile, err := os.Open("items.json")
+	stmt, err := db.Prepare("INSERT INTO ITEMS (name, category, image_name) VALUES (?,?,?)")
 	if err != nil {
-		log.Print("JSONファイルを開けません", err)
-		return err
+		log.Print("INSERTクエリ失敗")
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-	defer jsonFile.Close()
-
-	jsonData, err := ioutil.ReadAll(jsonFile)
+	_, err = stmt.Exec(name, category, imageName)
 	if err != nil {
-		log.Print("JSONデータを読み込めません", err)
-		return err
-	}
-	// convert json into go format
-	var items Items
-	err = json.Unmarshal(jsonData, &items)
-	if err != nil {
-		log.Print("GOへの変換に失敗", err)
-		return err
-	}
-	// add new item
-	newItem := Item{Name: name, Category: category}
-	items.Items = append(items.Items, newItem)
-
-	// convert go format into json
-	updatedJson, err := json.Marshal(&items)
-	if err != nil {
-		log.Print("JSONデータ変換に失敗", err)
-		return err
-	}
-	// output as json file
-	err = ioutil.WriteFile("items.json", updatedJson, 0644)
-	if err != nil {
-		log.Print("JSONファイル出力に失敗", err)
-		return err
+		log.Print("INSERT失敗")
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	return c.JSON(http.StatusOK, res)
 }
 
 func getItems(c echo.Context) error {
-	jsonFile, err := os.Open("items.json")
+	// connect to db
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
-		log.Print("JSONファイルを開けません", err)
+		log.Print("db接続に失敗")
 		return err
 	}
-	defer jsonFile.Close()
-	itemsData := Items{}
-	err = json.NewDecoder(jsonFile).Decode(&itemsData)
+	defer db.Close()
+	// get data from db
+	rows, err := db.Query("SELECT ITEMS.name, category.name, ITEMS.image_name FROM ITEMS INNER JOIN category on ITEMS.category_id = category.id")
 	if err != nil {
-		log.Print("JSONファイルからの変換に失敗", err)
-		return err
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	return c.JSON(http.StatusOK, itemsData)
+	items := Items{}
+
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.Name, &item.Category, &item.Image)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+		items.Items = append(items.Items, item)
+	}
+	return c.JSON(http.StatusOK, items)
 }
 
 func getItemById(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("id"))
-	file, err := os.Open("items.json")
-	if err != nil {
-		c.Logger().Errorf("Error opening file: %s", err)
-		res := Response{Message: "Error opening file"}
-		return c.JSON(http.StatusInternalServerError, res)
-	}
-	defer file.Close()
 
-	itemsData := Items{}
-	err = json.NewDecoder(file).Decode(&itemsData)
+	// connect to db
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
-		log.Print("JSONファイルからの変換に失敗", err)
+		log.Print("db接続に失敗")
 		return err
 	}
-	return c.JSON(http.StatusOK, itemsData.Items[id-1])
+	defer db.Close()
+	// get data from db
+	rows, err := db.Query("SELECT ITEMS.name, category.name, ITEMS.image_name FROM ITEMS INNER JOIN category on ITEMS.category_id = category.id")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	items := Items{}
+
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.Name, &item.Category, &item.Image)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+		items.Items = append(items.Items, item)
+	}
+
+	// check if id is safe number
+	if id > len(items.Items) || id <= 0 {
+		log.Print("指定されたidが不正な値です")
+		return err
+	}
+	selectedItemById := items.Items[id-1]
+
+	return c.JSON(http.StatusOK, selectedItemById)
+}
+
+func searchItem(c echo.Context) error {
+	keyword := c.QueryParam("keyword")
+
+	// connect to db
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		log.Print("db接続に失敗")
+		return err
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT name, category, image_name FROM ITEMS WHERE name LIKE ?", "%"+keyword+"%")
+	if err != nil {
+		log.Print("クエリ失敗")
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+
+	items := Items{}
+
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.Name, &item.Category, &item.Image)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+		items.Items = append(items.Items, item)
+	}
+	return c.JSON(http.StatusOK, items)
 
 }
 
@@ -206,6 +244,7 @@ func main() {
 	e.GET("/items", getItems)
 	e.GET("/items/:id", getItemById)
 	e.GET("/image/:imageFilename", getImg)
+	e.GET("/search", searchItem)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":9000"))
