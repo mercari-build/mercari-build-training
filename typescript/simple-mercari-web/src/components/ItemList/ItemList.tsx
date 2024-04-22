@@ -4,7 +4,7 @@ interface Item {
   id: number;
   name: string;
   category: string;
-  image_name: string;
+  image_name: string;  // This field might still exist, but will not be used for images now.
 }
 
 const server = process.env.REACT_APP_API_URL || 'http://127.0.0.1:9000';
@@ -19,33 +19,27 @@ export const ItemList: React.FC<Prop> = (props) => {
   const { reload = true, onLoadCompleted } = props;
   const [items, setItems] = useState<Item[]>([]);
   const fetchItems = () => {
-    fetch(server.concat('/items'),
-      {
-        method: 'GET',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log('GET success:', data);
-        setItems(data.items);
-        onLoadCompleted && onLoadCompleted();
-      })
-      .catch((error) => {
-        console.error('GET error:', error);
-      });
+    fetch(`${server}/items`, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('GET success:', data);
+      setItems(data.items);
+      onLoadCompleted && onLoadCompleted();
+    })
+    .catch((error) => {
+      console.error('GET error:', error);
+    });
   };
 
-  const getSrcImg = (image_name: string) => {
-    if (image_name) {
-      return server.concat('/image/', image_name);
-    } 
-    else {
-      return placeholderImage;
-    }
+  const getSrcImg = (itemId: number) => {
+    return `${server}/image/${itemId}.jpg`;
   };
 
   useEffect(() => {
@@ -59,7 +53,7 @@ export const ItemList: React.FC<Prop> = (props) => {
       {items.map((item) => {
         return (
           <div key={item.id} className="Item">
-            <img src={getSrcImg(item.image_name)} alt="item" />
+            <img src={getSrcImg(item.id)} alt={item.name} style={{ width: '100px', height: '100px' }} />
             <p>
               <span>Name: {item.name}</span>
               <br />
