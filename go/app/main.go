@@ -20,7 +20,7 @@ import (
 
 const (
 	ImgDir = "images"
-	dbPath = "../../sqlite3/mercari.sqlite3"
+	dbPath = "../mercari.sqlite3"
 )
 
 type Response struct {
@@ -32,6 +32,7 @@ type Items struct {
 }
 
 type Item struct {
+	Id       string `json:"id"`
 	Name     string `json:"name"`
 	Category string `json:"category"`
 	Image    string `json:"image_name"`
@@ -92,7 +93,7 @@ func addItem(c echo.Context) error {
 		return err
 	}
 	// connect to db
-	db, err := sql.Open("sqlite", dbPath)
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		log.Print("db接続に失敗")
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -104,6 +105,7 @@ func addItem(c echo.Context) error {
 		log.Print("INSERTクエリ失敗")
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
+	defer stmt.Close()
 	_, err = stmt.Exec(name, category, imageName)
 	if err != nil {
 		log.Print("INSERT失敗")
@@ -121,16 +123,16 @@ func getItems(c echo.Context) error {
 	}
 	defer db.Close()
 	// get data from db
-	rows, err := db.Query("SELECT ITEMS.name, category.name, ITEMS.image_name FROM ITEMS INNER JOIN category on ITEMS.category_id = category.id")
+	rows, err := db.Query("SELECT items.id, items.name, category.name, items.image_name FROM ITEMS INNER JOIN category on items.category_id = category.id")
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
-
+	defer rows.Close()
 	items := Items{}
 
 	for rows.Next() {
 		var item Item
-		err := rows.Scan(&item.Name, &item.Category, &item.Image)
+		err := rows.Scan(&item.Id, &item.Name, &item.Category, &item.Image)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
@@ -165,6 +167,7 @@ func getItemById(c echo.Context) error {
 		items.Items = append(items.Items, item)
 	}
 
+	defer rows.Close()
 	// check if id is safe number
 	if id > len(items.Items) || id <= 0 {
 		log.Print("指定されたidが不正な値です")
@@ -186,7 +189,7 @@ func searchItem(c echo.Context) error {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT name, category, image_name FROM ITEMS WHERE name LIKE ?", "%"+keyword+"%")
+	rows, err := db.Query("SELECT items.id, items.name, category.name, items.image_name FROM items INNER JOIN category ON items.category_id = category.id WHERE items.name LIKE ?", "%"+keyword+"%")
 	if err != nil {
 		log.Print("クエリ失敗")
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
@@ -196,14 +199,13 @@ func searchItem(c echo.Context) error {
 
 	for rows.Next() {
 		var item Item
-		err := rows.Scan(&item.Name, &item.Category, &item.Image)
+		err := rows.Scan(&item.Id, &item.Name, &item.Category, &item.Image)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}
 		items.Items = append(items.Items, item)
 	}
 	return c.JSON(http.StatusOK, items)
-
 }
 
 func getImg(c echo.Context) error {
