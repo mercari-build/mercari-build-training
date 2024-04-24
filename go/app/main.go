@@ -93,14 +93,14 @@ func addItem(c echo.Context) error {
 		return err
 	}
 	// connect to db
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		log.Print("db接続に失敗")
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 	defer db.Close()
 
-	stmt, err := db.Prepare("INSERT INTO ITEMS (name, category, image_name) VALUES (?,?,?)")
+	stmt, err := db.Prepare("INSERT INTO items (name, category_id, image_name) VALUES (?,(SELECT id FROM category WHERE name = ?),?)")
 	if err != nil {
 		log.Print("INSERTクエリ失敗")
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
