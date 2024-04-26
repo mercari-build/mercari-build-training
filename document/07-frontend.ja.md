@@ -70,4 +70,4 @@ CSSだけではなく、各コンポーネントでreturnされているHTMLタ�
 
 ### Next
 
-[STEP6: docker-composeでAPIとフロントエンドを動かす](08-docker-compose.ja.md)
+[STEP8: docker-composeでAPIとフロントエンドを動かす](08-docker-compose.ja.md)

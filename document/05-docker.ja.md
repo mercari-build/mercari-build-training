@@ -131,4 +131,4 @@ STEP4-5 までで docker image の中は STEP2-2 と同じ状態になってい�
 
 ### Next
 
-[STEP5: Webのフロントエンドを実装する](07-frontend.ja.md)
+[STEP6: CIを使ってDocker imageをBuildする](06-ci.ja.md)
