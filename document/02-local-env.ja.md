@@ -22,7 +22,8 @@ $ python3 -V
 
 **:book: Reference**
 
-* [PATHを通すとは？- 初心者でも分かる解説](https://hara-chan.com/it/programming/environment-variable-path/)
+* [「PATHが通っている」とはどういう状態か?](https://zenn.dev/d0ne1s/articles/1f435463551ac2)
+* Windowsの方向け [【環境構築 入門】PATHの通し方 – Windows11, M1 Mac 対応 –](https://www.kikagaku.co.jp/kikagaku-blog/path/)
 
 ### 3. 依存ライブラリをインストールする
 
