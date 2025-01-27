@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -13,43 +13,60 @@ import (
 )
 
 const (
-	ImgDir = "images"
+	imgDir = "images"
+	port   = "9000"
 )
 
 type Response struct {
 	Message string `json:"message"`
 }
 
-func root(c echo.Context) error {
-	res := Response{Message: "Hello, world!"}
+// hello is an endpoint to return a Hello, world! message.
+func hello(c echo.Context) error {
+	res := Response{
+		Message: "Hello, world!",
+	}
 	return c.JSON(http.StatusOK, res)
 }
 
+// addItem is an endpoint to add a new item.
 func addItem(c echo.Context) error {
 	// Get form data
 	name := c.FormValue("name")
 	c.Logger().Infof("Receive item: %s", name)
 
 	message := fmt.Sprintf("item received: %s", name)
-	res := Response{Message: message}
+	res := Response{
+		Message: message,
+	}
 
-	// http.StatusCreated(201) is also good choice.StatusOK
-  // but in that case, you need to implement and return a URL
-  //   that returns information on the posted item.
+	// http.StatusCreated(201) is also acceptable.
 	return c.JSON(http.StatusOK, res)
 }
 
-func getImg(c echo.Context) error {
-	// Create image path
-	imgPath := path.Join(ImgDir, c.Param("imageFilename"))
+// getImage is an endpoint to return an image.
+func getImage(c echo.Context) error {
+	// Build image path
+	imgPath := filepath.Join(imgDir, filepath.Clean(c.Param("imageFilename")))
+	rel, err := filepath.Rel(imgDir, imgPath)
+	if err != nil || strings.HasPrefix(rel, "..") {
+		res := Response{
+			Message: "Invalid image path",
+		}
+		return c.JSON(http.StatusBadRequest, res)
+	}
+
+	c.Logger().Info("Image path: ", imgPath)
 
 	if !strings.HasSuffix(imgPath, ".jpg") {
-		res := Response{Message: "Image path does not end with .jpg"}
+		res := Response{
+			Message: "Image path does not end with .jpg",
+		}
 		return c.JSON(http.StatusBadRequest, res)
 	}
 	if _, err := os.Stat(imgPath); err != nil {
 		c.Logger().Debugf("Image not found: %s", imgPath)
-		imgPath = path.Join(ImgDir, "default.jpg")
+		imgPath = filepath.Join(imgDir, "default.jpg")
 	}
 	return c.File(imgPath)
 }
@@ -68,15 +85,14 @@ func main() {
 	}
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{frontURL},
-		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete},
+		AllowMethods: []string{http.MethodGet, http.MethodPost},
 	}))
 
 	// Routes
-	e.GET("/", root)
+	e.GET("/", hello)
 	e.POST("/items", addItem)
-	e.GET("/image/:imageFilename", getImg)
-
+	e.GET("/image/:imageFilename", getImage)
 
 	// Start server
-	e.Logger.Fatal(e.Start(":9000"))
+	e.Logger.Fatal(e.Start(":" + port))
 }

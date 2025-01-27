@@ -1,6 +1,6 @@
 # STEP3: 出品APIを作る
 
-## 1. APIをたたいてみる
+## 1. APIを呼び出す
 
 **:book: Reference**
 
@@ -13,60 +13,64 @@
 * (EN) [HTTP response status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
 * (EN) [HTTP request methods](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods)
 
-## curlをインストール
-### 1. curlをインストールする
-もしcurlがインストールされていなければ、curlコマンドを使用するとcommand not foundエラーが返ってきます。
-その場合、curlをインストールする必要があります。
-このcurlのインストール方法は、macOS、Linux、Windows Subsystem for Linux (WSL)で使用できます。
-```shell
-$ brew install curl
-```
-### 2. curlのバージョンをチェックする
-```shell
-$ curl　--version
-```
+本節のゴールは、ツールを用いてAPIを呼び出すことです。
 
-### GETリクエスト
+### API呼び出しに利用できるツールについて
+APIの呼び出しはブラウザからも可能ですが、自由にリクエストを送るためにはコマンドラインツールを使うのが便利です。ツールとしては、GUIの[Insomnia](https://insomnia.rest/)や[Postman](https://www.postman.com/)、CUIの[HTTPie](https://github.com/httpie/cli)やcURLなどが存在しています。今回は、よく利用されるcURLを利用してみましょう。
 
-サービスをローカルで立ち上げると、ブラウザで `http://127.0.0.1:9000` からサービスにアクセスすることができるようになりました。
-次に、curlというコマンドを使ってアクセスをしてみます。 新しいターミナルを開き、次のコマンドを入力してください。curlがインストールされていない場合、インストールしてください。
+### cURLのインストール
+cURLが利用されているかは、以下のコマンドで確認できます。
 
 ```shell
-curl -X GET 'http://127.0.0.1:9000'
+$ curl --version
 ```
 
-ブラウザと同じように`{"message": "Hello, world!"}` がコンソール上で返ってくることを確認します。
+このコマンドを実行後にバージョンが表示されればcURLはインストールされているので、本節はスキップしてください。仮にインストールされていない場合は、各自調べてインストールしてください。
 
-### POSTリクエスト
+### GETリクエストの送信
 
-サンプルコードには `/items` というエンドポイントが用意されています。 こちらのエンドポイントをcurlで叩いてみます。
+cURLを用いて、前節で立ち上げたAPIサーバに対してGETリクエストを送ってみましょう。
+
+cURLでリクエストを送る前に、HTTPブラウザで `http://127.0.0.1:9000` にアクセスしたときに、 `{"message": "Hello, world!"}` が表示されることを確認してください。仮に表示されない場合は、前章の4節: アプリにアクセスする、を参照してください。
+
+さて、実際にcURLコマンドを用いてリクエストを送ってみましょう。ここではGETリクエストとPOSTリクエストを送信します。
+
+新しいターミナルを開き、以下のコマンドを実行してください。
+
+```shell
+$ curl -X GET 'http://127.0.0.1:9000'
+```
+
+ブラウザと同じように`{"message": "Hello, world!"}` がコンソール上で返ってくることを確認してください。
+
+### POSTリクエストの送信と修正
+
+次に、POSTリクエストを送ってみましょう。サンプルコードには `/items` というエンドポイントが用意されているので、こちらのエンドポイントに対してcURLでリクエストを送ります。以下のコマンドを実行してください。
 
 ```shell
 $ curl -X POST 'http://127.0.0.1:9000/items'
 ```
 
 このエンドポイントは、コールに成功すると`{"message": "item received: <name>"}`
-というレスポンスが返ってくることが期待されていますが、違ったレスポンスが返ってきてしまいます。
+というレスポンスが返ってくることが期待されています。しかし、ここでは異なるレスポンスが返ってくるはずです。
 
 コマンドを以下のように修正することで、`{"message": "item received: jacket"}`が返ってきますが、なぜそのような結果になるのか調べてみましょう。
 
 ```shell
-$ curl -X POST \
+$ curl \
+  -X POST \
   --url 'http://localhost:9000/items' \
-  -d name=jacket
+  -d 'name=jacket'
 ```
 
 **:beginner: Point**
 
-* POSTとGETのリクエストの違いについて調べてみましょう
-* ブラウザで `http://127.0.0.1:9000/items` にアクセスしても `{"message": "item received: <name>"}`
-  が返ってこないのはなぜでしょうか？
+* GETとPOSTのリクエストの違いについて調べてみましょう
+* ブラウザで `http://127.0.0.1:9000/items` にアクセスしても `{"message": "item received: <name>"}` が返ってこないのはなぜでしょうか？
   * アクセスしたときに返ってくる**HTTPステータスコード**はいくつですか？
   * それはどんな意味をもつステータスコードですか？
 
 ## 2. 新しい商品を登録する
-
-商品を登録するエンドポイントを作成します。
 
 **:book: Reference**
 
@@ -75,27 +79,40 @@ $ curl -X POST \
 * (EN) [RESTful web API design](https://docs.microsoft.com/en-us/azure/architecture/best-practices/api-design)
 * (EN) [HTTP response status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
 
+本節のゴールは、 `POST /items` のエンドポイントの拡張と `items` に関連するデータの永続化です。
 
-準備されている`POST /items`のエンドポイントはnameという情報を受け取れます。 ここにcategoryの情報も受け取れるように変更を加えます。
+前提として、準備されている`POST /items`のエンドポイントは `name` という情報を受け取ることが出来ます。 ここで、`category` という情報も受け取れるように変更を加えましょう。
 
-* name: 商品の名前 (string)
-* category: 商品のカテゴリ(string)
+* `name`: 商品の名前 (string型)
+* `category`: 商品のカテゴリ(string型)
 
-このままではデータの保存ができないので、jsonファイルに保存するようにしましょう。
-`items.json` というファイルを作り、そこの`items`というキーに新しく登録された商品を追加するようにしましょう。
+このままではデータの保存ができないので、JSONファイルに保存するようにしましょう。
+`items.json` というファイルを作り、ファイル内で保持されるJSONでは`items`というキーに新しく登録された商品を追加するようにしましょう。
 
-商品を追加すると、items.jsonの中身は以下のようになることを期待しています。
+商品を追加すると、`items.json` の中身は以下のようになることを期待しています。
+
 ```json
-{"items": [{"name": "jacket", "category": "fashion"}, ...]}
+{
+  "items": [
+    {
+      "name": "jacket",
+      "category": "fashion"
+    },
+    ... (ここから別のアイテムが続く)
+  ]
+}
 ```
 
 ## 3. 商品一覧を取得する
 
-GETで`/items`にアクセスしたときに、登録された商品一覧を取得できるようにエンドポイントを実装しましょう。 以下のようなレスポンスを期待しています。
+本節のゴールは、登録された商品一覧を取得するための `GET /items` エンドポイントを実装することです。
+
+GETで`/items`にアクセスしたときに、以下のようなレスポンスを期待しています。
 
 ```shell
 # 商品の登録
-$ curl -X POST \
+$ curl \
+  -X POST \
   --url 'http://localhost:9000/items' \
   -d 'name=jacket' \
   -d 'category=fashion'
@@ -110,15 +127,16 @@ $ curl -X GET 'http://127.0.0.1:9000/items'
 
 ## 4. 画像を登録する
 
-商品情報に画像(image)を登録できるように、`GET /items`と`POST /items`のエンドポイントを変更します。
+本節のゴールは、商品画像に画像(image)を登録できるようにすることです。そのために、`GET /items`と`POST /items`のエンドポイントを変更しましょう。
 
-* 画像は `images` というフォルダを作成し保存します
-* ポストされた画像のファイルを sha256 で hash化し、`<hash>.jpg`という名前で保存します
+* `images` というディレクトリを作成し、画像はそのディレクトリ以下に保存してください
+* 送信された画像のファイルを SHA-256 でハッシュ化し、`<hashed-value>.jpg`という名前で保存します
 * itemsに画像のファイル名をstringで保存できるように変更を加えます
 
 ```shell
 # ローカルから.jpgをポストする
-curl -X POST \
+$ curl \
+  -X POST \
   --url 'http://localhost:9000/items' \
   -F 'name=jacket' \
   -F 'category=fashion' \
@@ -133,12 +151,13 @@ curl -X POST \
 
 **:beginner: Point**
 
-* Hash化とはなにか？
-* sha256以外にどんなハッシュ関数があるか調べてみましょう
+* ハッシュ化とはなにか？
+* SHA-256 以外にどんなハッシュ関数があるか調べてみましょう
 
 ## 5. 商品の詳細を返す
 
-商品の詳細情報を取得する  `GET /items/<item_id>` というエンドポイントを作成します。
+本節のゴールは、1商品の詳細情報を取得できるエンドポイントを作成することです。
+そのために、 `GET /items/<item_id>` というエンドポイントを作成します。
 
 ```shell
 $ curl -X GET 'http://127.0.0.1:9000/items/1'
