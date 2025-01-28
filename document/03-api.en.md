@@ -13,46 +13,51 @@
 * (EN) [HTTP response status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
 * (EN) [HTTP request methods](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods)
 
-##  Install curl
-Check if you can see command not found　error on your console.
-You need to install curl.
-This how to install curl be used on macOS and Linux and Windows Subsystem for Linux (WSL). 
-### 1. How to install curl
-```shell
-$ brew install curl
-```
-### 2. Check the curl version
-```shell
-$ curl　--version
-```
+The goal of this section is to call the API with a tool.
 
-### GET request
+### Tools to Call the API
+You can call APIs from a browser, but using a tool is more convenient if you want to freely send requests. There're various tools such as GUI: [Insomnia](https://insomnia.rest/) / [Postman](https://www.postman.com/) and CUI: [HTTPie](https://github.com/httpie/cli) / cURL. In this tutorial, we'll use cURL, which is often used by engineers.
 
-In step2, you ran a service on your local server where you accessed the endpoint from `http://127.0.0.1:9000` using your browser.
-Use the following `curl` command to access this endpoint. Please open a new terminal and enter the following command. Install `curl` if necessary.
+### Installing cURL
+You can check whether cURL is installed with the following command:
 
 ```shell
-curl -X GET 'http://127.0.0.1:9000'
+$ curl --version
 ```
 
-Check if you can see `{"message": "Hello, world!"}` on your console.
+If the version number is shown after executing the command above, cURL is installed. However, if not, please install the command.
 
-### POST request.
+### Sending a GET Request
 
-In the example implementation, you can see `/items` endpoint. Use `curl` to call this endpoints.
+Let's send a GET reaquest with cURL to the API server we launched in the previous section. 
+
+Before sending the request with cURL, check that you can access `http://127.0.0.1:9000` in a browser and see `{"message": "Hello, world!"}` displayed. If not, refer to the section 4 of the previous chapter: Run Python/Go app([Python](./02-local-env.en.md#4-run-the-python-app), [Go](./02-local-env.en.md#4-run-the-go-app)).
+
+Now, it's time to send the request with cURL. Open a new terminal and run the following command: 
+
+```shell
+$ curl -X GET 'http://127.0.0.1:9000'
+```
+
+You should see `{"message": "Hello, world!"}` shown in the terminal as same as in the browser.
+
+### Sending a POST Request and Modify the Code
+
+
+Next, let's send a POST request. The sample code provides an endpoint `/items`, so let's send a request to this endpoint with cURL. Run the following command:
 
 ```shell
 $ curl -X POST 'http://127.0.0.1:9000/items'
 ```
 
-This endpoint expects to return `{"message": "item received: <name>"}`, but you should be seeing something different.
+This endpoint expects to return `{"message": "item received: <name>"}` as an successfull response. However, you should receive a differnt response here.
 
-Modify the command as follows and see that you receive `{"message": "item received: jacket"}`. Investigate what causes the differences.
+Modify the command as follows and see that you receive `{"message": "item received: jacket"}`. Investigate why that happens and the differences.
 
 ```shell
 $ curl -X POST \
   --url 'http://localhost:9000/items' \
-  -d name=jacket
+  -d 'name=jacket'
 ```
 
 **:beginner: Points**
@@ -64,8 +69,6 @@ $ curl -X POST \
 
 ## 2. List a new item
 
-Make an endpoint to add a new item
-
 **:book: Reference**
 
 * (JA)[RESTful Web API の設計](https://docs.microsoft.com/ja-jp/azure/architecture/best-practices/api-design)
@@ -73,22 +76,33 @@ Make an endpoint to add a new item
 * (EN) [RESTful web API design](https://docs.microsoft.com/en-us/azure/architecture/best-practices/api-design)
 * (EN) [HTTP response status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
 
-The endpoint already implemented (`POST /items`) takes `name` as an argument. Modify the API such that it also accepts `category` information.
+The goal of this section is to extend the `POST /items` endpoint and persist data related to `items`.
 
-* name: Name of the item (string)
-* category: Category of the item (string)
+The current `POST /items` endpoint can accept the `name` parameter. Let's modify it so it can also accept a `category` parameter.
 
-Since the information cannot be retained with the current implementation, save this into a `JSON` file.
-Make a file called `items.json` and add new items under `items` key.
+* `name`: Name of the item (string)
+* `category`: Category of the item (string)
 
-`items.json` is expected to look like the following.
+Since the current implementaion doesn't persist data, let's modify the code to save data in a JSON file. Let's create a file named `items.json`, and register new items under `items` key.
+
+When a new item is added, the content should be saved in the `items.json` as follows:
 ```json
-{"items": [{"name": "jacket", "category": "fashion"}, ...]}
+{
+  "items": [
+    {
+      "name": "jacket",
+      "category": "fashion"
+    },
+    ... (other items will follow here)
+  ]
+}
 ```
 
-## 3. Get a list of items
+## 3. Get the List of Items
 
-Implement a GET endpoint `/items` that returns the list of all items. The response should look like the following.
+The goal of this section is to implement the `GET /items` endpoint to get the list of registered items. 
+
+After implementing the endpoint, the response should be as follows:
 
 ```shell
 # Add a new item
@@ -104,13 +118,15 @@ $ curl -X GET 'http://127.0.0.1:9000/items'
 {"items": [{"name": "jacket", "category": "fashion"}, ...]}
 ```
 
-## 4. Add an image to an item
+## 4. Add Item Images
 
-Change the endpoints `GET /items` and `POST /items` such that items can have images while listing.
+The goal of this section is to allow users to upload an image for an item. 
 
-* Make a directory called `images`
-* Hash the image using sha256, and save it with the name `<hash>.jpg`
-* Modify items such that the image file can be saved as a string
+Modify both `GET /items` and `POST /items` endpoints for that.
+
+* Make a directory named `images`
+* Hash the image using SHA-256, and save it with the name `<hashed-value>.jpg`
+* Modify `items` such that the image file can be saved as a string
 
 ```shell
 # POST the jpg file
@@ -129,10 +145,12 @@ curl -X POST \
 **:beginner: Point**
 
 * What is hashing?
-* What other hashing functions are out there except for sha256?
+* What other hashing functions are out there except for SHA-256?
 
 
-## 5. Return item details
+## 5. Return Item Details
+
+The goal of this section is to create an endpoint which returns the detailed information of a single product.
 
 Make an endpoint `GET /items/<item_id>` to return item details.
 
