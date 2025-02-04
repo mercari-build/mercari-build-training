@@ -8,7 +8,7 @@ function App() {
   const [reload, setReload] = useState(true);
   return (
     <div>
-      <header className='Title'>
+      <header className="Title">
         <p>
           <b>Simple Mercari</b>
         </p>
@@ -20,7 +20,7 @@ function App() {
         <ItemList reload={reload} onLoadCompleted={() => setReload(false)} />
       </div>
     </div>
-  )
+  );
 }
 
 export default App;
