@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Item, fetchItems } from '../api';
 
-const placeholderImage = import.meta.env.VITE_FRONTEND_URL + '/logo192.png';
+const PLACEHOLDER_IMAGE = import.meta.env.VITE_FRONTEND_URL + '/logo192.png';
 
 interface Prop {
   reload?: boolean;
@@ -37,7 +37,7 @@ export const ItemList: React.FC<Prop> = (props) => {
         return (
           <div key={item.id} className="ItemList">
             {/* TODO: Task 1: Replace the placeholder image with the item image */}
-            <img src={placeholderImage} />
+            <img src={PLACEHOLDER_IMAGE} />
             <p>
               <span>Name: {item.name}</span>
               <br />
