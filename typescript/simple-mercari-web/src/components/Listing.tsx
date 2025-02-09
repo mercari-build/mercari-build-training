@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { postItem } from '../api';
 
 interface Prop {
-  onListingCompleted?: () => void;
+  onListingCompleted: () => void;
 }
 
-type formDataType = {
+type FormDataType = {
   name: string;
   category: string;
   image: string | File;
@@ -18,7 +18,7 @@ export const Listing: React.FC<Prop> = (props) => {
     category: '',
     image: '',
   };
-  const [values, setValues] = useState<formDataType>(initialState);
+  const [values, setValues] = useState<FormDataType>(initialState);
 
   const onValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setValues({
@@ -39,14 +39,13 @@ export const Listing: React.FC<Prop> = (props) => {
       category: values.category,
       image: values.image,
     })
-      .then((response) => {
-        console.log('POST status:', response.statusText);
-        if (onListingCompleted) {
-          onListingCompleted();
-        }
-      })
       .catch((error) => {
         console.error('POST error:', error);
+        alert('Failed to list this item');
+      })
+      .finally(() => {
+        onListingCompleted();
+        setValues(initialState);
       });
   };
   return (
