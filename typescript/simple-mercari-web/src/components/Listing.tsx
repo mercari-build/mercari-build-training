@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { postItem } from '../api';
+import { postItem } from '~/api';
 
 interface Prop {
   onListingCompleted: () => void;

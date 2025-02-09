@@ -29,7 +29,7 @@ export interface CreateItemInput {
   image: string | File;
 }
 
-export const postItem = async (input: CreateItemInput) => {
+export const postItem = async (input: CreateItemInput): Promise<Response> => {
   const data = new FormData();
   data.append('name', input.name);
   data.append('category', input.category);

@@ -10,4 +10,7 @@ export default defineConfig({
       port: 3000, // host machine port mapping
     },
   },
+  resolve: {
+    alias: [{ find: '~', replacement: '/src' }],
+  },
 });
