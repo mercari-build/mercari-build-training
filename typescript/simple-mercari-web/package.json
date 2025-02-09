@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "start": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -27,8 +27,5 @@
     "typescript-eslint": "^8.22.0",
     "vite": "^6.0.11",
     "prettier": "^3.4.2"
-  },
-  "volta": {
-    "node": "22.13.1"
   }
 }
