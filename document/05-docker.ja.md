@@ -78,9 +78,9 @@ docker はホスト上に存在しないイメージを使う際には、自動�
 ## 4. Docker Image を Build する
 **pythonで開発をしている人は`python/`, Goの人は`go/`以下にある`Dockerfile`をbuildしてみましょう。**
 
-* 名前（リポジトリ名）は `build2024/app`, タグは`latest` とします。
+* 名前（リポジトリ名）は `build2025/app`, タグは`latest` とします。
 
-イメージ一覧の中に `build2024/app` という image があれば成功です。
+イメージ一覧の中に `build2025/app` という image があれば成功です。
 
 
 **:book: Reference**
@@ -112,7 +112,7 @@ STEP4-5 までで docker image の中は STEP2-2 と同じ状態になってい�
 
 **`Dockerfile`を変更し、必要なファイルをコピーしたり依存ライブラリをインストールしたりして, docker image 上で 出品 API が動くようにしましょう。**
 
-`$ docker run -d -p 9000:9000 build2024/app:latest`
+`$ docker run -d -p 9000:9000 build2025/app:latest`
 
 を実行しSTEP3と同様にしてAPIを叩ければ成功です。
 
