@@ -117,7 +117,7 @@ This material aims to provide a basic understanding of React, so it does not use
 - [Next.js (App Router)](https://nextjs.org/docs)
 - [React Router (v7)](https://reactrouter.com/start/framework/installation)
 
-:warning: As a point of caution, it has been [officially announced](https://react.dev/blog/2025/02/14/sunsetting-create-react-app) that `create-react-app`, which is introduced in many React materials, will be deprecated on February 14, 2025.
+:warning: **As a point of caution, it has been [officially announced](https://react.dev/blog/2025/02/14/sunsetting-create-react-app) that [`create-react-app`](https://github.com/facebook/create-react-app), which is introduced in many React materials, will be deprecated on February 14, 2025.**
 
 In the future, when you are responsible for developing services intended for long-term use by users, consider using these frameworks. When creating a new service, it is important to understand the characteristics of each framework and the requirements of the service you want to create, and select the appropriate framework.
 
