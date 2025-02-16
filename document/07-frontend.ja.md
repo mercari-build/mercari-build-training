@@ -119,7 +119,7 @@ export const ItemList: React.FC<Prop> = (props) => {
 - [Next.js (App Router)](https://nextjs.org/docs)
 - [React Router (v7)](https://reactrouter.com/start/framework/installation)
 
-:warning: **注意点として、多くの React の教材等で紹介されている[`create-react-app`](https://github.com/facebook/create-react-app)は、2025 年 2 月 14 日に非推奨となることが[正式にアナウンス](https://react.dev/blog/2025/02/14/sunsetting-create-react-app)されました。**
+:warning: 注意点として、**多くの React の教材等で紹介されている[`create-react-app`](https://github.com/facebook/create-react-app)は非推奨となる**ことが、2025 年 2 月 14 日に[正式にアナウンス](https://react.dev/blog/2025/02/14/sunsetting-create-react-app)されました。新規プロジェクトでは`create-react-app`は使用せず、別の方法を検討することを強くお勧めします。
 
 今後、実際に長期的にユーザーに使ってもらうことを想定したサービスの開発を担当する際は、これらのフレームワークの利用を検討しましょう。新しいサービスを作る際は、各フレームワークの特徴と作りたいサービスの要件を理解した上で、適切なフレームワークを選定することが重要です。
 
