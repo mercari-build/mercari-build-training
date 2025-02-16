@@ -15,7 +15,7 @@ export const ItemList: React.FC<Prop> = (props) => {
     const fetchData = () => {
       fetchItems()
         .then((data) => {
-          console.log('GET success:', data);
+          console.debug('GET success:', data);
           setItems(data.items);
           onLoadCompleted();
         })
