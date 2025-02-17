@@ -82,7 +82,7 @@ Debugging is the process of checking the operation of a program, identifying pro
 By inserting `console.debug()` at the points in the code where you want to check the operation, you can verify the values and states at runtime. For example, in `ItemList.tsx`:
 
 ```typescript
-export const ItemList: = (props: Prop) => {
+export const ItemList = (props: Prop) => {
   ...
   useEffect(() => {
     const fetchData = () => {
