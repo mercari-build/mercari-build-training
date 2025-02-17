@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "format": "prettier --write src/**/*.{ts,tsx,css}"
+    "format": "prettier --write src/**/*.{ts,tsx,css} ./index.html"
   },
   "dependencies": {
     "react": "^19.0.0",
