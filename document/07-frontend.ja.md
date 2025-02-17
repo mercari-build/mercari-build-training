@@ -82,7 +82,7 @@ CSS だけではなく、各コンポーネントで return されている HTML
 Web フロントエンドでは、コードの動作を確認したい箇所に`console.debug()`を仕込むことで、実行時の値や状態を確認することができます。例えば`ItemList.tsx`の場合：
 
 ```typescript
-export const ItemList: Prop = (props: Prop) => {
+export const ItemList = (props: Prop) => {
   ...
   useEffect(() => {
     const fetchData = () => {
