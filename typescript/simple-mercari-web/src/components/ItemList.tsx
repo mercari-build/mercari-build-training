@@ -8,8 +8,7 @@ interface Prop {
   onLoadCompleted: () => void;
 }
 
-export const ItemList = (props: Prop) => {
-  const { reload, onLoadCompleted } = props;
+export const ItemList = ({ reload, onLoadCompleted }: Prop) => {
   const [items, setItems] = useState<Item[]>([]);
   useEffect(() => {
     const fetchData = () => {

@@ -11,8 +11,7 @@ type FormDataType = {
   image: string | File;
 };
 
-export const Listing = (props: Prop) => {
-  const { onListingCompleted } = props;
+export const Listing = ({ onListingCompleted }: Prop) => {
   const initialState = {
     name: '',
     category: '',
