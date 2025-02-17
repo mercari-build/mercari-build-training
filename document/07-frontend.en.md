@@ -2,7 +2,7 @@
 
 ## 1. Build local environment
 
-Install Node v20 from below.
+Install Node v22 from below.
 (v22.13.1 LTS is recommended as of Feb 2025)
 
 https://nodejs.org/en/
