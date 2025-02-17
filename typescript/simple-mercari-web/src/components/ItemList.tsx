@@ -8,7 +8,7 @@ interface Prop {
   onLoadCompleted: () => void;
 }
 
-export const ItemList: React.FC<Prop> = (props) => {
+export const ItemList = (props: Prop) => {
   const { reload, onLoadCompleted } = props;
   const [items, setItems] = useState<Item[]>([]);
   useEffect(() => {

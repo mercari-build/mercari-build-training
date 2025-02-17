@@ -11,7 +11,7 @@ type FormDataType = {
   image: string | File;
 };
 
-export const Listing: React.FC<Prop> = (props) => {
+export const Listing = (props: Prop) => {
   const { onListingCompleted } = props;
   const initialState = {
     name: '',

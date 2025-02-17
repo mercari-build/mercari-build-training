@@ -2,12 +2,10 @@
 
 ## 1. 環境構築
 
-以下から v20 の Node をインストールしてください。
+以下から v22 の Node をインストールしてください。
 （2025 年 2 月現在 v22.13.1 LTS を推奨）
 
 https://nodejs.org/en/
-
-複数のバージョンをインストールしたい場合は[nvs](https://github.com/jasongin/nvs)を推奨します。
 
 `node -v` を実行して `v22.0.0` 以上のバージョンが表示されれば正しくインストールできています。
 
@@ -24,7 +22,7 @@ npm ci
 npm start
 ```
 
-Step3のサーバー(Python/Go)もローカルで立ち上げておきましょう。
+Step3 のサーバー(Python/Go)もローカルで立ち上げておきましょう。
 このシンプルな画面では、以下の二つのことができるようになっています。
 
 - 新しい商品の登録 (Listing)
@@ -63,7 +61,7 @@ CSS だけではなく、各コンポーネントで return されている HTML
 
 ## (Optional) 課題 4. アイテム一覧の UI を変更する
 
-現在の`ItemList`では、それぞれのアイテムが上から一つずつ表示されています。以下のレファレンスを参考に、グリッドを使ってアイテムを表示してみましょう。
+現在の`ItemList`では、それぞれのアイテムが上から一つずつ表示されています。以下のドキュメントを参考に、グリッドを使ってアイテムを表示してみましょう。
 
 **:book: References**
 
@@ -84,7 +82,7 @@ CSS だけではなく、各コンポーネントで return されている HTML
 Web フロントエンドでは、コードの動作を確認したい箇所に`console.debug()`を仕込むことで、実行時の値や状態を確認することができます。例えば`ItemList.tsx`の場合：
 
 ```typescript
-export const ItemList: React.FC<Prop> = (props) => {
+export const ItemList: Prop = (props: Prop) => {
   ...
   useEffect(() => {
     const fetchData = () => {
