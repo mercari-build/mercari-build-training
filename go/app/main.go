@@ -91,7 +91,7 @@ func main() {
 	// Routes
 	e.GET("/", hello)
 	e.POST("/items", addItem)
-	e.GET("/image/:imageFilename", getImage)
+	e.GET("/images/:imageFilename", getImage)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":" + port))

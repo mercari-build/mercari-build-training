@@ -1,4 +1,4 @@
-# STEP7: Implement a simple Mercari webapp as frontend
+# STEP8: Implement a simple Mercari webapp as frontend
 
 
 ## 1. Build local environment
@@ -74,4 +74,4 @@ Current `ItemList` shows one column of items sequentially. Use the following ref
 
 ### Next
 
-[STEP8: Run frontend and API using docker-compose](08-docker-compose.en.md)
+[STEP9: Run frontend and API using docker-compose](09-docker-compose.en.md)
