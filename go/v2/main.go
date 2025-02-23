@@ -30,6 +30,8 @@ type HelloResponse struct {
 	Message string `json:"message"`
 }
 
+// Hello is an endpoint to return a Hello, world! message.
+// GET /hello
 func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 	resp := HelloResponse{Message: "Hello, world!"}
 	err := json.NewEncoder(w).Encode(resp)
@@ -66,37 +68,8 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	return req, nil
 }
 
-type Item struct {
-	Name     string `db:"name"`
-	Category string `db:"category"`
-}
-
-//go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE}_mock -destination=./mock/$GOFILE
-type ItemRepository interface {
-	Insert(ctx context.Context, item *Item) error
-}
-
-type itemRepository struct {
-	db *sql.DB
-}
-
-func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	const sql = "INSERT INTO items (name, category) VALUES (?, ?)"
-
-	stmt, err := i.db.PrepareContext(ctx, sql)
-	if err != nil {
-		return fmt.Errorf("failed to prepare statement: %w", err)
-	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(item.Name, item.Category)
-	if err != nil {
-		return fmt.Errorf("failed to execute statement: %w", err)
-	}
-
-	return nil
-}
-
+// AddItem is an endpoint to add a new item.
+// POST /items
 func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -143,6 +116,8 @@ func parseGetImageRequest(r *http.Request) (*GetImageRequest, error) {
 	return req, nil
 }
 
+// GetImage is an endpoint to return an image.
+// GET /images/{filename}
 func (s *Handlers) GetImage(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -188,6 +163,39 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 	return imgPath, nil
 }
 
+type Item struct {
+	Name     string `db:"name"`
+	Category string `db:"category"`
+}
+
+// //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE}_mock -destination=./mock/$GOFILE
+//
+//go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
+type ItemRepository interface {
+	Insert(ctx context.Context, item *Item) error
+}
+
+type itemRepository struct {
+	db *sql.DB
+}
+
+func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
+	const sql = "INSERT INTO items (name, category) VALUES (?, ?)"
+
+	stmt, err := i.db.PrepareContext(ctx, sql)
+	if err != nil {
+		return fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(item.Name, item.Category)
+	if err != nil {
+		return fmt.Errorf("failed to execute statement: %w", err)
+	}
+
+	return nil
+}
+
 func simpleCORSMiddleware(next http.Handler, origin string, methods []string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", origin)
@@ -218,11 +226,12 @@ func main() {
 
 	dbPath, found := os.LookupEnv("DB_PATH")
 	if !found {
-		_, err := os.Create("mercari.sqlite3")
+		f, err := os.Create("mercari.sqlite3")
 		if err != nil {
 			slog.Error("failed to create db file: ", "error", err)
 			os.Exit(1)
 		}
+		defer f.Close()
 		dbPath = "mercari.sqlite3"
 	}
 	// confirm existence
@@ -239,6 +248,7 @@ func main() {
 	}
 	defer db.Close()
 
+	// TODO: replace it with real SQL file.
 	cmd := `CREATE TABLE IF NOT EXISTS items (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
     	name VARCHAR(255),
