@@ -71,7 +71,9 @@ type Item struct {
 	Category string `db:"category"`
 }
 
-//go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE}_mock -destination=./mock/$GOFILE
+// //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE}_mock -destination=./mock/$GOFILE
+//
+//go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 }
@@ -218,11 +220,12 @@ func main() {
 
 	dbPath, found := os.LookupEnv("DB_PATH")
 	if !found {
-		_, err := os.Create("mercari.sqlite3")
+		f, err := os.Create("mercari.sqlite3")
 		if err != nil {
 			slog.Error("failed to create db file: ", "error", err)
 			os.Exit(1)
 		}
+		defer f.Close()
 		dbPath = "mercari.sqlite3"
 	}
 	// confirm existence
@@ -239,6 +242,7 @@ func main() {
 	}
 	defer db.Close()
 
+	// TODO: replace it with real SQL file.
 	cmd := `CREATE TABLE IF NOT EXISTS items (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
     	name VARCHAR(255),
