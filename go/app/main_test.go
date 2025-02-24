@@ -2,8 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -22,27 +20,27 @@ func TestParseAddItemRequest(t *testing.T) {
 		req *AddItemRequest
 		err bool
 	}
+
+	// STEP6-1: define test cases
 	cases := map[string]struct {
 		args map[string]string
 		wants
 	}{
 		"ok: valid request": {
 			args: map[string]string{
-				"name":     "used iPhone 16e",
-				"category": "phone",
+				"name":     "", // fill here
+				"category": "", // fill here
 			},
 			wants: wants{
 				req: &AddItemRequest{
-					Name:     "used iPhone 16e",
-					Category: "phone",
+					Name:     "", // fill here
+					Category: "", // fill here
 				},
 				err: false,
 			},
 		},
 		"ng: empty request": {
-			args: map[string]string{
-				// Category: "",
-			},
+			args: map[string]string{},
 			wants: wants{
 				req: nil,
 				err: true,
@@ -54,25 +52,29 @@ func TestParseAddItemRequest(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
+			// prepare request body
 			values := url.Values{}
 			for k, v := range tt.args {
 				values.Set(k, v)
 			}
 
+			// prepare HTTP request
 			req, err := http.NewRequest("POST", "http://localhost:9000/items", strings.NewReader(values.Encode()))
 			if err != nil {
 				t.Fatalf("failed to create request: %v", err)
 			}
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
+			// execute test target
 			got, err := parseAddItemRequest(req)
+
+			// confirm the result
 			if err != nil {
 				if !tt.err {
 					t.Errorf("unexpected error: %v", err)
 				}
 				return
 			}
-
 			if diff := cmp.Diff(tt.wants.req, got); diff != "" {
 				t.Errorf("unexpected request (-want +got):\n%s", diff)
 			}
@@ -83,15 +85,16 @@ func TestParseAddItemRequest(t *testing.T) {
 func TestHelloHandler(t *testing.T) {
 	t.Parallel()
 
+	// Please comment out for STEP 6-2
 	// predefine what we want
-	type wants struct {
-		code int               // desired HTTP status code
-		body map[string]string // desired body
-	}
-	want := wants{
-		code: http.StatusOK,
-		body: map[string]string{"message": "Hello, world!"},
-	}
+	// type wants struct {
+	// 	code int               // desired HTTP status code
+	// 	body map[string]string // desired body
+	// }
+	// want := wants{
+	// 	code: http.StatusOK,
+	// 	body: map[string]string{"message": "Hello, world!"},
+	// }
 
 	// set up test
 	req := httptest.NewRequest("GET", "/hello", nil)
@@ -100,21 +103,9 @@ func TestHelloHandler(t *testing.T) {
 	h := &Handlers{}
 	h.Hello(res, req)
 
-	// confirm status code
-	if want.code != res.Code {
-		t.Errorf("expected status code %d, got %d", want.code, res.Code)
-	}
+	// STEP 6-2: confirm the status code
 
-	// confirm response body
-	got := make(map[string]string)
-	err := json.NewDecoder(res.Body).Decode(&got)
-	if err != nil {
-		t.Fatalf("failed to decode response body: %v", err)
-	}
-
-	if diff := cmp.Diff(want.body, got); diff != "" {
-		t.Errorf("unexpected response body (-want +got):\n%s", diff)
-	}
+	// STEP 6-2: confirm response body
 }
 
 func TestAddItem(t *testing.T) {
@@ -134,7 +125,8 @@ func TestAddItem(t *testing.T) {
 				"category": "phone",
 			},
 			injector: func(m *MockItemRepository) {
-				m.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil) // mock expectation
+				// STEP 6-3: define mock expectation
+				// succeeded to insert
 			},
 			wants: wants{
 				code: http.StatusOK,
@@ -146,7 +138,8 @@ func TestAddItem(t *testing.T) {
 				"category": "phone",
 			},
 			injector: func(m *MockItemRepository) {
-				m.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(errors.New("failed to insert")) // mock expectation
+				// STEP 6-3: define mock expectation
+				// failed to insert
 			},
 			wants: wants{
 				code: http.StatusInternalServerError,
@@ -255,24 +248,7 @@ func TestAddItemE2e(t *testing.T) {
 				}
 			}
 
-			// check inserted data
-			rows, err := db.Query("SELECT COUNT(*) FROM items WHERE name = ? AND category = ?", tt.args["name"], tt.args["category"])
-			if err != nil {
-				t.Fatalf("failed to query: %v", err)
-			}
-			defer rows.Close()
-
-			var count int
-			for rows.Next() {
-				err = rows.Scan(&count)
-				if err != nil {
-					t.Fatalf("failed to scan: %v", err)
-				}
-			}
-
-			if count != 1 {
-				t.Errorf("expected 1 row, got %d", count)
-			}
+			// STEP 6-4: check inserted data
 		})
 	}
 }

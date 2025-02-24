@@ -2,14 +2,18 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -44,6 +48,7 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 type AddItemRequest struct {
 	Name     string `form:"name"`
 	Category string `form:"category"`
+	Image    []byte `form:"image"`
 }
 
 type AddItemResponse struct {
@@ -52,9 +57,21 @@ type AddItemResponse struct {
 
 // parseAddItemRequest parses and validates the request to add an item.
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
+	f, _, err := r.FormFile("image")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get image: %w", err)
+	}
+	defer f.Close()
+
+	buf, err := io.ReadAll(f)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read image: %w", err)
+	}
+
 	req := &AddItemRequest{
 		Name:     r.FormValue("name"),
 		Category: r.FormValue("category"),
+		Image:    buf,
 	}
 
 	// validate the request
@@ -64,8 +81,32 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	if req.Category == "" {
 		return nil, errors.New("category is required")
 	}
+	if len(req.Image) == 0 {
+		return nil, errors.New("image is required")
+	}
 
 	return req, nil
+}
+
+// GetItems returns a list of items.
+// GET /items
+func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	items, err := s.itemRepo.GetItems(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to get items: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(items)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	slog.InfoContext(ctx, "items returned", "items", items)
 }
 
 // AddItem is an endpoint to add a new item.
@@ -79,11 +120,18 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message := fmt.Sprintf("item received: %#v", *req)
+	fileName, err := storeImage(req.Image)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to store image: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	item := &Item{Name: req.Name, Category: req.Category, ImageName: fileName}
+	message := fmt.Sprintf("item received: %#v", item)
 	slog.InfoContext(ctx, message)
 
-	// TODO: add implementation to store the item
-	err = s.itemRepo.Insert(ctx, &Item{Name: req.Name, Category: req.Category})
+	err = s.itemRepo.Insert(ctx, item)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to store item: ", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -98,8 +146,71 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// storeImage stores the image and returns the file name.
+// Although this function should be implemented with repository,
+// it's implemented with a simple function for simplicity.
+func storeImage(image []byte) (string, error) {
+	hashSum := sha256.Sum256(image)
+	hashSumStr := hex.EncodeToString(hashSum[:])
+	fileName := hashSumStr + ".jpg"
+	imgPath := filepath.Join(imageDirPath, fileName)
+
+	err := os.WriteFile(imgPath, image, 0644)
+	if err != nil {
+		return "", err
+	}
+
+	return fileName, nil
+}
+
+type GetItemRequest struct {
+	ID int // path value
+}
+
+func parseGetItemRequest(r *http.Request) (*GetItemRequest, error) {
+	idStr := r.PathValue("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse id: %w", err)
+	}
+	if id < 0 {
+		return nil, errors.New("id must be greater than or equal to 0")
+	}
+
+	return &GetItemRequest{ID: id}, nil
+}
+
+type GetItemResponse struct {
+	*Item
+}
+
+func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	req, err := parseGetItemRequest(r)
+	if err != nil {
+		slog.WarnContext(ctx, "failed to parse get item request: ", "error", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	item, err := s.itemRepo.GetItem(ctx, req.ID)
+	if err != nil {
+		slog.WarnContext(ctx, "failed to get item: ", "error", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	resp := GetItemResponse{Item: item}
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 type GetImageRequest struct {
-	FileName string `form:"filename"`
+	FileName string // path value
 }
 
 // parseGetImageRequest parses and validates the request to get an image.
@@ -164,8 +275,10 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 }
 
 type Item struct {
-	Name     string `db:"name"`
-	Category string `db:"category"`
+	ID        int    `db:"id"`
+	Name      string `db:"name"`
+	Category  string `db:"category"`
+	ImageName string `db:"image_name"`
 }
 
 // //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE}_mock -destination=./mock/$GOFILE
@@ -173,6 +286,8 @@ type Item struct {
 //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
+	GetItems(ctx context.Context) ([]*Item, error)
+	GetItem(ctx context.Context, id int) (*Item, error)
 }
 
 type itemRepository struct {
@@ -194,6 +309,114 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	}
 
 	return nil
+}
+
+func (i *itemRepository) GetItems(ctx context.Context) ([]*Item, error) {
+	const sql = "SELECT id, name, category, image_name FROM items"
+
+	rows, err := i.db.QueryContext(ctx, sql)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query: %w", err)
+	}
+	defer rows.Close()
+
+	var items []*Item
+	for rows.Next() {
+		var item Item
+		err = rows.Scan(&item.ID, &item.Name, &item.Category, &item.ImageName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan: %w", err)
+		}
+		items = append(items, &item)
+	}
+
+	return items, nil
+}
+
+func (i *itemRepository) GetItem(ctx context.Context, id int) (*Item, error) {
+	const sql = "SELECT id, name, category, image_name FROM items WHERE id = ?"
+
+	rows, err := i.db.QueryContext(ctx, sql, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query: %w", err)
+	}
+	defer rows.Close()
+
+	var item Item
+	for rows.Next() {
+		err = rows.Scan(&item.ID, &item.Name, &item.Category, &item.ImageName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan: %w", err)
+		}
+	}
+
+	return &item, nil
+}
+
+type itemRepositoryJson struct {
+	fileName string
+}
+
+func NewItemRepositoryJson(fileName string) ItemRepository {
+	return &itemRepositoryJson{fileName: fileName}
+}
+
+func (i *itemRepositoryJson) Insert(ctx context.Context, item *Item) error {
+	buf, err := os.ReadFile(i.fileName)
+	if err != nil {
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+
+	var items []*Item
+	err = json.Unmarshal(buf, &items)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal json: %w", err)
+	}
+
+	item.ID = len(items)
+	items = append(items, item)
+
+	buf, err = json.Marshal(items)
+	if err != nil {
+		return fmt.Errorf("failed to marshal json: %w", err)
+	}
+
+	err = os.WriteFile(i.fileName, buf, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
+	}
+
+	return nil
+}
+
+func (i *itemRepositoryJson) GetItems(ctx context.Context) ([]*Item, error) {
+	buf, err := os.ReadFile(i.fileName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+
+	var items []*Item
+	err = json.Unmarshal(buf, &items)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal json: %w", err)
+	}
+
+	return items, nil
+}
+
+func (i *itemRepositoryJson) GetItem(ctx context.Context, id int) (*Item, error) {
+	items, err := i.GetItems(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get items: %w", err)
+	}
+
+	for _, item := range items {
+		if item.ID == id {
+			return item, nil
+		}
+	}
+
+	return nil, fmt.Errorf("item not found: id=%d", id)
 }
 
 func simpleCORSMiddleware(next http.Handler, origin string, methods []string) http.Handler {
@@ -248,29 +471,33 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := sql.Open("sqlite3", dbPath)
-	if err != nil {
-		slog.Error("failed to open db: ", "error", err)
-		os.Exit(1)
-	}
-	defer db.Close()
+	// db, err := sql.Open("sqlite3", dbPath)
+	// if err != nil {
+	// 	slog.Error("failed to open db: ", "error", err)
+	// 	os.Exit(1)
+	// }
+	// defer db.Close()
 
-	// TODO: replace it with real SQL file.
-	cmd := `CREATE TABLE IF NOT EXISTS items (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-    	name VARCHAR(255),
-    	category VARCHAR(255)
-	)`
-	_, err = db.ExecContext(context.Background(), cmd)
-	if err != nil {
-		slog.Error("failed to create table: ", "error", err)
-		os.Exit(1)
-	}
-	defer db.Close()
+	// // TODO: replace it with real SQL file.
+	// cmd := `CREATE TABLE IF NOT EXISTS items (
+	// 	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	// 	name VARCHAR(255),
+	// 	category VARCHAR(255)
+	// )`
+	// _, err = db.ExecContext(context.Background(), cmd)
+	// if err != nil {
+	// 	slog.Error("failed to create table: ", "error", err)
+	// 	os.Exit(1)
+	// }
+	// defer db.Close()
 
-	h := &Handlers{imgDirPath: imageDirPath, itemRepo: &itemRepository{db: db}}
+	itemRepo := NewItemRepositoryJson("items.json")
+	h := &Handlers{imgDirPath: imageDirPath, itemRepo: itemRepo}
 	mux.HandleFunc("GET /", h.Hello)
+	mux.HandleFunc("GET /items", h.GetItems)
 	mux.HandleFunc("POST /items", h.AddItem)
+	mux.HandleFunc("GET /items/{id}", h.GetItem)
+
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
 	slog.Info("http server started on", "port", port)
