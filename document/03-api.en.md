@@ -156,7 +156,7 @@ Make an endpoint `GET /items/<item_id>` to return item details.
 
 ```shell
 $ curl -X GET 'http://127.0.0.1:9000/items/1'
-{"name": "jacket", "category": "fashion", "image": "..."}
+{"id": 1, "name": "jacket", "category": "fashion", "image_name": "..."}
 ```
 
 ## 6. (Optional) Understand Loggers

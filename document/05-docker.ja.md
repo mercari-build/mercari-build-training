@@ -131,4 +131,4 @@ STEP4-5 までで docker image の中は STEP2-2 と同じ状態になってい�
 
 ### Next
 
-[STEP6: CIを使ってDocker imageをBuildする](06-ci.ja.md)
+[STEP6: テストを用いてAPIの挙動を確認する](./06-testing.ja.md)
