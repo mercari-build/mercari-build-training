@@ -40,7 +40,7 @@ $ docker run -v $(pwd)/data/text_ja.png:/tmp/img.png wakanapo/tesseract-ocr tess
 
 **:beginner: Points**
 
-* Make sure you understand [docker volume](https://docs.docker.com/storage/volumes/) 
+* Make sure you understand [docker volume](https://docs.docker.com/storage/volumes/)
 
 ## 3. Get Docker Image
 
@@ -78,9 +78,9 @@ Make sure you understand the following commands and when to use them.
 ## 4. Building a Docker Image
 **Build the docker file under the directory `python/` if you're using Python and `go/` if you're using Go.**
 
-* Set the name of the image to be `build2024/app` with `latest` tag.
+* Set the name of the image to be `mercari-build-training/app` with `latest` tag.
 
-Check that you can now see `build2024/app` in the list of images.
+Check that you can now see `mercari-build-training/app` in the list of images.
 
 
 **:book: Reference**
@@ -92,7 +92,7 @@ Check that you can now see `build2024/app` in the list of images.
 
 ```
 docker: Error response from daemon: OCI runtime create failed: container_linux.go:380: starting container process caused: exec: "python": executable file not found in $PATH: unknown.
-ERRO[0000] error waiting for container: context canceled 
+ERRO[0000] error waiting for container: context canceled
 ```
 
 `"python"` part will be replaced with `"go"` if you're using Go.
@@ -114,9 +114,27 @@ The environment within the docker image should be the same as STEP2-2 after STEP
 **Modify `Dockerfile` to copy necessary files and install dependencies such that you can run the listing API on docker**
 
 
-`$ docker run -d -p 9000:9000 build2024/app:latest`
+Run
 
-Check if the above command results in the same response as STEP3.
+```shell
+$ docker run -d -p 9000:9000 mercari-build-training/app:latest
+```
+
+and in another terminal, execute:
+
+```shell
+$ curl \
+  -X POST \
+  --url 'http://localhost:9000/items' \
+  -F 'name=jacket' \
+  -F 'category=fashion' \
+  -F 'image=@images/local_image.jpg'
+```
+
+If the correct result is returned, it is successful. Let's also verify if other APIs implemented in STEP3 can be accessed correctly.
+
+To run the product API, it is necessary to include not only the Go or Python programs but also the db files in the Docker image.
+Note that you need to execute the Docker command under `mercari-build-training/`.
 
 ---
 **:beginner: Points**
