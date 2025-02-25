@@ -40,7 +40,7 @@ $ docker run -v $(pwd)/data/text_ja.png:/tmp/img.png wakanapo/tesseract-ocr tess
 
 **:beginner: Points**
 
-* Make sure you understand [docker volume](https://docs.docker.com/storage/volumes/) 
+* Make sure you understand [docker volume](https://docs.docker.com/storage/volumes/)
 
 ## 3. Get Docker Image
 
