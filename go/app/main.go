@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -169,9 +170,10 @@ type Item struct {
 	Name string `db:"name"`
 }
 
-//go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
-
+// Please run `go generate ./...` to generate the mock implementation
 // ItemRepository is an interface to manage items.
+//
+//go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 }
@@ -194,6 +196,20 @@ func (i *itemRepositoryJSON) Insert(ctx context.Context, item *Item) error {
 	return nil
 }
 
+type itemRepositoryDB struct {
+	db *sql.DB
+}
+
+func NewItemRepositoryDB(db *sql.DB) ItemRepository {
+	return &itemRepositoryDB{db: db}
+}
+
+func (i *itemRepositoryDB) Insert(ctx context.Context, item *Item) error {
+	// STEP 4-1: add an implementation to store an item
+
+	return nil
+}
+
 func main() {
 	// set up logger
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
@@ -207,7 +223,11 @@ func main() {
 		frontURL = "http://localhost:3000"
 	}
 
+	// STEP 4-1: set up the database connection
+
 	// set up handlers
+	// STEP 4-1: replace the itemRepo with the DB implementation
+	// itemRepo := NewItemRepositoryDB(db)
 	itemRepo := NewItemRepositoryJSON(itemJSONFilePath)
 	h := &Handlers{imgDirPath: imageDirPath, itemRepo: itemRepo}
 
