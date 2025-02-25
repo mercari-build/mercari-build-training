@@ -92,7 +92,7 @@ Check that you can now see `build2024/app` in the list of images.
 
 ```
 docker: Error response from daemon: OCI runtime create failed: container_linux.go:380: starting container process caused: exec: "python": executable file not found in $PATH: unknown.
-ERRO[0000] error waiting for container: context canceled 
+ERROR[0000] error waiting for container: context canceled 
 ```
 
 `"python"` part will be replaced with `"go"` if you're using Go.

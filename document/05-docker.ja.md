@@ -92,7 +92,7 @@ docker はホスト上に存在しないイメージを使う際には、自動�
 
 ```
 docker: Error response from daemon: OCI runtime create failed: container_linux.go:380: starting container process caused: exec: "python": executable file not found in $PATH: unknown.
-ERRO[0000] error waiting for container: context canceled 
+ERROR[0000] error waiting for container: context canceled 
 ```
 Goの場合は、上のエラーメッセージの`"python"`の部分が`"go"`になります。
 
@@ -131,4 +131,4 @@ STEP4-5 までで docker image の中は STEP2-2 と同じ状態になってい�
 
 ### Next
 
-[STEP6: CIを使ってDocker imageをBuildする](06-ci.ja.md)
+[STEP6: テストを用いてAPIの挙動を確認する](./06-testing.ja.md)
