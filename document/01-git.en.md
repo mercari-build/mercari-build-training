@@ -68,6 +68,7 @@ This is required to use githooks in mercari-build-training repository.
    $ git push origin first-pull-request:first-pull-request
    ```
 6. Open `https://github.com/<your github id>/mercari-build-training` and make a **Pull Request** (PR).
+    - base repository: `<your github id>/mercari-build-training`
     - base branch: `main`
     - target branch: `first-pull-request`
 
