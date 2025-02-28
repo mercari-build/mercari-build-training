@@ -1,4 +1,4 @@
-# STEP3: 出品APIを作る
+# STEP4: 出品APIを作る
 
 ## 1. APIを呼び出す
 
@@ -161,7 +161,7 @@ $ curl \
 
 ```shell
 $ curl -X GET 'http://127.0.0.1:9000/items/1'
-{"name": "jacket", "category": "fashion", "image_name": "..."}
+{"id": 1, "name": "jacket", "category": "fashion", "image_name": "..."}
 ```
 
 ## 6. (Optional) Loggerについて調べる
@@ -192,4 +192,4 @@ Image not found: <image path>
 
 ### Next
 
-[STEP4: データベース](04-database.ja.md)
+[STEP5: データベース](./05-database.ja.md)

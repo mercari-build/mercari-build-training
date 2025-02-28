@@ -1,4 +1,4 @@
-# STEP8: Run frontend and API using docker-compose
+# STEP10: Run frontend and API using docker-compose
 In this step, we will learn how to use docker-compose.
 
 **:book: Reference**
