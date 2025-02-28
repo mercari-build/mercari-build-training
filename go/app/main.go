@@ -126,15 +126,15 @@ func (s *Handlers) GetImage(w http.ResponseWriter, r *http.Request) {
 
 	imgPath, err := s.buildImagePath(req.FileName)
 	if err != nil {
-		// when the image is not found, it returns the default image.
-		if errors.Is(err, errImageNotFound) {
-			slog.DebugContext(ctx, "image not found", "filename", imgPath)
-			imgPath = filepath.Join(s.imgDirPath, "default.jpg")
-		} else {
+		if !errors.Is(err, errImageNotFound) {
 			slog.WarnContext(ctx, "failed to build image path: ", "error", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+
+		// when the image is not found, it returns the default image without an error.
+		slog.DebugContext(ctx, "image not found", "filename", imgPath)
+		imgPath = filepath.Join(s.imgDirPath, "default.jpg")
 	}
 
 	slog.InfoContext(ctx, "returned image", "path", imgPath)
@@ -151,7 +151,7 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 		return "", fmt.Errorf("invalid image path: %s", imgPath)
 	}
 
-	// validate the image path
+	// validate the image suffix
 	if !strings.HasSuffix(imgPath, ".jpg") && !strings.HasSuffix(imgPath, ".jpeg") {
 		return "", fmt.Errorf("image path does not end with .jpg or .jpeg: %s", imgPath)
 	}
@@ -214,7 +214,7 @@ func main() {
 	// set up logger
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
-	// STEP 4-6: set the log level to info
+	// STEP 4-6: set the log level to DEBUG
 	slog.SetLogLoggerLevel(slog.LevelInfo)
 
 	// set up CORS settings
