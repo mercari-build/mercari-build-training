@@ -159,8 +159,12 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 }
 
 type Item struct {
-	ID   int    `db:"id"`
-	Name string `db:"name"`
+	ID   int    `db:"id" json:"-"`
+	Name string `db:"name" json:"name"`
+}
+
+type Items struct {
+	Items []*Item `json:"items"`
 }
 
 // Please run `go generate ./...` to generate the mock implementation
@@ -185,6 +189,38 @@ func NewItemRepository() ItemRepository {
 // Insert inserts an item into the JSON file.
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	// STEP 4-1: add an implementation to store an item
+	var items Items
+	if _, err := os.Stat(i.fileName); err != nil {
+		f, err := os.Open(i.fileName)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		if err := json.NewDecoder(f).Decode(&items); err != nil {
+			return err
+		}
+	} else {
+		f, err := os.Create(i.fileName)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+	}
+
+	fmt.Printf("items: %v\n", items)
+	items.Items = append(items.Items, item)
+	if b, err := json.Marshal(items); err != nil {
+		if f, err := os.Open(i.fileName); err != nil {
+			defer f.Close()
+			if f != nil {
+				_, err := f.Write(b)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
 
 	return nil
 }
