@@ -108,7 +108,7 @@ Understand the role of `go.mod` and the commands around it referring to this [do
 ### 4. Run the Go app
 
 ```shell
-$ go run app/main.go
+$ go run cmd/api/main.go
 ```
 
 If successful, you can access the local host `http://127.0.0.1:9000` on our browser and you will see`{"message": "Hello, world!"}`.

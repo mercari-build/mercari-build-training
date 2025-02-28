@@ -1,8 +1,7 @@
-package main
+package app
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,12 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-)
-
-const (
-	imageDirPath     = "images"
-	itemJSONFilePath = "items.json"
-	port             = "9000"
 )
 
 var errImageNotFound = errors.New("image not found")
@@ -178,33 +171,19 @@ type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 }
 
-// itemRepositoryJSON is an implementation of ItemRepository using JSON files.
-type itemRepositoryJSON struct {
+// itemRepository is an implementation of ItemRepository using JSON files.
+type itemRepository struct {
 	// fileName is the path to the JSON file storing items.
 	fileName string
 }
 
-// NewItemRepositoryJSON creates a new itemRepositoryJSON.
-func NewItemRepositoryJSON(fileName string) ItemRepository {
-	return &itemRepositoryJSON{fileName: fileName}
+// NewItemRepository creates a new itemRepositoryJSON.
+func NewItemRepository() ItemRepository {
+	return &itemRepository{fileName: "items.json"}
 }
 
 // Insert inserts an item into the JSON file.
-func (i *itemRepositoryJSON) Insert(ctx context.Context, item *Item) error {
-	// STEP 4-2: add an implementation to store an image
-
-	return nil
-}
-
-type itemRepositoryDB struct {
-	db *sql.DB
-}
-
-func NewItemRepositoryDB(db *sql.DB) ItemRepository {
-	return &itemRepositoryDB{db: db}
-}
-
-func (i *itemRepositoryDB) Insert(ctx context.Context, item *Item) error {
+func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	// STEP 4-1: add an implementation to store an item
 
 	return nil
@@ -233,7 +212,16 @@ func simpleLoggerMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func main() {
+type Server struct {
+	// Port is the port number to listen on.
+	Port string
+	// ImageDirPath is the path to the directory storing images.
+	ImageDirPath string
+}
+
+// Run is a method to start the server.
+// This method returns 0 if
+func (s Server) Run() int {
 	// set up logger
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
@@ -249,10 +237,8 @@ func main() {
 	// STEP 5-1: set up the database connection
 
 	// set up handlers
-	// STEP 5-1: replace the itemRepo with the DB implementation
-	// itemRepo := NewItemRepositoryDB(db)
-	itemRepo := NewItemRepositoryJSON(itemJSONFilePath)
-	h := &Handlers{imgDirPath: imageDirPath, itemRepo: itemRepo}
+	itemRepo := NewItemRepository()
+	h := &Handlers{imgDirPath: s.ImageDirPath, itemRepo: itemRepo}
 
 	// set up routes
 	mux := http.NewServeMux()
@@ -261,9 +247,12 @@ func main() {
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
 	// start the server
-	slog.Info("http server started on", "port", port)
-	err := http.ListenAndServe(":"+port, simpleCORSMiddleware(simpleLoggerMiddleware(mux), frontURL, []string{"GET", "HEAD", "POST", "OPTIONS"}))
+	slog.Info("http server started on", "port", s.Port)
+	err := http.ListenAndServe(":"+s.Port, simpleCORSMiddleware(simpleLoggerMiddleware(mux), frontURL, []string{"GET", "HEAD", "POST", "OPTIONS"}))
 	if err != nil {
 		slog.Error("failed to start server: ", "error", err)
+		return 1
 	}
+
+	return 0
 }
