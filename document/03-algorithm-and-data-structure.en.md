@@ -1,6 +1,6 @@
-# Extra1: Algorithms and Data Structures
+# STEP3: Algorithms and Data Structures
 
-In Extra1, after learning about basic algorithms and data structures, you will practice using problems from LeetCode. It is recommended to solve the problems before looking at the explanations.
+In STEP3, after learning about basic algorithms and data structures, you will practice using problems from LeetCode. It is recommended to solve the problems before looking at the explanations.
 
 ## Textbooks
 
@@ -109,3 +109,5 @@ Is it possible to solve it in O(1)-space, excluding the input and return?
 ### [Non-overlapping Intervals](https://leetcode.com/problems/non-overlapping-intervals/description/) (optional)
 
 ### [Longest Substring Without Repeating Characters](https://leetcode.com/problems/longest-substring-without-repeating-characters/description/) (optional)
+
+[STEP4: Make a listing API](./04-api.en.md)

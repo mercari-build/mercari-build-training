@@ -1,4 +1,4 @@
-# STEP3: Make a listing API
+# STEP4: Make a listing API
 
 ## 1. Call an API
 
@@ -50,7 +50,7 @@ Next, let's send a POST request. The sample code provides an endpoint `/items`, 
 $ curl -X POST 'http://127.0.0.1:9000/items'
 ```
 
-This endpoint expects to return `{"message": "item received: <name>"}` as an successfull response. However, you should receive a differnt response here.
+This endpoint expects to return `{"message": "item received: <name>"}` as an successful response. However, you should receive a different response here.
 
 Modify the command as follows and see that you receive `{"message": "item received: jacket"}`. Investigate why that happens and the differences.
 
@@ -83,7 +83,7 @@ The current `POST /items` endpoint can accept the `name` parameter. Let's modify
 * `name`: Name of the item (string)
 * `category`: Category of the item (string)
 
-Since the current implementaion doesn't persist data, let's modify the code to save data in a JSON file. Let's create a file named `items.json`, and register new items under `items` key.
+Since the current implementation doesn't persist data, let's modify the code to save data in a JSON file. Let's create a file named `items.json`, and register new items under `items` key.
 
 When a new item is added, the content should be saved in the `items.json` as follows:
 ```json
@@ -156,7 +156,7 @@ Make an endpoint `GET /items/<item_id>` to return item details.
 
 ```shell
 $ curl -X GET 'http://127.0.0.1:9000/items/1'
-{"name": "jacket", "category": "fashion", "image": "..."}
+{"id": 1, "name": "jacket", "category": "fashion", "image_name": "..."}
 ```
 
 ## 6. (Optional) Understand Loggers
@@ -185,4 +185,4 @@ Check if you understand the following concepts.
 
 ### Next
 
-[STEP4: Database](04-database.en.md)
+[STEP5: Database](./05-database.en.md)
