@@ -102,7 +102,7 @@ n 個の整数からなる配列 nums が与えられ、nums[i] は [1, n] の�
 </details>
 
 
-### [Koko Eating Bananas](https://leetcode.com/problems/koko-eating-bananas/) (optinal)
+### [Koko Eating Bananas](https://leetcode.com/problems/koko-eating-bananas/) (optional)
 
 ### [Non-overlapping Intervals](https://leetcode.com/problems/non-overlapping-intervals/description/) (optional)
 

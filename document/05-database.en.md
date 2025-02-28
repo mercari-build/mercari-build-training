@@ -65,4 +65,4 @@ Since `GET items` should return the category name as before, **join** these two 
 
 ### Next
 
-[STEP6: Run the application in a virtual environment](./06-docker.en.md)
+[STEP6: Ensure API Behavior Using Tests](./06-testing.en.md)

@@ -78,4 +78,4 @@ $ curl -X GET 'http://127.0.0.1:9000/search?keyword=jacket'
 
 ### Next
 
-[STEP6: 仮想環境でアプリを動かす](./06-docker.ja.md)
+[STEP6: テストを用いてAPIの挙動を確認する](./06-testing.ja.md)

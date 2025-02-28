@@ -1,4 +1,4 @@
-# STEP6: 仮想環境でアプリを動かす
+# STEP7: 仮想環境でアプリを動かす
 
 このステップでは docker の使い方を学びます。
 
@@ -92,7 +92,7 @@ docker はホスト上に存在しないイメージを使う際には、自動�
 
 ```
 docker: Error response from daemon: OCI runtime create failed: container_linux.go:380: starting container process caused: exec: "python": executable file not found in $PATH: unknown.
-ERRO[0000] error waiting for container: context canceled 
+ERROR[0000] error waiting for container: context canceled 
 ```
 Goの場合は、上のエラーメッセージの`"python"`の部分が`"go"`になります。
 
@@ -147,4 +147,4 @@ $ curl \
 
 ### Next
 
-[STEP7: CIを使ってDocker imageをBuildする](./07-ci.ja.md)
+[STEP8: CIを使ってDocker imageをBuildする](./08-ci.ja.md)

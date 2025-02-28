@@ -131,4 +131,4 @@ When selecting a framework, it is good to consider the following perspectives:
 
 ## Next
 
-[STEP9: Run frontend and API using docker-compose](./09-docker-compose.en.md)
+[STEP10: Run frontend and API using docker-compose](./10-docker-compose.en.md)

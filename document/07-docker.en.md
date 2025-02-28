@@ -1,4 +1,4 @@
-# STEP6: Run the application in a virtual environment
+# STEP7: Run the application in a virtual environment
 
 In this step, we will learn how to use Docker.
 
@@ -92,7 +92,7 @@ Check that you can now see `mercari-build-training/app` in the list of images.
 
 ```
 docker: Error response from daemon: OCI runtime create failed: container_linux.go:380: starting container process caused: exec: "python": executable file not found in $PATH: unknown.
-ERRO[0000] error waiting for container: context canceled
+ERROR[0000] error waiting for container: context canceled 
 ```
 
 `"python"` part will be replaced with `"go"` if you're using Go.
@@ -151,4 +151,4 @@ Make sure you understand the following concepts
 
 ### Next
 
-[STEP7: Build Docker image using CI](./07-ci.en.md)
+[STEP8: Build Docker image using CI](./08-ci.en.md)
