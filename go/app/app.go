@@ -188,40 +188,54 @@ func NewItemRepository() ItemRepository {
 
 // Insert inserts an item into the JSON file.
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	// STEP 4-1: add an implementation to store an item
 	var items Items
-	if _, err := os.Stat(i.fileName); err != nil {
+
+	// Check if the file exists
+	if _, err := os.Stat(i.fileName); err == nil {
+		// File exists, open it for reading
 		f, err := os.Open(i.fileName)
 		if err != nil {
 			return err
 		}
 		defer f.Close()
 
+		// Decode existing items from the file
 		if err := json.NewDecoder(f).Decode(&items); err != nil {
 			return err
 		}
+	} else if os.IsNotExist(err) {
+		// File does not exist, initialize items list
+		items.Items = []*Item{}
 	} else {
-		f, err := os.Create(i.fileName)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
+		// Some other error occurred
+		return err
 	}
 
-	fmt.Printf("items: %v\n", items)
+	fmt.Printf("items before insert: %v\n", items)
+
+	// Append the new item
 	items.Items = append(items.Items, item)
-	if b, err := json.Marshal(items); err != nil {
-		if f, err := os.Open(i.fileName); err != nil {
-			defer f.Close()
-			if f != nil {
-				_, err := f.Write(b)
-				if err != nil {
-					return err
-				}
-			}
-		}
+
+	// Marshal items to JSON
+	b, err := json.Marshal(items)
+	if err != nil {
+		return err
 	}
 
+	// Open or create the file for writing
+	f, err := os.Create(i.fileName)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	// Write the JSON data to the file
+	_, err = f.Write(b)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("items after insert: %v\n", items)
 	return nil
 }
 
