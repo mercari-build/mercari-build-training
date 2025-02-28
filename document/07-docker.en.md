@@ -92,11 +92,7 @@ Check that you can now see `mercari-build-training/app` in the list of images.
 
 ```
 docker: Error response from daemon: OCI runtime create failed: container_linux.go:380: starting container process caused: exec: "python": executable file not found in $PATH: unknown.
-<<<<<<< HEAD:document/05-docker.en.md
 ERROR[0000] error waiting for container: context canceled 
-=======
-ERRO[0000] error waiting for container: context canceled
->>>>>>> origin/main:document/06-docker.en.md
 ```
 
 `"python"` part will be replaced with `"go"` if you're using Go.
