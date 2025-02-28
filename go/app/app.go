@@ -75,7 +75,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	slog.InfoContext(ctx, message)
 
 	// STEP 4-2: add an implementation to store an image
-	err = s.itemRepo.Insert(ctx, item)
+	err = s.itemRepo.InsertToFile(ctx, item)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to store item: ", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -176,6 +176,7 @@ type Items struct {
 //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
+	InsertToFile(ctx context.Context, item *Item) error
 }
 
 // itemRepository is an implementation of ItemRepository using JSON files.
@@ -188,9 +189,12 @@ type itemRepository struct {
 func NewItemRepository() ItemRepository {
 	return &itemRepository{fileName: "items.json"}
 }
+func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
+	return errors.New("not implemented")
+}
 
 // Insert inserts an item into the JSON file.
-func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
+func (i *itemRepository) InsertToFile(ctx context.Context, item *Item) error {
 	var items Items
 
 	// Check if the file exists
