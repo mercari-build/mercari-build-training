@@ -241,7 +241,7 @@ The expected request should require `name` and `category` fields and should retu
 
 ### Go
 
-Let's look at `main_test.go`.
+Let's look at `app_test.go`.
 
 We want to ensure AddItem requests succeed when all values are present and fail when values are missing.
 Let's write test cases for this.
