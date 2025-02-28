@@ -114,7 +114,7 @@ $ go mod tidy
 ### 4. アプリにアクセスする
 
 ```shell
-$ go run app/main.go
+$ go run cmd/api/main.go
 ```
 
 起動に成功したら、 ブラウザで `http://127.0.0.1:9000` にアクセスして、`{"message": "Hello, world!"}`
