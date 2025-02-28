@@ -73,13 +73,13 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// STEP 3-4: add an implementation to store an image
+	// STEP 4-4: add an implementation to store an image
 
 	item := &Item{Name: req.Name}
 	message := fmt.Sprintf("item received: %#v", item)
 	slog.InfoContext(ctx, message)
 
-	// STEP 3-2: add an implementation to store an image
+	// STEP 4-2: add an implementation to store an image
 	err = s.itemRepo.Insert(ctx, item)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to store item: ", "error", err)
@@ -191,7 +191,7 @@ func NewItemRepositoryJSON(fileName string) ItemRepository {
 
 // Insert inserts an item into the JSON file.
 func (i *itemRepositoryJSON) Insert(ctx context.Context, item *Item) error {
-	// STEP 3-2: add an implementation to store an image
+	// STEP 4-2: add an implementation to store an image
 
 	return nil
 }
@@ -214,7 +214,7 @@ func main() {
 	// set up logger
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
-	// STEP 3-6: set the log level to info
+	// STEP 4-6: set the log level to info
 	slog.SetLogLoggerLevel(slog.LevelInfo)
 
 	// set up CORS settings
@@ -223,10 +223,10 @@ func main() {
 		frontURL = "http://localhost:3000"
 	}
 
-	// STEP 4-1: set up the database connection
+	// STEP 5-1: set up the database connection
 
 	// set up handlers
-	// STEP 4-1: replace the itemRepo with the DB implementation
+	// STEP 5-1: replace the itemRepo with the DB implementation
 	// itemRepo := NewItemRepositoryDB(db)
 	itemRepo := NewItemRepositoryJSON(itemJSONFilePath)
 	h := &Handlers{imgDirPath: imageDirPath, itemRepo: itemRepo}
