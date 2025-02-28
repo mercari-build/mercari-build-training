@@ -76,7 +76,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	// STEP 4-4: add an implementation to store an image
 
 	item := &Item{Name: req.Name}
-	message := fmt.Sprintf("item received: %#v", item)
+	message := fmt.Sprintf("item received: %s", item.Name)
 	slog.InfoContext(ctx, message)
 
 	// STEP 4-2: add an implementation to store an image
