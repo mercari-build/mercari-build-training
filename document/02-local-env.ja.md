@@ -114,8 +114,10 @@ $ go mod tidy
 ### 4. アプリにアクセスする
 
 ```shell
-$ go run app/main.go
+$  go run mercari-build-training/app
 ```
+mercari-build-training/appは<module name>/<package>の形式で指定します。
+<module name>はgo.modのファイルの一番上の行で定義されています。
 
 起動に成功したら、 ブラウザで `http://127.0.0.1:9000` にアクセスして、`{"message": "Hello, world!"}`
 が表示されれば成功です。
