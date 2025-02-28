@@ -157,7 +157,7 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 }
 
 type Item struct {
-	ID   int    `db:"id" json:"id"`
+	ID   int    `db:"id" json:"-"`
 	Name string `db:"name" json:"name"`
 }
 
