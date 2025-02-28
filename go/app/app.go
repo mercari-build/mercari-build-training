@@ -35,7 +35,8 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 }
 
 type AddItemRequest struct {
-	Name string `form:"name"`
+	Name     string `form:"name"`
+	Category string `form:"name"`
 }
 
 type AddItemResponse struct {
@@ -45,7 +46,8 @@ type AddItemResponse struct {
 // parseAddItemRequest parses and validates the request to add an item.
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	req := &AddItemRequest{
-		Name: r.FormValue("name"),
+		Name:     r.FormValue("name"),
+		Category: r.FormValue("category"),
 	}
 
 	// validate the request
@@ -73,7 +75,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	slog.Info(message)
 
 	// STEP 4-2: add an implementation to store an image
-	err = s.itemRepo.Insert(ctx, item)
+	err = s.itemRepo.InsertToFile(ctx, item)
 	if err != nil {
 		slog.Error("failed to store item: ", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -157,8 +159,13 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 }
 
 type Item struct {
-	ID   int    `db:"id"`
-	Name string `db:"name"`
+	ID       int    `db:"id" json:"-"`
+	Name     string `db:"name" json:"name"`
+	Category string `db:"category" json:"category"`
+}
+
+type Items struct {
+	Items []*Item `json:"items"`
 }
 
 // Please run `go generate ./...` to generate the mock implementation
@@ -167,6 +174,7 @@ type Item struct {
 //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
+	InsertToFile(ctx context.Context, item *Item) error
 }
 
 // itemRepository is an implementation of ItemRepository using JSON files.
@@ -179,11 +187,60 @@ type itemRepository struct {
 func NewItemRepository() ItemRepository {
 	return &itemRepository{fileName: "items.json"}
 }
+func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
+	return errors.New("not implemented")
+}
 
 // Insert inserts an item into the JSON file.
-func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	// STEP 4-1: add an implementation to store an item
+func (i *itemRepository) InsertToFile(ctx context.Context, item *Item) error {
+	var items Items
 
+	// Check if the file exists
+	if _, err := os.Stat(i.fileName); err == nil {
+		// File exists, open it for reading
+		f, err := os.Open(i.fileName)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		// Decode existing items from the file
+		if err := json.NewDecoder(f).Decode(&items); err != nil {
+			return err
+		}
+	} else if os.IsNotExist(err) {
+		// File does not exist, initialize items list
+		items.Items = []*Item{}
+	} else {
+		// Some other error occurred
+		return err
+	}
+
+	slog.Info("items before insert", "items", items)
+
+	// Append the new item
+	items.Items = append(items.Items, item)
+
+	// Marshal items to JSON
+	b, err := json.Marshal(items)
+	if err != nil {
+		return err
+	}
+
+	// Open or create the file for writing
+	f, err := os.Create(i.fileName)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	// Write the JSON data to the file
+	_, err = f.Write(b)
+	if err != nil {
+		return err
+	}
+
+	slog.Info("items after insert", "items", items)
 	return nil
 }
 
