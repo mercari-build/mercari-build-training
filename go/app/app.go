@@ -35,7 +35,8 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 }
 
 type AddItemRequest struct {
-	Name string `form:"name"`
+	Name     string `form:"name"`
+	Category string `form:"name"`
 }
 
 type AddItemResponse struct {
@@ -45,7 +46,8 @@ type AddItemResponse struct {
 // parseAddItemRequest parses and validates the request to add an item.
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	req := &AddItemRequest{
-		Name: r.FormValue("name"),
+		Name:     r.FormValue("name"),
+		Category: r.FormValue("category"),
 	}
 
 	// validate the request
@@ -159,8 +161,9 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 }
 
 type Item struct {
-	ID   int    `db:"id" json:"-"`
-	Name string `db:"name" json:"name"`
+	ID       int    `db:"id" json:"-"`
+	Name     string `db:"name" json:"name"`
+	Category string `db:"category" json:"category"`
 }
 
 type Items struct {
@@ -211,7 +214,7 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 		return err
 	}
 
-	fmt.Printf("items before insert: %v\n", items)
+	slog.Info("items before insert", "items", items)
 
 	// Append the new item
 	items.Items = append(items.Items, item)
@@ -235,7 +238,7 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 		return err
 	}
 
-	fmt.Printf("items after insert: %v\n", items)
+	slog.Info("items after insert", "items", items)
 	return nil
 }
 
