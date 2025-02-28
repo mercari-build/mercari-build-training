@@ -98,6 +98,62 @@ When a new item is added, the content should be saved in the `items.json` as fol
 }
 ```
 
+### Additional Information about Go Persistence
+
+The Go side of the code is implemented as follows. In this case, the `Insert()` method called within the `AddItem` method is the `Insert()` method of `itemRepository`.
+
+
+```go
+type Handlers struct {
+	imgDirPath string
+	itemRepo   ItemRepository
+}
+
+func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
+  // (snip)
+  err = s.itemRepo.Insert(ctx, item)
+  // (snip)
+}
+
+type ItemRepository interface {
+	Insert(ctx context.Context, item *Item) error
+}
+
+func NewItemRepository() ItemRepository {
+	return &itemRepository{fileName: "items.json"}
+}
+
+type itemRepository struct {
+	fileName string
+}
+
+func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
+	// STEP 4-1: add an implementation to store an item
+
+	return nil
+}
+
+func (s Server) Run() int {
+  // (snip)
+  itemRepo := NewItemRepository()
+	h := &Handlers{imgDirPath: s.ImageDirPath, itemRepo: itemRepo}
+  // (snip)
+}
+```
+
+You may have noticed that `s.itemRepo` is not a struct called `itemRepository`, but rather an `interface` called `ItemRepository`. This `interface` is a type that represents a collection of methods. In this case, it only has a method called `Insert`. Therefore, any structure that has an `Insert` method can be set to this `ItemRepository`. In this example, within the `Run` method, since `itemRepo` is set to the `itemRepository` struct, the `Insert` method of `itemRepository` is called.
+
+So, why is such abstraction necessary?
+There are several reasons, but one of the benefits here is that it makes it easy to replace the method of persistence.
+In this case, we are using JSON as the persistence method, but it becomes easy to replace it with a database or a test implementation.
+At this point, the caller in the code does not need to be aware of the underlying implementation and can call it without worrying about the specifics, which means there is no need for major changes in the code.
+
+This concept of abstraction is also touched upon in things like the UNIX philosophy, so if you're interested, you might want to read about it.
+
+**:book: Reference**
+
+* (EN)[book - Linux and the Unix Philosophy: Operating Systems](https://www.amazon.com/dp/B001HZZSEK)
+
 ## 3. Get the List of Items
 
 The goal of this section is to implement the `GET /items` endpoint to get the list of registered items. 
