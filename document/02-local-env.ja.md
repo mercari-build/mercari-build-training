@@ -134,4 +134,4 @@ $ go run app/main.go
 ---
 ### Next
 
-[STEP3: 出品APIを作る](03-api.ja.md)
+[STEP3: アルゴリズムとデータ構造](./03-algorithm-and-data-structure.ja.md)

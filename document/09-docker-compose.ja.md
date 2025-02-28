@@ -1,4 +1,4 @@
-# STEP8: docker-composeを利用して複数のサービスを動かす
+# STEP9: docker-composeを利用して複数のサービスを動かす
 
 このステップでは docker-compose の使い方を学びます。
 

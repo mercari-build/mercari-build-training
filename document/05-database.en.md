@@ -1,4 +1,4 @@
-# STEP4: Database
+# STEP5: Database
 In the previous step, we saved data into `items.json`. We will move this into a database.
 
 **:book: Reference**
@@ -65,4 +65,4 @@ Since `GET items` should return the category name as before, **join** these two 
 
 ### Next
 
-[STEP5: Run the application in a virtual environment](05-docker.en.md)
+[STEP6: Run the application in a virtual environment](./06-docker.en.md)
