@@ -124,8 +124,9 @@ The goal of this section is to allow users to upload an image for an item.
 
 Modify both `GET /items` and `POST /items` endpoints for that.
 
-* Make a directory named `images`
-* Hash the image using SHA-256, and save it with the name `<hashed-value>.jpg`
+* Hash the image using SHA-256, and save it with the name `<hashed-value>.jpg` in `images` directory
+
+```shell
 * Modify `items` such that the image file can be saved as a string
 
 ```shell
