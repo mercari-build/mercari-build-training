@@ -1,4 +1,4 @@
-# STEP7: Web のフロントエンドを実装する
+# STEP8: Web のフロントエンドを実装する
 
 ## 1. 環境構築
 
@@ -131,4 +131,4 @@ export const ItemList = (props: Prop) => {
 
 ## Next
 
-[STEP8: docker-compose で API とフロントエンドを動かす](08-docker-compose.ja.md)
+[STEP9: docker-compose で API とフロントエンドを動かす](./09-docker-compose.ja.md)

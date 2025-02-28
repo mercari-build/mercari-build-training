@@ -1,4 +1,4 @@
-# STEP5: Run the application in a virtual environment
+# STEP6: Run the application in a virtual environment
 
 In this step, we will learn how to use Docker.
 
@@ -151,4 +151,4 @@ Make sure you understand the following concepts
 
 ### Next
 
-[STEP6: Build Docker image using CI](06-ci.en.md)
+[STEP7: Build Docker image using CI](./07-ci.en.md)

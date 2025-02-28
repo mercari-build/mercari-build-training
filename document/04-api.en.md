@@ -1,4 +1,4 @@
-# STEP3: Make a listing API
+# STEP4: Make a listing API
 
 ## 1. Call an API
 
@@ -185,4 +185,4 @@ Check if you understand the following concepts.
 
 ### Next
 
-[STEP4: Database](04-database.en.md)
+[STEP5: Database](./05-database.en.md)

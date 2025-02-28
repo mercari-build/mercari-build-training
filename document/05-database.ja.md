@@ -1,4 +1,4 @@
-# STEP4: データベース
+# STEP5: データベース
 
 ここまで`items.json`に情報を保存してきましたが、このデータをデータベースに移し替えます。
 
@@ -78,4 +78,4 @@ $ curl -X GET 'http://127.0.0.1:9000/search?keyword=jacket'
 
 ### Next
 
-[STEP5: 仮想環境でアプリを動かす](05-docker.ja.md)
+[STEP6: 仮想環境でアプリを動かす](./06-docker.ja.md)

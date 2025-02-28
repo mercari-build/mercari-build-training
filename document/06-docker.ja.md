@@ -1,4 +1,4 @@
-# STEP5: 仮想環境でアプリを動かす
+# STEP6: 仮想環境でアプリを動かす
 
 このステップでは docker の使い方を学びます。
 
@@ -147,4 +147,4 @@ $ curl \
 
 ### Next
 
-[STEP6: CIを使ってDocker imageをBuildする](06-ci.ja.md)
+[STEP7: CIを使ってDocker imageをBuildする](./07-ci.ja.md)

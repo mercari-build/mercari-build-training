@@ -1,9 +1,9 @@
-# Extra2: Data Analysis (データ分析)
+# Extra1: Data Analysis (データ分析)
 
-Extra2 performs data analysis in [extra-02-data-analysis-en.ipynb](../extra/extra-02-data-analysis-en.ipynb) under the `extra` directory. Please work on the problems in the Notebook.
+Extra1 performs data analysis in [extra-01-data-analysis-en.ipynb](../extra/extra-01-data-analysis-en.ipynb) under the `extra` directory. Please work on the problems in the Notebook.
 The working environment is free, but here we share the `Google Colaboratory`, which is often used for data analysis.
 
-Extra2 では extra ディレクトリ配下の [extra-02-data-analysis-ja.ipynb](../extra/extra-02-data-analysis-ja.ipynb) にてデータ分析を行います。Notebook にある問題に取り組んで下さい。
+Extra1 では extra ディレクトリ配下の [extra-01-data-analysis-ja.ipynb](../extra/extra-01-data-analysis-ja.ipynb) にてデータ分析を行います。Notebook にある問題に取り組んで下さい。
 なお作業環境は自由ですが、ここではデータ分析でよく使用される `Google Colaboratory` について共有しておきます。
 
 ## Google Colaboratory
@@ -18,8 +18,8 @@ Extra2 では extra ディレクトリ配下の [extra-02-data-analysis-ja.ipynb
 
 ### How to Use (利用方法)
 
-Upload the file `extra-02-data-analysis-en.ipynb` in the `extra` directory to your Google Drive.
+Upload the file `extra-01-data-analysis-en.ipynb` in the `extra` directory to your Google Drive.
 Then right-click `Open with` and select `Google Colaboratory`. (If you do not have `Google Colaboratory`, go to `Connect more apps` and install `Google Colaboratory`.)
 
-`extra` ディレクトリ内にある `extra-02-data-analysis-ja.ipynb` を、ご自身の Google Drive 上にアップロードして下さい。
+`extra` ディレクトリ内にある `extra-01-data-analysis-ja.ipynb` を、ご自身の Google Drive 上にアップロードして下さい。
 その後、右クリックから `アプリで開く` をクリックし、`Google Colaboratory` を選択して下さい。（もし `Google Colaboratory` が無い場合は、`アプリを追加` から `Google Colaboratory` をインストールして下さい。）
