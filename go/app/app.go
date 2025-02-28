@@ -70,12 +70,12 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 
 	item := &Item{Name: req.Name}
 	message := fmt.Sprintf("item received: %s", item.Name)
-	slog.InfoContext(ctx, message)
+	slog.Info(message)
 
 	// STEP 4-2: add an implementation to store an image
 	err = s.itemRepo.Insert(ctx, item)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to store item: ", "error", err)
+		slog.Error("failed to store item: ", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -108,11 +108,9 @@ func parseGetImageRequest(r *http.Request) (*GetImageRequest, error) {
 
 // GetImage is a handler to return an image for GET /images/{filename} .
 func (s *Handlers) GetImage(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
 	req, err := parseGetImageRequest(r)
 	if err != nil {
-		slog.WarnContext(ctx, "failed to parse get image request: ", "error", err)
+		slog.Warn("failed to parse get image request: ", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -120,17 +118,17 @@ func (s *Handlers) GetImage(w http.ResponseWriter, r *http.Request) {
 	imgPath, err := s.buildImagePath(req.FileName)
 	if err != nil {
 		if !errors.Is(err, errImageNotFound) {
-			slog.WarnContext(ctx, "failed to build image path: ", "error", err)
+			slog.Warn("failed to build image path: ", "error", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
 		// when the image is not found, it returns the default image without an error.
-		slog.DebugContext(ctx, "image not found", "filename", imgPath)
+		slog.Debug("image not found", "filename", imgPath)
 		imgPath = filepath.Join(s.imgDirPath, "default.jpg")
 	}
 
-	slog.InfoContext(ctx, "returned image", "path", imgPath)
+	slog.Info("returned image", "path", imgPath)
 	http.ServeFile(w, r, imgPath)
 }
 
