@@ -157,8 +157,8 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 }
 
 type Item struct {
-	ID   int    `db:"id"`
-	Name string `db:"name"`
+	ID   int    `db:"id" json:"id"`
+	Name string `db:"name" json:"name"`
 }
 
 // Please run `go generate ./...` to generate the mock implementation
