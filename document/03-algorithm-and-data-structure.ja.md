@@ -1,5 +1,5 @@
-# Extra1: アルゴリズムとデータ構造　
-Extra1では、基本的なアルゴリズムとデータ構造を学んだ後、LeetCodeの問題を用いて演習を行います。解説の前に問題を解いておくことをお勧めします。
+# STEP3: アルゴリズムとデータ構造　
+STEP3では、基本的なアルゴリズムとデータ構造を学んだ後、LeetCodeの問題を用いて演習を行います。解説の前に問題を解いておくことをお勧めします。
 
 ## 教材
 
@@ -107,3 +107,6 @@ n 個の整数からなる配列 nums が与えられ、nums[i] は [1, n] の�
 ### [Non-overlapping Intervals](https://leetcode.com/problems/non-overlapping-intervals/description/) (optional)
 
 ### [Longest Substring Without Repeating Characters](https://leetcode.com/problems/longest-substring-without-repeating-characters/description/) (optional)
+
+
+[STEP4: 出品APIを作る](./04-api.ja.md)

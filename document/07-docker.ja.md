@@ -1,4 +1,4 @@
-# STEP5: 仮想環境でアプリを動かす
+# STEP7: 仮想環境でアプリを動かす
 
 このステップでは docker の使い方を学びます。
 
@@ -78,9 +78,9 @@ docker はホスト上に存在しないイメージを使う際には、自動�
 ## 4. Docker Image を Build する
 **pythonで開発をしている人は`python/`, Goの人は`go/`以下にある`Dockerfile`をbuildしてみましょう。**
 
-* 名前（リポジトリ名）は `build2024/app`, タグは`latest` とします。
+* 名前（リポジトリ名）は `mercari-build-training/app`, タグは`latest` とします。
 
-イメージ一覧の中に `build2024/app` という image があれば成功です。
+イメージ一覧の中に `mercari-build-training/app` という image があれば成功です。
 
 
 **:book: Reference**
@@ -112,9 +112,25 @@ STEP4-5 までで docker image の中は STEP2-2 と同じ状態になってい�
 
 **`Dockerfile`を変更し、必要なファイルをコピーしたり依存ライブラリをインストールしたりして, docker image 上で 出品 API が動くようにしましょう。**
 
-`$ docker run -d -p 9000:9000 build2024/app:latest`
+```shell
+$ docker run -d -p 9000:9000 mercari-build-training/app:latest
+```
 
-を実行しSTEP3と同様にしてAPIを叩ければ成功です。
+を実行し別のターミナルで
+
+```shell
+$ curl \
+  -X POST \
+  --url 'http://localhost:9000/items' \
+  -F 'name=jacket' \
+  -F 'category=fashion' \
+  -F 'image=@images/local_image.jpg'
+```
+
+の結果が正しく返ってくれば成功です。STEP3で実装した他のAPIに対しても正しく叩けるか確認してみましょう。
+
+出品 API を動かすためには、go や　python のプログラムに加えて db のファイルも docker image の中に含める必要があります。
+そのためには `mercari-build-training/` 以下で docker コマンドを実行する必要があることに注意しましょう。
 
 ---
 **:beginner: Point**
@@ -131,4 +147,4 @@ STEP4-5 までで docker image の中は STEP2-2 と同じ状態になってい�
 
 ### Next
 
-[STEP6: テストを用いてAPIの挙動を確認する](./06-testing.ja.md)
+[STEP8: CIを使ってDocker imageをBuildする](./08-ci.ja.md)

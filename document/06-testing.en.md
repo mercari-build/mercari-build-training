@@ -336,4 +336,4 @@ TBD
 
 ## Next
 
-[STEP7: Build Docker image using CI](./07-ci.en.md)
+[STEP7: Run the application in a virtual environment](./07-docker.en.md)

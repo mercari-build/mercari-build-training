@@ -329,4 +329,4 @@ TBD
 
 ## Next
 
-[STEP 7: CIを使ってDocker imageをBuildする](./07-ci.ja.md)
+[STEP7: 仮想環境でアプリを動かす](./07-docker.ja.md)
