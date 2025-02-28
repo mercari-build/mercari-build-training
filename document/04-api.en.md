@@ -25,7 +25,7 @@ You can check whether cURL is installed with the following command:
 $ curl --version
 ```
 
-If the version number is shown after executing the command above, cURL is installed. However, if not, please install the command.
+If the version number is shown after executing the command above, cURL is installed. If not, please install the command.
 
 ### Sending a GET Request
 
