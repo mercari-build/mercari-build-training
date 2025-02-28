@@ -106,10 +106,11 @@ $ go mod tidy
 Understand the role of `go.mod` and the commands around it referring to this [document](https://pkg.go.dev/cmd/go#hdr-The_go_mod_file).
 
 ### 4. Run the Go app
-
 ```shell
-$ go run app/main.go
+$  go run mercari-build-training/app
 ```
+mercari-build-training/app should be specified in the format `<module name>/<package>`. 
+<module name> is defined in the first line of the go.mod file.
 
 If successful, you can access the local host `http://127.0.0.1:9000` on our browser and you will see`{"message": "Hello, world!"}`.
 
