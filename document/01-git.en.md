@@ -110,7 +110,7 @@ Please open `https://github.com/<your github id>/mercari-build-training` in your
 
 ```bash
 git fetch origin
-git fetch origin/main
+git merge origin/main
 ```
 
 

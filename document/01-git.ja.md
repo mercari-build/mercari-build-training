@@ -111,7 +111,7 @@ fork元のリポジトリが更新された場合、その変更をforkした自
 
 ```bash
 git fetch origin
-git fetch origin/main
+git merge origin/main
 ```
 
 ### Next
