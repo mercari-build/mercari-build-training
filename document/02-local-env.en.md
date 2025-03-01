@@ -40,6 +40,7 @@ $ source .venv/bin/activate # for Mac or Unix user
 $ ./venv/Scripts/activate # for Windows user
 
 # Install required library
+$ pip install --upgrade pip setuptools wheel
 $ pip install -r requirements.txt
 ```
 

@@ -45,6 +45,7 @@ $ ./venv/Scripts/activate    # windowsの場合
 $ which python
 
 # 必要なライブラリをインストールする
+$ pip install --upgrade pip setuptools wheel
 $ pip install -r requirements.txt
 ```
 
