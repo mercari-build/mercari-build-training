@@ -39,7 +39,7 @@ $ python3 -m venv .venv
 
 # 仮想環境をアクティベートする  
 $ source .venv/bin/activate  # Unix / Macの場合
-$ ./venv/Scripts/activate    # windowsの場合
+$ .venv/Scripts/activate    # windowsの場合
 
 # 今回使うPythonのパスを確認する。
 $ which python
