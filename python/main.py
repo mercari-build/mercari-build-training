@@ -1,11 +1,42 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException
+from fastapi import FastAPI, Form, HTTPException, Depends
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+import sqlite3
 
-app = FastAPI()
+from contextlib import asynccontextmanager
+
+DATABASE = "fastapi.db"
+
+def get_db():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row # Return rows as dictionaries
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await create_tables_on_startup()
+    yield
+
+async def create_tables_on_startup():
+    conn = sqlite3.connect("fastapi.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS items (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name VARCHAR(255),
+		category VARCHAR(255)
+	)"""
+    )
+    conn.commit()
+    conn.close()
+
+app = FastAPI(lifespan=lifespan)
 logger = logging.getLogger("uvicorn")
 logger.level = logging.INFO
 images = pathlib.Path(__file__).parent.resolve() / "images"
@@ -18,15 +49,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/")
 def root():
     return {"message": "Hello, world!"}
 
 
 @app.post("/items")
-def add_item(name: str = Form(...)):
+def add_item(name: str = Form(...), db: sqlite3.Connection = Depends(get_db)):
     logger.info(f"Receive item: {name}")
+    cursor = db.cursor()
+    cursor.execute("INSERT INTO items (name, category) VALUES (?, ?)", (name, "test"))
+    db.commit()
     return {"message": f"item received: {name}"}
 
 
@@ -43,3 +76,5 @@ async def get_image(image_name):
         image = images / "default.jpg"
 
     return FileResponse(image)
+
+
