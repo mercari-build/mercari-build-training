@@ -20,8 +20,8 @@ graph TD
 ├── README.en.md
 ├── README.md
 ├── middleware.go       # サーバの汎用的な処理が責務
-├── mock_repository.go  # 永続化のモック
-├── repository.go       # 永続化のための処理が責務
+├── mock_infra.go       # 永続化のモック
+├── infra.go            # 永続化のための処理が責務
 ├── server.go           # HTTPリクエスト/レスポンス等のハンドリング、ハンドラのロジック管理が責務
 └── server_test.go      # server.goに含まれる処理のテストが責務
 ```

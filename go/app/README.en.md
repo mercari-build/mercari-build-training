@@ -20,8 +20,8 @@ The files and responsibilities included in this package are as follows. Please a
 ├── README.en.md
 ├── README.md
 ├── middleware.go       # Responsible for general server-side processing
-├── mock_repository.go  # Mock for persistence
-├── repository.go       # Responsible for persistence-related processing
+├── mock_infra.go       # Mock for persistence
+├── infra.go            # Responsible for persistence-related processing
 ├── server.go           # Responsible for handling HTTP requests/responses and managing handler logic
 └── server_test.go      # Responsible for testing the logic included in server
 ```
