@@ -74,7 +74,7 @@ def add_item(
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
 
-    insert_item(Item(name=name, category=category))
+    insert_item(Item(name=name))
     return AddItemResponse(**{"message": f"item received: {name}"})
 
 
