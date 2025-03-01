@@ -141,14 +141,14 @@ func (s Server) Run() int {
 }
 ```
 
-You may have noticed that `s.itemRepo` is not a struct called `itemRepository`, but rather an `interface` called `ItemRepository`. This `interface` is a type that represents a collection of methods. In this case, it only has a method called `Insert`. Therefore, any structure that has an `Insert` method can be set to this `ItemRepository`. In this example, within the `Run` method, since `itemRepo` is set to the `itemRepository` struct, the `Insert` method of `itemRepository` is called.
+You may have noticed that `s.itemRepo` is not a struct called `itemRepository`, but rather an `interface` called `ItemRepository`. This `interface` is a type that represents a collection of methods. In this case, it only has a method called `Insert`. Therefore, any structure that has an `Insert` method can be set to this `ItemRepository`. In this example, within the `Run` method, since `itemRepository` struct is set to the `itemRepo`, the `Insert` method of `itemRepository` is called.
 
 So, why is such abstraction necessary?
 There are several reasons, but one of the benefits here is that it makes it easy to replace the method of persistence.
 In this case, we are using JSON as the persistence method, but it becomes easy to replace it with a database or a test implementation.
 At this point, the caller in the code does not need to be aware of the underlying implementation and can call it without worrying about the specifics, which means there is no need for major changes in the code.
 
-This concept of abstraction is also touched upon in things like the UNIX philosophy, so if you're interested, you might want to read about it.
+This concept of abstraction is also touched upon in things like the UNIX philosophy book mentioned below, so if you're interested, you might want to read about it.
 
 **:book: Reference**
 
