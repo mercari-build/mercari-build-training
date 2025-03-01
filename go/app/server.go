@@ -131,7 +131,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	message := fmt.Sprintf("item received: %s", item.Name)
 	slog.Info(message)
 
-	// STEP 4-2: add an implementation to store an image
+	// STEP 4-2: add an implementation to store an item
 	err = s.itemRepo.Insert(ctx, item)
 	if err != nil {
 		slog.Error("failed to store item: ", "error", err)
