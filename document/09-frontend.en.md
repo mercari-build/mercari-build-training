@@ -24,7 +24,7 @@ After launching the web application with the following command, check your web a
 npm start
 ```
 
-Run the backend servers in Python/Go as described in Step4.
+Run the backend servers in Python/Go as described in STEP4.
 This simple web application allows you to do two things
 
 - Add a new item (Listing)

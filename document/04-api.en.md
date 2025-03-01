@@ -31,7 +31,7 @@ If the version number is shown after executing the command above, cURL is instal
 
 Let's send a GET reaquest with cURL to the API server we launched in the previous section. 
 
-Before sending the request with cURL, check that you can access `http://127.0.0.1:9000` in a browser and see `{"message": "Hello, world!"}` displayed. If not, refer to the section 4 of the previous chapter: Run Python/Go app([Python](./02-local-env.en.md#4-run-the-python-app), [Go](./02-local-env.en.md#4-run-the-go-app)).
+Before sending the request with cURL, check that you can access `http://127.0.0.1:9000` in a browser and see `{"message": "Hello, world!"}` displayed. If not, refer to the section 4 of the STEP2: Run Python/Go app([Python](./02-local-env.en.md#4-run-the-python-app), [Go](./02-local-env.en.md#4-run-the-go-app)).
 
 Now, it's time to send the request with cURL. Open a new terminal and run the following command: 
 

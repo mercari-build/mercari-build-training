@@ -88,7 +88,7 @@ Check that you can now see `mercari-build-training/app` in the list of images.
 * [Dockerfile reference](https://docs.docker.com/engine/reference/builder/)
 
 ## 5. Modity Dockerfile
-**Run the docker image you built in STEP4-4, and check if the following error shows up.**
+**Run the docker image you built in STEP7-4, and check if the following error shows up.**
 
 ```
 docker: Error response from daemon: OCI runtime create failed: container_linux.go:380: starting container process caused: exec: "python": executable file not found in $PATH: unknown.
@@ -109,7 +109,7 @@ Run the image with the modified `Dockerfile`, check if the same message is displ
 
 ## 6. Run the listing API on Docker
 
-The environment within the docker image should be the same as STEP2-2 after STEP4-5.
+The environment within the docker image should be the same as STEP2-2 after STEP7-5.
 
 **Modify `Dockerfile` to copy necessary files and install dependencies such that you can run the listing API on docker**
 

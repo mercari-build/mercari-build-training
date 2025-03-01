@@ -11,7 +11,7 @@
 * (EN)[Udemy Business - Docker for the Absolute Beginner - Hands On - DevOps](https://mercari.udemy.com/course/learn-docker/)
 ## 1. (復習) フロントエンドの docker image を作成する
 
-**STEP4を思い出しながらフロントエンドの docker image を作成しましょう。**
+**STEP7を思い出しながらフロントエンドの docker image を作成しましょう。**
 
 `typescript/simple-mercari-web`以下にフロントエンド用の `Dockerfile` がすでに用意されています。これを変更しフロントエンドが docker 上で立ち上がるようにしましょう。
 
@@ -49,7 +49,7 @@
 以下の点を参考にしながら `docker-compose.yml` を作成しましょう。
 
 * 使用する docker image
-    * (Option 1: 難易度 ☆) STEP4 と STEP6-1 でそれぞれ build した `build2024/app:latest` と `build2024/web:latest` を使う
+    * (Option 1: 難易度 ☆) STEP7 と STEP10-1 でそれぞれ build した `build2024/app:latest` と `build2024/web:latest` を使う
     * (Option 2: 難易度 ☆☆☆) `{go|python}/Dockerfile` と `typescript/simple-mercari-web/Dockerfile` から build するようにする
 * 使用する port
     * API : 9000
