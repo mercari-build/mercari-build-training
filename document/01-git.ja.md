@@ -94,6 +94,26 @@ $ git config --local core.hooksPath .githooks/
 - Pull Request
 
 ---
+
+## 最新の変更をpullする
+
+fork元のリポジトリが更新された場合、その変更をforkした自分のリポジトリにも取り込む必要があります。
+
+1. forkしたリポジトリの状態を更新する
+
+`https://github.com/<your github id>/mercari-build-training` をブラウザで開き、以下の通りforkしたリポジトリを更新してください。
+
+![fork-update1.png](./assets/fork-update1.png)
+
+![fork-update2.png](./assets/fork-update2.png)
+
+2. ローカルの状態を更新する
+
+```bash
+git fetch origin
+git fetch origin/main
+```
+
 ### Next
 
 [STEP2: 環境構築](02-local-env.ja.md)
