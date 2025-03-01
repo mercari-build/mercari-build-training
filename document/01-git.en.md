@@ -34,11 +34,16 @@ In this step, we will learn how to use Git and GitHub.
    ```
 
 ## Use basic commands in Git
+0. Set up SSH-key
+Follow the GitHub documentation to setup SSH-key.
+- [Generate new SSH key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent?platform=mac)
+- [Add a new SSH key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
 
-1. **Clone** `https://github.com/<your github id>/mercari-build-training` onto your local using the following command.
+1. **Clone** `https://github.com/<your github id>/mercari-build-training` onto your local using the following command. Follow the below image to get the ssh url. 
+![clone-ssh.png](./assets/clone-ssh.png)
    ```shell
    $ cd <your working space>
-   $ git clone https://github.com/<your github id>/mercari-build-training
+   $ git clone git@github.com:<your github id>/mercari-build-training.git
    ```
 
 **:bangbang: Caution**
