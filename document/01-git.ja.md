@@ -34,12 +34,17 @@
    ```
    
 ## Gitの基本コマンドを使う
+0. SSH-keyのセットアップ
+GitHubの公式ドキュメントに従ってSSH-keyをセットアップします。
+- [新しいSSHキーを生成する](https://docs.github.com/ja/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
+- [新しいSSHキーを追加する](https://docs.github.com/ja/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
 
 1. `https://github.com/<your github id>/mercari-build-training` を **clone**
-   します。 cloneすると、github上のリポジトリを自分のローカルにDownloadできます。
+   します。 cloneすると、github上のリポジトリを自分のローカルにDownloadできます。以下の画像に従ってsshのurlを取得できます。
+   ![clone-ssh.png](./assets/clone-ssh.png)
    ```shell
    $ cd <your working space>
-   $ git clone https://github.com/<your github id>/mercari-build-training
+   $ git clone git@github.com:<your github id>/mercari-build-training.git
    ```
 
 **:bangbang: 注意**
