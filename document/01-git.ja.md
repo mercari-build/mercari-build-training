@@ -57,7 +57,7 @@ $ git config --local core.hooksPath .githooks/
    $ git branch first-pull-request
    $ git switch first-pull-request
    ```
-3. README.md の中にある`@<your github id>` の部分をあなたのgithub idに書き換えてください
+3. README.md の中にある`@your_github_id` の部分をあなたのgithub idに書き換えてください
 4. 書き換えた内容を **commit**します
    ```shell
    $ git status # Check your change
