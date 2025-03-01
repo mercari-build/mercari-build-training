@@ -213,10 +213,11 @@ $ curl \
 
 本節のゴールは、1商品の詳細情報を取得できるエンドポイントを作成することです。
 そのために、 `GET /items/<item_id>` というエンドポイントを作成します。
+`<item_id>` は何個目に登録した商品かを表すIDです。jsonファイルからitem一覧を呼び出して、`item_id` 番目のitemの情報を返しましょう。
 
 ```shell
 $ curl -X GET 'http://127.0.0.1:9000/items/1'
-{"id": 1, "name": "jacket", "category": "fashion", "image_name": "..."}
+{"name": "jacket", "category": "fashion", "image_name": "..."}
 ```
 
 ## 6. (Optional) Loggerについて調べる

@@ -209,10 +209,12 @@ curl -X POST \
 The goal of this section is to create an endpoint which returns the detailed information of a single product.
 
 Make an endpoint `GET /items/<item_id>` to return item details.
+The `<item_id>` represents the ID indicating the order in which the item was registered.
+Let's call up the list of items from the JSON file and return the information of the item at the item_id position.
 
 ```shell
 $ curl -X GET 'http://127.0.0.1:9000/items/1'
-{"id": 1, "name": "jacket", "category": "fashion", "image_name": "..."}
+{"name": "jacket", "category": "fashion", "image_name": "..."}
 ```
 
 ## 6. (Optional) Understand Loggers
