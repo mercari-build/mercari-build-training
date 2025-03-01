@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	// STEP 5-1: uncomment this line
+	// _ "github.com/mattn/go-sqlite3"
 )
 
 var errImageNotFound = errors.New("image not found")
