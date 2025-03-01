@@ -133,9 +133,6 @@ $ curl \
 
 If the correct result is returned, it is successful. Let's also verify if other APIs implemented in STEP3 can be accessed correctly.
 
-To run the product API, it is necessary to include not only the Go or Python programs but also the db files in the Docker image.
-Note that you need to execute the Docker command under `mercari-build-training/`.
-
 ---
 **:beginner: Points**
 
