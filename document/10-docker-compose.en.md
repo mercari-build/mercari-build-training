@@ -32,7 +32,7 @@ Run the following and check if you can successfully open [http://localhost:3000/
 ## 3. Docker Compose Tutorial
 **Go through [Docker Compose tutorial](https://docs.docker.com/compose/gettingstarted/)**
 
-:pushpin: Sample code is in Python but the knowledge of Python or the environment is not necessary. Use this tutorial regardless of the backend language you chose in STEP3.
+:pushpin: Sample code is in Python but the knowledge of Python or the environment is not necessary. Use this tutorial regardless of the backend language you chose in STEP4.
 
 **:beginner: Point**
 

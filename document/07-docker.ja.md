@@ -127,7 +127,7 @@ $ curl \
   -F 'image=@images/local_image.jpg'
 ```
 
-の結果が正しく返ってくれば成功です。STEP3で実装した他のAPIに対しても正しく叩けるか確認してみましょう。
+の結果が正しく返ってくれば成功です。STEP4で実装した他のAPIに対しても正しく叩けるか確認してみましょう。
 
 出品 API を動かすためには、go や　python のプログラムに加えて db のファイルも docker image の中に含める必要があります。
 そのためには `mercari-build-training/` 以下で docker コマンドを実行する必要があることに注意しましょう。
