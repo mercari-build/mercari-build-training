@@ -68,3 +68,64 @@ Start by understanding the problem (This takes a certain amount of time.)
 We often say “read the official documentation!” but if you don’t have the necessary basic or peripheral knowledge, reading the documentation won’t help you understand.
 For example, for you to understand Docker, you need to have knowledge of Linux and networking.
 To start off, use Udemy and relevant books to increase your basic computer science skills.
+
+
+## Utilizing LLMs
+
+- ChatGPT: https://chatgpt.com/
+- DeepSeek: https://www.deepseek.com/
+- Claude: https://claude.ai/
+- Gemini: https://gemini.google.com/
+
+LLMs (Large Language Models) like ChatGPT and Claude can be powerful development aids. However, there are several key points to keep in mind to effectively utilize LLMs.
+
+### Ask Specific Questions
+
+Rather than vague questions like "improve this code," ask specific questions like:
+
+```
+I'd like to reduce memory usage in the following Python code.
+Particularly, I want to improve parts dealing with large arrays.
+What methods are available?
+
+[CODE]
+```
+
+### Share Complete Error Messages
+
+When encountering errors, including the following information will help get more accurate responses:
+
+1. Complete error message
+2. Execution environment (OS and versions)
+3. What you've tried and expected behavior
+
+### Use as Code Review
+
+Having LLMs review your code can help identify:
+
+- Security concerns
+- Performance improvements
+- Better coding practices and design suggestions
+- Comparisons with best practices
+
+### Use as a Learning Tool
+
+You can use LLMs as a "teacher" when learning new technologies or concepts:
+
+```
+Please explain Docker's layer architecture
+in a way that beginners can understand.
+I'd like the explanation to include concrete examples.
+```
+
+### Understand LLM Limitations
+
+However, keep these points in mind:
+
+- Always review and understand generated code before using it
+- Double-check security-related aspects in official documentation
+- Recognize that they may provide outdated or incorrect information
+- **Don't share project confidential information**
+  - [DeepSeek coding has the capability to transfer users' data directly to the Chinese government](https://abcnews.go.com/US/deepseek-coding-capability-transfer-users-data-directly-chinese/story?id=118465451)
+
+LLMs are powerful tools, but they should be used as aids, with developers making the final decisions. Especially for beginners, it's recommended not to rely too heavily on LLMs and to properly learn the fundamentals independently.

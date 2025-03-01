@@ -1,4 +1,4 @@
-# STEP3: 出品APIを作る
+# STEP4: 出品APIを作る
 
 ## 1. APIを呼び出す
 
@@ -25,7 +25,7 @@ cURLが利用されているかは、以下のコマンドで確認できます�
 $ curl --version
 ```
 
-このコマンドを実行後にバージョンが表示されればcURLはインストールされているので、本節はスキップしてください。仮にインストールされていない場合は、各自調べてインストールしてください。
+このコマンドを実行後にバージョンが表示されればcURLはインストールされています。インストールされていない場合は、各自調べてインストールしてください。
 
 ### GETリクエストの送信
 
@@ -103,6 +103,61 @@ $ curl \
 }
 ```
 
+### Goの永続化に関する補足
+
+Go側のコードは以下のような実装をしています。この場合、 `AddItem` メソッド内で呼ばれる `Insert()` メソッドは `itemRepository` の `Insert()` メソッドです。
+
+```go
+type Handlers struct {
+	imgDirPath string
+	itemRepo   ItemRepository
+}
+
+func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
+  // (略)
+  err = s.itemRepo.Insert(ctx, item)
+  // (略)
+}
+
+type ItemRepository interface {
+	Insert(ctx context.Context, item *Item) error
+}
+
+func NewItemRepository() ItemRepository {
+	return &itemRepository{fileName: "items.json"}
+}
+
+type itemRepository struct {
+	fileName string
+}
+
+func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
+	// STEP 4-1: add an implementation to store an item
+
+	return nil
+}
+
+func (s Server) Run() int {
+  // (略)
+  itemRepo := NewItemRepository()
+	h := &Handlers{imgDirPath: s.ImageDirPath, itemRepo: itemRepo}
+  // (略)
+}
+```
+
+ここで、 `s.itemRepo` は `itemRepository` と呼ばれる `struct` ではなく、`ItemRepository` と呼ばれる `interface` であることに気づいたでしょうか。この `interface` とは、メソッドの集合を表現した型です。今回は `Insert` と呼ばれるメソッドのみを持ちます。したがって、 `Insert` というメソッドを持つ任意の構造体をこの `ItemRepository` にセットすることが可能です。今回は、`Run` メソッドの中で、`itemRepo` に `itemRepository` を構造体されているため、`itemRepository` の `Insert` メソッドが呼び出されます。
+
+では、なぜこのような抽象化が必要なのでしょうか？
+理由はいくつかありますが、ここでは永続化の方法を容易に置き換えられることがメリットの1つです。
+今回は、JSONを永続化の方法として選択していますが、データベースやテスト用の実装をここで置き換えることが容易になります。
+この時に、コード上は呼び出し側は裏側の実装がどうなっているかを意識せずに呼び出すことが出来るため、コードの大きな改変が不要になります。
+
+このような抽象化の概念はUNIX哲学等でも触れられているので、興味があれば読んでみてください。
+
+**:book: Reference**
+
+* (JA)[book - UNIXという考え方: その設計思想と哲学](https://www.amazon.co.jp/dp/4274064069)
+
 ## 3. 商品一覧を取得する
 
 本節のゴールは、登録された商品一覧を取得するための `GET /items` エンドポイントを実装することです。
@@ -161,7 +216,7 @@ $ curl \
 
 ```shell
 $ curl -X GET 'http://127.0.0.1:9000/items/1'
-{"name": "jacket", "category": "fashion", "image_name": "..."}
+{"id": 1, "name": "jacket", "category": "fashion", "image_name": "..."}
 ```
 
 ## 6. (Optional) Loggerについて調べる
@@ -192,4 +247,4 @@ Image not found: <image path>
 
 ### Next
 
-[STEP4: データベース](04-database.ja.md)
+[STEP5: データベース](./05-database.ja.md)

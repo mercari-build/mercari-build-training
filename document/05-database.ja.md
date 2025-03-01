@@ -1,4 +1,4 @@
-# STEP4: データベース
+# STEP5: データベース
 
 ここまで`items.json`に情報を保存してきましたが、このデータをデータベースに移し替えます。
 
@@ -17,13 +17,13 @@
 * SQLiteをインストール
 * dbフォルダに、`mercari.sqlite3` というデータベースファイルを作成
 * `mercari.sqlite3`を開き、`items`テーブルを作成 
-*  `items`テーブルは以下のように定義し、スキーマを `db/items.db` に保存します。
+*  `items`テーブルは以下のように定義し、スキーマを `db/items.sql` に保存します。
   * id: int 商品ごとにユニークなID
   * name: string 商品の名前
   * category: string 商品のカテゴリ
   * image_name: string 画像のパス
 
-`items.db`はgitの管理対象にしますが、`mercari.sqlite3`はgitの管理対象として追加しないようにしてください。
+`items.sql`はgitの管理対象にしますが、`mercari.sqlite3`はgitの管理対象として追加しないようにしてください。
 
 データがデータベースに保存され、商品一覧情報を取り出すことができるように、`GET /items`と`POST /items`のエンドポイントを変更しましょう。
 
@@ -78,4 +78,4 @@ $ curl -X GET 'http://127.0.0.1:9000/search?keyword=jacket'
 
 ### Next
 
-[STEP5: 仮想環境でアプリを動かす](05-docker.ja.md)
+[STEP6: テストを用いてAPIの挙動を確認する](./06-testing.ja.md)

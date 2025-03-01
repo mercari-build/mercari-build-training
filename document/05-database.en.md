@@ -1,4 +1,4 @@
-# STEP4: Database
+# STEP5: Database
 In the previous step, we saved data into `items.json`. We will move this into a database.
 
 **:book: Reference**
@@ -14,13 +14,13 @@ We will use a database called **SQLite**.
 
 * Install SQlite, and make a database file called `mercari.sqlite3`.  
 * Open this file and make a table called `items`. 
-* Define the items table as follows and save the schema into `db/items.db`.
+* Define the items table as follows and save the schema into `db/items.sql`.
   * id: int (Identifier unique for each item)
   * name: string (Name of the item)
   * category: string (Category of the item)
   * image_name: string (Filename of the imeage)
 
-Change the endpoints `GET /items` and `POST /items` such that items are saved into the database and can be returned based on GET request. Add `mercari.sqlite3` to your `.gitignore` such that it is not committed. `items.db` should be committed. 
+Change the endpoints `GET /items` and `POST /items` such that items are saved into the database and can be returned based on GET request. Add `mercari.sqlite3` to your `.gitignore` such that it is not committed. `items.sql` should be committed. 
 
 **:beginner: Points**
 
@@ -65,4 +65,4 @@ Since `GET items` should return the category name as before, **join** these two 
 
 ### Next
 
-[STEP5: Run the application in a virtual environment](05-docker.en.md)
+[STEP6: Ensure API Behavior Using Tests](./06-testing.en.md)

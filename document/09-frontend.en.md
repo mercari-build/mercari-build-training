@@ -1,4 +1,4 @@
-# STEP7: Implement a simple Mercari webapp as frontend
+# STEP9: Implement a simple Mercari webapp as frontend
 
 ## 1. Build local environment
 
@@ -131,4 +131,4 @@ When selecting a framework, it is good to consider the following perspectives:
 
 ## Next
 
-[STEP8: Run frontend and API using docker-compose](08-docker-compose.en.md)
+[STEP10: Run frontend and API using docker-compose](./10-docker-compose.en.md)
