@@ -101,6 +101,18 @@ async def get_image(image_name):
 
     return FileResponse(image)
 
+@app.get("/items")
+def get_items():
+    if not items_file.exists():
+        return {"items": []}
+    
+    try:
+        with open(items_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError:
+        data = {"items": []}
+        
+    return data
 
 class Item(BaseModel):
     name: str
