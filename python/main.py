@@ -5,26 +5,30 @@ from fastapi import FastAPI, Form, HTTPException, Depends
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
-
+from pydantic import BaseModel
 from contextlib import asynccontextmanager
 
-DATABASE = "fastapi.db"
+DATABASE = "fastapi.sqlite3"
+
 
 def get_db():
     conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row # Return rows as dictionaries
+    conn.row_factory = sqlite3.Row  # Return rows as dictionaries
     try:
         yield conn
     finally:
         conn.close()
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await create_tables_on_startup()
+    await on_startup()
     yield
 
-async def create_tables_on_startup():
-    conn = sqlite3.connect("fastapi.db")
+
+async def on_startup():
+    logging.info("Startup application...")
+    conn = sqlite3.connect("fastapi.sqlite3")
     cursor = conn.cursor()
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS items (
@@ -34,7 +38,7 @@ async def create_tables_on_startup():
 	)"""
     )
     conn.commit()
-    conn.close()
+
 
 app = FastAPI(lifespan=lifespan)
 logger = logging.getLogger("uvicorn")
@@ -49,20 +53,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-def root():
-    return {"message": "Hello, world!"}
+
+class HelloResponse(BaseModel):
+    message: str
 
 
-@app.post("/items")
-def add_item(name: str = Form(...), db: sqlite3.Connection = Depends(get_db)):
-    logger.info(f"Receive item: {name}")
-    cursor = db.cursor()
-    cursor.execute("INSERT INTO items (name, category) VALUES (?, ?)", (name, "test"))
-    db.commit()
-    return {"message": f"item received: {name}"}
+@app.get("/", response_model=HelloResponse)
+def hello():
+    return HelloResponse(**{"message": "Hello World"})
 
 
+class AddItemResponse(BaseModel):
+    message: str
+
+# add_item is a handler to add a new item for POST /items .
+@app.post("/items", response_model=AddItemResponse)
+def add_item(
+    name: str = Form(...),
+    category: str = Form(...),
+    db: sqlite3.Connection = Depends(get_db),
+):
+    insert_item(Item(name=name, category=category), db)
+    return AddItemResponse(**{"message": f"item received: {name}"})
+
+# get_image is a handler to return an image for GET /images/{filename} .
 @app.get("/image/{image_name}")
 async def get_image(image_name):
     # Create image path
@@ -76,5 +90,16 @@ async def get_image(image_name):
         image = images / "default.jpg"
 
     return FileResponse(image)
+
+
+class Item(BaseModel):
+    name: str
+    category: str
+
+def insert_item(item: Item, db):
+    cursor = db.cursor()
+    cursor.execute("INSERT INTO items (name, category) VALUES (?, ?)", (item.name, item.category))
+    db.commit()
+
 
 
