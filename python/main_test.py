@@ -47,7 +47,7 @@ client = TestClient(app)
 @pytest.mark.parametrize(
     "want_status_code, want_body",
     [
-        (200, {"message": "Hello World"}),
+        (200, {"message": "Hello, world!"}),
     ],
 )
 def test_hello(want_status_code, want_body):

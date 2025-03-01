@@ -43,7 +43,7 @@ class HelloResponse(BaseModel):
 
 @app.get("/", response_model=HelloResponse)
 def hello():
-    return HelloResponse(**{"message": "Hello World"})
+    return HelloResponse(**{"message": "Hello, world!"})
 
 
 class AddItemResponse(BaseModel):
