@@ -22,7 +22,7 @@ npm ci
 npm start
 ```
 
-Step3 のサーバー(Python/Go)もローカルで立ち上げておきましょう。
+Step4 のサーバー(Python/Go)もローカルで立ち上げておきましょう。
 このシンプルな画面では、以下の二つのことができるようになっています。
 
 - 新しい商品の登録 (Listing)
@@ -36,7 +36,7 @@ Step3 のサーバー(Python/Go)もローカルで立ち上げておきましょ
 
 Listing のフォームを使って、新しい商品を登録してみましょう。この画面では、名前、カテゴリ、画像が登録できるようになっています。
 
-STEP3 で名前とカテゴリのみで出品をする API を作った人は、`typescript/simple-mercari-web/src/components/Listing.tsx`を編集して画像のフィールドを削除しておきましょう。
+STEP4 で名前とカテゴリのみで出品をする API を作った人は、`typescript/simple-mercari-web/src/components/Listing.tsx`を編集して画像のフィールドを削除しておきましょう。
 
 ## (Optional) 課題 2. 各アイテムの画像を表示する
 
