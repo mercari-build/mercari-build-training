@@ -69,13 +69,12 @@ class AddItemResponse(BaseModel):
 @app.post("/items", response_model=AddItemResponse)
 def add_item(
     name: str = Form(...),
-    category: str = Form(...),
     db: sqlite3.Connection = Depends(get_db),
 ):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
 
-    insert_item(Item(name=name, category=category))
+    insert_item(Item(name=name))
     return AddItemResponse(**{"message": f"item received: {name}"})
 
 
@@ -97,9 +96,8 @@ async def get_image(image_name):
 
 class Item(BaseModel):
     name: str
-    category: str
 
 
 def insert_item(item: Item):
-    # STEP 4-1: add an implementation to store an item
+    # STEP 4-2: add an implementation to store an item
     pass
