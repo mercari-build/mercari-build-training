@@ -45,7 +45,7 @@ func NewItemRepository() ItemRepository {
 
 // Insert inserts an item into the repository.
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	// STEP 4-1: add an implementation to store an item
+	// STEP 4-2: add an implementation to store an item
 	items, err := decodeItemsFromFile(i.fileName)
 	if err != nil {
 		slog.Error("failed to decode items from file: ", "error", err)

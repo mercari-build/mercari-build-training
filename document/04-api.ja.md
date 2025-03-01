@@ -132,7 +132,7 @@ type itemRepository struct {
 }
 
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	// STEP 4-1: add an implementation to store an item
+	// STEP 4-2: add an implementation to store an item
 
 	return nil
 }
