@@ -8,35 +8,18 @@ import sqlite3
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 
-DATABASE = "fastapi.sqlite3"
 
 
+# STEP 5-1: set up the database connection
 def get_db():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row  # Return rows as dictionaries
-    try:
-        yield conn
-    finally:
-        conn.close()
+    yield
 
-
-
-def on_startup():
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    cursor.execute(
-        """CREATE TABLE IF NOT EXISTS items (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name VARCHAR(255),
-        category VARCHAR(255)
-    )"""
-    )
-    conn.commit()
-    conn.close()
+def setup_database():
+    pass
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    on_startup()
+    setup_database()
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -75,7 +58,8 @@ def add_item(
 ):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
-    insert_item(Item(name=name, category=category), db)
+
+    insert_item(Item(name=name, category=category))
     return AddItemResponse(**{"message": f"item received: {name}"})
 
 # get_image is a handler to return an image for GET /images/{filename} .
@@ -98,10 +82,8 @@ class Item(BaseModel):
     name: str
     category: str
 
-def insert_item(item: Item, db):
-    cursor = db.cursor()
-    cursor.execute("INSERT INTO items (name, category) VALUES (?, ?)", (item.name, item.category))
-    db.commit()
-
+def insert_item(item: Item):
+    # STEP 4-1: add an implementation to store an item
+    pass
 
 
