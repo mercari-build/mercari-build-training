@@ -94,6 +94,26 @@ Check if you understand the following concepts.
 
 ---
 
+## Pull the latest changes
+
+When the original repository is updated, you have to pull the changes into your forked repository as well.
+
+1. Update your forked repository
+
+Please open `https://github.com/<your github id>/mercari-build-training` in your browser, please update your repository as follows:
+
+![fork-update1.png](./assets/fork-update1.png)
+
+![fork-update2.png](./assets/fork-update2.png)
+
+2. Update your local environment
+
+```bash
+git fetch origin
+git merge origin/main
+```
+
+
 ### Next
 
 [STEP2: Building local environment](02-local-env.en.md)
