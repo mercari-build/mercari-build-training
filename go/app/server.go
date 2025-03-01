@@ -78,6 +78,8 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 
 type AddItemRequest struct {
 	Name string `form:"name"`
+	// Category string `form:"category"` // STEP 4-2: add a category field
+	Image []byte `form:"image"` // STEP 4-4: add an image field
 }
 
 type AddItemResponse struct {
@@ -88,13 +90,18 @@ type AddItemResponse struct {
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	req := &AddItemRequest{
 		Name: r.FormValue("name"),
+		// STEP 4-2: add a category field
 	}
+
+	// STEP 4-4: add an image field
 
 	// validate the request
 	if req.Name == "" {
 		return nil, errors.New("name is required")
 	}
 
+	// STEP 4-2: validate the category field
+	// STEP 4-4: validate the image field
 	return req, nil
 }
 
@@ -108,9 +115,19 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// STEP 4-4: add an implementation to store an image
+	// STEP 4-4: uncomment on adding an implementation to store an image
+	// fileName, err := s.storeImage(req.Image)
+	// if err != nil {
+	// 	slog.Error("failed to store image: ", "error", err)
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
 
-	item := &Item{Name: req.Name}
+	item := &Item{
+		Name: req.Name,
+		// STEP 4-2: add a category field
+		// STEP 4-4: add an image field
+	}
 	message := fmt.Sprintf("item received: %s", item.Name)
 	slog.Info(message)
 
@@ -128,6 +145,21 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+// storeImage stores an image and returns the file path and an error if any.
+// this method calculates the hash sum of the image as a file name to avoid the duplication of a same file
+// and stores it in the image directory.
+func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
+	// STEP 4-4: add an implementation to store an image
+	// TODO:
+	// - calc hash sum
+	// - build image file path
+	// - check if the image already exists
+	// - store image
+	// - return the image file path
+
+	return
 }
 
 type GetImageRequest struct {

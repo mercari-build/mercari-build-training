@@ -39,3 +39,11 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 
 	return nil
 }
+
+// StoreImage stores an image and returns an error if any.
+// This package doesn't have a related interface for simplicity.
+func StoreImage(fileName string, image []byte) error {
+	// STEP 4-4: add an implementation to store an image
+
+	return nil
+}
