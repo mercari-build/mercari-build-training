@@ -9,11 +9,20 @@ from pydantic import BaseModel
 from contextlib import asynccontextmanager
 
 
+DATABASE = "fastapi.sqlite3"
+
+def get_db():
+    if not os.path.exists(DATABASE):
+        yield
+    
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row  # Return rows as dictionaries
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 # STEP 5-1: set up the database connection
-def get_db():
-    yield
-
 def setup_database():
     pass
 
