@@ -57,10 +57,10 @@ Once the virtual environment is created, it must be activated by the `source .ve
 ### 4. Run the Python app
 
 ```shell
-$ uvicorn main:app --reload --port 9000
+$ uvicorn main:app --reload --port 9001
 ```
 
-If successful, you can access the local host `http://127.0.0.1:9000` on our browser and you will see`{"message": "Hello, world!"}`.
+If successful, you can access the local host `http://127.0.0.1:9001` on our browser and you will see`{"message": "Hello, world!"}`.
 
 ---
 
@@ -112,7 +112,7 @@ Understand the role of `go.mod` and the commands around it referring to this [do
 $ go run cmd/api/main.go
 ```
 
-If successful, you can access the local host `http://127.0.0.1:9000` on our browser and you will see`{"message": "Hello, world!"}`.
+If successful, you can access the local host `http://127.0.0.1:9001` on our browser and you will see`{"message": "Hello, world!"}`.
 
 ---
 **:beginner: Points**

@@ -62,10 +62,10 @@ $ pip install -r requirements.txt
 ### 4. アプリにアクセスする
 
 ```shell
-$ uvicorn main:app --reload --port 9000
+$ uvicorn main:app --reload --port 9001
 ```
 
-起動に成功したら、 ブラウザで `http://127.0.0.1:9000` にアクセスして、`{"message": "Hello, world!"}`
+起動に成功したら、 ブラウザで `http://127.0.0.1:9001` にアクセスして、`{"message": "Hello, world!"}`
 が表示されれば成功です。
 
 ---
@@ -118,7 +118,7 @@ $ go mod tidy
 $ go run cmd/api/main.go
 ```
 
-起動に成功したら、 ブラウザで `http://127.0.0.1:9000` にアクセスして、`{"message": "Hello, world!"}`
+起動に成功したら、 ブラウザで `http://127.0.0.1:9001` にアクセスして、`{"message": "Hello, world!"}`
 が表示されれば成功です。
 
 ---
