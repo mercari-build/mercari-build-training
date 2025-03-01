@@ -9,27 +9,33 @@ from pydantic import BaseModel
 from contextlib import asynccontextmanager
 
 
-DATABASE = "fastapi.sqlite3"
+# Define the path to the images & sqlite3 database
+images = pathlib.Path(__file__).parent.resolve() / "images"
+db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
+
 
 def get_db():
-    if not os.path.exists(DATABASE):
+    if not db.exists():
         yield
-    
-    conn = sqlite3.connect(DATABASE)
+
+    conn = sqlite3.connect(db)
     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
     try:
         yield conn
     finally:
         conn.close()
 
+
 # STEP 5-1: set up the database connection
 def setup_database():
     pass
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_database()
     yield
+
 
 app = FastAPI(lifespan=lifespan)
 
@@ -58,6 +64,7 @@ def hello():
 class AddItemResponse(BaseModel):
     message: str
 
+
 # add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
 def add_item(
@@ -70,6 +77,7 @@ def add_item(
 
     insert_item(Item(name=name, category=category))
     return AddItemResponse(**{"message": f"item received: {name}"})
+
 
 # get_image is a handler to return an image for GET /images/{filename} .
 @app.get("/image/{image_name}")
@@ -91,8 +99,7 @@ class Item(BaseModel):
     name: str
     category: str
 
+
 def insert_item(item: Item):
     # STEP 4-1: add an implementation to store an item
     pass
-
-

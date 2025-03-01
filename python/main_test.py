@@ -3,12 +3,13 @@ from main import app, get_db
 import pytest
 import sqlite3
 import os
+import pathlib
 
 # STEP 6-4: uncomment this test setup
-# TEST_DATABASE = "test_fastapi.sqlite3"
+# test_db = pathlib.Path(__file__).parent.resolve() / "db" / "test_mercari.sqlite3"
 
 # def override_get_db():
-#     conn = sqlite3.connect(TEST_DATABASE)
+#     conn = sqlite3.connect(test_db)
 #     conn.row_factory = sqlite3.Row
 #     try:
 #         yield conn
@@ -19,7 +20,7 @@ import os
 # @pytest.fixture(autouse=True)
 # def db_connection():
 #     # Before the test is done, create a test database
-#     conn = sqlite3.connect(TEST_DATABASE)
+#     conn = sqlite3.connect(test_db)
 #     cursor = conn.cursor()
 #     cursor.execute(
 #         """CREATE TABLE IF NOT EXISTS items (
@@ -35,9 +36,8 @@ import os
 
 #     conn.close()
 #     # After the test is done, remove the test database
-#     if os.path.exists(TEST_DATABASE):
-#         os.remove(TEST_DATABASE)
-
+#     if test_db.exists():
+#         test_db.unlink() # Remove the file
 
 # app.dependency_overrides[get_db] = override_get_db
 
