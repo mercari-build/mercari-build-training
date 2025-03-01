@@ -20,27 +20,27 @@ def get_db():
         conn.close()
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await on_startup()
-    yield
 
-
-async def on_startup():
-    logging.info("Startup application...")
-    conn = sqlite3.connect("fastapi.sqlite3")
+def on_startup():
+    conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS items (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name VARCHAR(255),
-		category VARCHAR(255)
-	)"""
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name VARCHAR(255),
+        category VARCHAR(255)
+    )"""
     )
     conn.commit()
+    conn.close()
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    on_startup()
+    yield
 
 app = FastAPI(lifespan=lifespan)
+
 logger = logging.getLogger("uvicorn")
 logger.level = logging.INFO
 images = pathlib.Path(__file__).parent.resolve() / "images"
@@ -73,6 +73,8 @@ def add_item(
     category: str = Form(...),
     db: sqlite3.Connection = Depends(get_db),
 ):
+    if not name:
+        raise HTTPException(status_code=400, detail="name is required")
     insert_item(Item(name=name, category=category), db)
     return AddItemResponse(**{"message": f"item received: {name}"})
 

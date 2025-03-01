@@ -5,42 +5,42 @@ import sqlite3
 import os
 
 # STEP 6-4: uncomment this test setup
-# TEST_DATABASE = "test_fastapi.sqlite3"
+TEST_DATABASE = "test_fastapi.sqlite3"
 
 
-# def override_get_db():
-#     conn = sqlite3.connect(TEST_DATABASE)
-#     conn.row_factory = sqlite3.Row
-#     try:
-#         yield conn
-#     finally:
-#         conn.close()
+def override_get_db():
+    conn = sqlite3.connect(TEST_DATABASE)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 
-# @pytest.fixture(autouse=True)
-# def db_connection():
-#     # Before the test is done, create a test database
-#     conn = sqlite3.connect(TEST_DATABASE)
-#     cursor = conn.cursor()
-#     cursor.execute(
-#         """CREATE TABLE IF NOT EXISTS items (
-# 		id INTEGER PRIMARY KEY AUTOINCREMENT,
-# 		name VARCHAR(255),
-# 		category VARCHAR(255)
-# 	)"""
-#     )
-#     conn.commit()
-#     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
+@pytest.fixture(autouse=True)
+def db_connection():
+    # Before the test is done, create a test database
+    conn = sqlite3.connect(TEST_DATABASE)
+    cursor = conn.cursor()
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS items (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name VARCHAR(255),
+		category VARCHAR(255)
+	)"""
+    )
+    conn.commit()
+    conn.row_factory = sqlite3.Row  # Return rows as dictionaries
 
-#     yield conn
+    yield conn
 
-#     conn.close()
-#     # After the test is done, remove the test database
-#     if os.path.exists(TEST_DATABASE):
-#         os.remove(TEST_DATABASE)
+    conn.close()
+    # After the test is done, remove the test database
+    if os.path.exists(TEST_DATABASE):
+        os.remove(TEST_DATABASE)
 
 
-# app.dependency_overrides[get_db] = override_get_db
+app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
 
@@ -67,7 +67,13 @@ def test_hello(want_status_code, want_body):
 )
 def test_add_item_e2e(args,want_status_code,db_connection):
     response = client.post("/items/", data=args)
-    assert response.status_code == 200
+    assert response.status_code == want_status_code
+    
+    if want_status_code >= 400:
+        return
+    
+    
+    # Check if the response body is correct
     response_data = response.json()
     assert "message" in response_data
 
