@@ -7,11 +7,14 @@ from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
+import json
 
 
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
 db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
+# items.jsonに新しいアイテムを追加した時のデータを追加するためにjsonファイルのパスを指定
+items_file = pathlib.Path(__file__).parent.resolve() / "items.json"
 
 
 def get_db():
@@ -69,13 +72,18 @@ class AddItemResponse(BaseModel):
 @app.post("/items", response_model=AddItemResponse)
 def add_item(
     name: str = Form(...),
+    category: str = Form(...),
     db: sqlite3.Connection = Depends(get_db),
 ):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
+    
+    if not category:
+        raise HTTPException(status_code=400, detail="category is required")
 
-    insert_item(Item(name=name))
-    return AddItemResponse(**{"message": f"item received: {name}"})
+    new_item = Item(name=name, category=category)
+    insert_item(new_item)
+    return AddItemResponse(**{"message": f"item received: {name} category received: {category}"})
 
 
 # get_image is a handler to return an image for GET /images/{filename} .
@@ -96,8 +104,31 @@ async def get_image(image_name):
 
 class Item(BaseModel):
     name: str
+    category: str
 
 
 def insert_item(item: Item):
     # STEP 4-1: add an implementation to store an item
-    pass
+    global items_file
+    
+    # ファイルが存在しない場合初期状態で作成する
+    if not items_file.exists():
+        with open(items_file, "w", encoding="utf-8") as f:
+            json.dump({"items": []}, f, ensure_ascii=False, indent=2)
+            
+    # 既存のファイルがあった場合読み込み
+    try:
+        # すでにデータがある場合
+        with open(items_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        # ファイルはあるがデータが空の場合
+    except json.JSONDecodeError:
+        data = {"items": []}
+        
+    # 新しいアイテムを追加する
+    data["items"].append({"name": item.name, "category": item.category})
+    
+    #更新したデータを書き戻す
+    with open(items_file, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii="False", indent=2)
+        
