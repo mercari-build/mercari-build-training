@@ -116,6 +116,6 @@ def insert_item(item: Item):
     d_update['items'].append(item_detail)
 
     with open('items.json', 'w') as f:
-        json.dump(d, f, indent=2)
+        json.dump(d_update, f, indent=2)
 
     pass
