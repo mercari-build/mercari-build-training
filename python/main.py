@@ -69,7 +69,6 @@ class AddItemResponse(BaseModel):
 @app.post("/items", response_model=AddItemResponse)
 def add_item(
     name: str = Form(...),
-    category: str = Form(...),
     db: sqlite3.Connection = Depends(get_db),
 ):
     if not name:
@@ -97,7 +96,6 @@ async def get_image(image_name):
 
 class Item(BaseModel):
     name: str
-    category: str
 
 
 def insert_item(item: Item):
