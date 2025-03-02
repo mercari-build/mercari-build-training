@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -44,10 +45,11 @@ func (s Server) Run() int {
 
 	// set up routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", h.Hello)
 	mux.HandleFunc("POST /items", h.AddItem)
 	mux.HandleFunc("GET /items", h.GetItems)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
+	mux.HandleFunc("GET /items/{item_id}", h.GetItemByID)
+	mux.HandleFunc("GET /", h.Hello)
 
 	// start the server
 	slog.Info("http server started on", "port", s.Port)
@@ -68,6 +70,39 @@ type Handlers struct {
 
 type HelloResponse struct {
 	Message string `json:"message"`
+}
+
+func (s *Handlers) GetItemByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// URL パスから item_id を取得
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) < 3 {
+		http.Error(w, "invalid request path", http.StatusBadRequest)
+		return
+	}
+	itemIDStr := parts[2] // `/items/{item_id}` の `{item_id}` に相当
+
+	// 数値に変換
+	itemID, err := strconv.Atoi(itemIDStr)
+	if err != nil || itemID < 1 {
+		http.Error(w, "invalid item ID", http.StatusBadRequest)
+		return
+	}
+
+	// アイテムを取得
+	item, err := s.itemRepo.GetByID(ctx, itemID)
+	if err != nil {
+		http.Error(w, "item not found", http.StatusNotFound)
+		return
+	}
+
+	// JSON でレスポンスを返す
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(item)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 // Hello is a handler to return a Hello, world! message for GET / .

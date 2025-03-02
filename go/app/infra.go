@@ -26,6 +26,7 @@ type Item struct {
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 	GetAll(ctx context.Context) ([]Item, error)
+	GetByID(ctx context.Context, itemID int) (*Item, error)
 }
 
 func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
@@ -81,6 +82,24 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	defer file.Close()
 
 	return json.NewEncoder(file).Encode(items)
+}
+
+// GetByID retrieves an item by its index (1-based).
+func (i *itemRepository) GetByID(ctx context.Context, itemID int) (*Item, error) {
+	items, err := i.GetAll(ctx)
+	if err != nil {
+		slog.Error("Failed to get all items", "error", err)
+		return nil, err
+	}
+
+	// itemIDは1から始まる想定
+	if itemID < 1 || itemID > len(items) {
+		slog.Warn("Item not found", "itemID", itemID, "totalItems", len(items))
+		return nil, errors.New("item not found")
+	}
+
+	slog.Info("Item found", "itemID", itemID, "item", items[itemID-1])
+	return &items[itemID-1], nil
 }
 
 // StoreImage stores an image and returns an error if any.
