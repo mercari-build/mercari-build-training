@@ -2,7 +2,11 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
+	"log/slog"
+	"os"
 	// STEP 5-1: uncomment this line
 	// _ "github.com/mattn/go-sqlite3"
 )
@@ -12,6 +16,11 @@ var errImageNotFound = errors.New("image not found")
 type Item struct {
 	ID   int    `db:"id" json:"-"`
 	Name string `db:"name" json:"name"`
+	Category string `db:"category" json:"category"`
+}
+
+type JsonFormat struct {
+	Items []Item `json:"items"`
 }
 
 // Please run `go generate ./...` to generate the mock implementation
@@ -36,8 +45,39 @@ func NewItemRepository() ItemRepository {
 // Insert inserts an item into the repository.
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	// STEP 4-1: add an implementation to store an item
+	
+	// open json file
+	jsonFile, err := os.Open(i.fileName)
 
-	return nil
+	if err != nil {
+		slog.Error("failed to open jsonFile: ", "error", err)
+		return err
+	}
+	defer jsonFile.Close()
+	
+	// read json file as bytes
+	bytes, _ := io.ReadAll(jsonFile)
+
+	// decode bytes to map
+	var decodeData JsonFormat
+	json.Unmarshal(bytes, &decodeData)
+
+	// append new item
+	decodeData.Items = append(decodeData.Items, *item)
+
+	// create json file to write
+	newJsonFile, err := os.Create(i.fileName)
+	if err != nil {
+		slog.Error("failed to create jsonFile: ", "error", err)
+		return err
+	}
+	defer newJsonFile.Close()
+
+	// encode and wrute to json file
+	encoder := json.NewEncoder(newJsonFile)
+	encoder.SetIndent("", "  ")
+
+	return encoder.Encode(decodeData)
 }
 
 // StoreImage stores an image and returns an error if any.
