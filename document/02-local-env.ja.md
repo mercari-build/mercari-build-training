@@ -120,6 +120,7 @@ $ go run cmd/api/main.go
 
 起動に成功したら、 ブラウザで `http://127.0.0.1:9000` にアクセスして、`{"message": "Hello, world!"}`
 が表示されれば成功です。
+サーバーをストップする場合はCtrl+Cを押してください。
 
 ---
 **:beginner: Point**
