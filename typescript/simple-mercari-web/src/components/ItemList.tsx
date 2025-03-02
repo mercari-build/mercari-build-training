@@ -30,7 +30,7 @@ export const ItemList = ({ reload, onLoadCompleted }: Prop) => {
 
   return (
     <div>
-      {items.map((item) => {
+      {items?.map((item) => {
         return (
           <div key={item.id} className="ItemList">
             {/* TODO: Task 2: Show item images */}
