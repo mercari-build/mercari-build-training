@@ -225,8 +225,6 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 
 	message := fmt.Sprintf("item received: %s", item.Name)
 	slog.Info("Saving item", "item", item)
-
-	// アイテムをデータベースに保存
 	err = s.itemRepo.Insert(ctx, item)
 	if err != nil {
 		slog.Error("failed to store item: ", "error", err)
