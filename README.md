@@ -2,7 +2,6 @@
 
 This is @rino7tech's build training repository.
 
-
 Build training の前半では個人で課題に取り組んでもらい、Web 開発の基礎知識をつけていただきます。
 ドキュメントには詳細なやり方は記載しません。自身で検索したり、リファレンスを確認したり、チームメイトと協力して各課題をクリアしましょう。
 
