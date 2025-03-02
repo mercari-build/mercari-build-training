@@ -1,9 +1,12 @@
 package app
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log/slog"
 	"net/http"
 	"os"
@@ -92,54 +95,103 @@ type GetItemsResponse struct {
 }
 
 // parseAddItemRequest parses and validates the request to add an item.
+// parseAddItemRequest parses and validates the request to add an item.
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
+	err := r.ParseMultipartForm(10 << 20) // 最大 10MB のファイルを許可
+	if err != nil {
+		return nil, errors.New("failed to parse multipart form")
+	}
+
+	file, _, err := r.FormFile("image")
+	if err != nil {
+		return nil, errors.New("image file is required")
+	}
+	defer file.Close()
+
+	imageData, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, errors.New("failed to read image file")
+	}
+
 	req := &AddItemRequest{
 		Name:     r.FormValue("name"),
 		Category: r.FormValue("category"),
+		Image:    imageData,
 	}
 
-	// STEP 4-4: add an image field
-
-	// validate the request
+	// バリデーション
 	if req.Name == "" {
 		return nil, errors.New("name is required")
 	}
-
 	if req.Category == "" {
 		return nil, errors.New("category is required")
 	}
+	if len(req.Image) == 0 {
+		return nil, errors.New("image is required")
+	}
 
-	// STEP 4-4: validate the image field
 	return req, nil
 }
 
+func (s *Handlers) hashAndStoreImage(filePath string) (string, error) {
+	// 画像データを読み込む
+	imageData, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		slog.Error("failed to read image", "error", err)
+		return "", err
+	}
+
+	// SHA-256 ハッシュを計算
+	hash := sha256.Sum256(imageData)
+	hashedFileName := hex.EncodeToString(hash[:]) + ".jpg"
+	newFilePath := filepath.Join(s.imgDirPath, hashedFileName)
+
+	// 既に存在する場合は保存せず、そのままファイル名を返す
+	if _, err := os.Stat(newFilePath); err == nil {
+		slog.Info("image already exists", "path", newFilePath)
+		return hashedFileName, nil
+	}
+
+	// 画像を保存
+	err = ioutil.WriteFile(newFilePath, imageData, 0644)
+	if err != nil {
+		slog.Error("failed to store image", "error", err)
+		return "", err
+	}
+
+	slog.Info("image stored", "path", newFilePath, "hashedFileName", hashedFileName)
+	return hashedFileName, nil
+}
+
+// AddItem is a handler to add a new item for POST /items .
 // AddItem is a handler to add a new item for POST /items .
 func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	req, err := parseAddItemRequest(r)
+	// `default.jpg` のパス
+	defaultImagePath := filepath.Join(s.imgDirPath, "default.jpg")
+
+	// 画像のハッシュ化 & 保存
+	fileName, err := s.hashAndStoreImage(defaultImagePath)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		slog.Error("failed to store image: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// STEP 4-4: uncomment on adding an implementation to store an image
-	// fileName, err := s.storeImage(req.Image)
-	// if err != nil {
-	// 	slog.Error("failed to store image: ", "error", err)
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
+	slog.Info("Hashed image file name", "fileName", fileName)
 
+	// アイテムの追加
 	item := &Item{
-		Name:     req.Name,
-		Category: req.Category,
-		// STEP 4-4: add an image field
+		Name:     "Default Item",
+		Category: "Default Category",
+		Image:    fileName, // ハッシュ化された画像のファイル名
 	}
-	message := fmt.Sprintf("item received: %s", item.Name)
-	slog.Info(message)
 
-	// STEP 4-2: add an implementation to store an image
+	message := fmt.Sprintf("item received: %s", item.Name)
+	slog.Info("Saving item", "item", item)
+
+	// アイテムをデータベースに保存
 	err = s.itemRepo.Insert(ctx, item)
 	if err != nil {
 		slog.Error("failed to store item: ", "error", err)
@@ -179,16 +231,27 @@ func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
 // storeImage stores an image and returns the file path and an error if any.
 // this method calculates the hash sum of the image as a file name to avoid the duplication of a same file
 // and stores it in the image directory.
-func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
-	// STEP 4-4: add an implementation to store an image
-	// TODO:
-	// - calc hash sum
-	// - build image file path
-	// - check if the image already exists
-	// - store image
-	// - return the image file path
+func (s *Handlers) storeImage(image []byte) (string, error) {
+	// SHA-256 ハッシュを計算
+	hash := sha256.Sum256(image)
+	hashedFileName := hex.EncodeToString(hash[:]) + ".jpg"
+	filePath := filepath.Join(s.imgDirPath, hashedFileName)
 
-	return
+	// 画像が既に存在するか確認
+	if _, err := os.Stat(filePath); err == nil {
+		slog.Info("image already exists", "path", filePath)
+		return hashedFileName, nil
+	}
+
+	// 画像を保存
+	err := ioutil.WriteFile(filePath, image, 0644)
+	if err != nil {
+		slog.Error("failed to store image", "error", err)
+		return "", err
+	}
+
+	slog.Info("image stored", "path", filePath)
+	return hashedFileName, nil
 }
 
 type GetImageRequest struct {

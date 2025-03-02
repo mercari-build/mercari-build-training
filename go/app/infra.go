@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"os"
 	// STEP 5-1: uncomment this line
 	// _ "github.com/mattn/go-sqlite3"
@@ -15,6 +16,7 @@ type Item struct {
 	ID       int    `db:"id" json:"-"`
 	Name     string `db:"name" json:"name"`
 	Category string `db:"category" json:"category"`
+	Image    string `db:"image" json:"image"`
 }
 
 // Please run `go generate ./...` to generate the mock implementation
@@ -64,6 +66,9 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	if err != nil {
 		return err
 	}
+
+	// デバッグログ
+	slog.Info("Inserting item", "name", item.Name, "category", item.Category, "image", item.Image)
 
 	// 新しいアイテムを追加
 	items = append(items, *item)
