@@ -1,0 +1,17 @@
+{
+    "items": [
+        {
+            "name": "jacket",
+            "category": "fashion"
+        },
+        {
+            "name": "lip",
+            "category": "cosmetics"
+        },
+        {
+            "name": "machine",
+            "category": "stretch",
+            "image": "271514f616188ad2e38893f0c9aa563b4511a5e5e5d8d71863091cf4659b29b4.jpg"
+        }
+    ]
+}
