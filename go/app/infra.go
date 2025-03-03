@@ -24,6 +24,7 @@ type Item struct {
 //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
+	FindAll(ctx context.Context) ([]Item, error)
 }
 
 // itemRepository is an implementation of ItemRepository
@@ -37,6 +38,7 @@ func NewItemRepository() ItemRepository {
 	return &itemRepository{fileName: "items.json"}
 }
 
+// STEP 4-2: 新しい商品を登録する
 // Insert inserts an item into the repository.
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	// STEP 4-2: add an implementation to store an item
@@ -66,6 +68,30 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	}
 
 	return nil
+}
+
+// STEP 4-3: 商品一覧を取得する
+// FindAll retrieves all items from the repository.
+func (i *itemRepository) FindAll(ctx context.Context) ([]Item, error) {
+	// `items.json` を読み込む
+	data, err := os.ReadFile(i.fileName)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// ファイルが存在しない場合は空のリストを返す
+			return []Item{}, nil
+		}
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+
+	// JSON を `[]Item` に変換
+	var items []Item
+	if len(data) > 0 {
+		if err := json.Unmarshal(data, &items); err != nil {
+			return nil, fmt.Errorf("failed to parse JSON: %w", err)
+		}
+	}
+
+	return items, nil
 }
 
 // StoreImage stores an image and returns an error if any.

@@ -49,6 +49,7 @@ func (s Server) Run() int {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", h.Hello)
 	mux.HandleFunc("POST /items", h.AddItem)
+	mux.HandleFunc("GET /items", h.GetItems)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
 	// (4) サーバーの起動
@@ -160,6 +161,29 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	// (3) レスポンスを返す
 	resp := AddItemResponse{Message: message}
 	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// 　STEP 4-3: 商品一覧を取得する
+// GetItems ハンドラー: 登録された商品の一覧を取得
+func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// 1. `items.json` からすべてのアイテムを取得
+	items, err := s.itemRepo.FindAll(ctx)
+	if err != nil {
+		slog.Error("failed to retrieve items: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// 2. レスポンスをJSONに変換
+	response := map[string][]Item{"items": items}
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
