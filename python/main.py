@@ -18,8 +18,8 @@ db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
 
 
 def get_db():
-    if not db.exists():
-        yield
+    # if not db.exists():
+    #     yield
 
     conn = sqlite3.connect(db)
     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
@@ -34,8 +34,9 @@ def setup_database():
     
     print("set up db!!")
     # connect database
-    conn = sqlite3.connect(db)
-    # make a cursor
+    db_gen = get_db()  # get_db()を呼び出してジェネレータを取得
+    conn = next(db_gen)  # ジェネレータを消費してデータベース接続を取得
+    
     cursor = conn.cursor()
 
     # open sql schema　file
@@ -44,7 +45,7 @@ def setup_database():
         cursor.executescript(sql_script)
     
     conn.commit()
-    conn.close()
+    db_gen.close()
 
 
 @asynccontextmanager
@@ -279,14 +280,16 @@ def insert_item(item: Item):
 def get_items():
 
     # connect database
-    conn = sqlite3.connect("./db/mercari.sqlite3")
+    db_gen = get_db()  # get_db()を呼び出してジェネレータを取得
+    conn = next(db_gen)  # ジェネレータを消費してデータベース接続を取得
     cursor = conn.cursor()
 
     # fetch item table from database
     cursor.execute("SELECT * FROM items")
     items = cursor.fetchall()
 
-    conn.close()
+    db_gen.close()
+
 
     # print(items)
     # items = [(1, 'jacket', 'fashion', 'ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg'), 
@@ -306,6 +309,7 @@ def get_items():
     return resjson
 """
 
+"""
 # change post end point for 5-1
 @app.post("/items",response_model = AddItemResponse)
 async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
@@ -330,19 +334,21 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
     file_hash_name= file_hash.hexdigest()+".jpg"
 
     # connect database
-    conn = sqlite3.connect("./db/mercari.sqlite3")
+    db_gen = get_db()  # get_db()を呼び出してジェネレータを取得
+    conn = next(db_gen)  # ジェネレータを消費してデータベース接続を取得
     cursor = conn.cursor()
 
     print("kakuninnshite!!!!")
     # insert to database
-    cursor.execute("""INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)""", (name, category, file_hash_name))
-
+"""
+    # cursor.execute("""INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)""", (name, category, file_hash_name))
+"""
     # saved change data
     conn.commit()
-    # close database connection
-    conn.close()
+    db_gen.close()
     
     return AddItemResponse(**{"message": f"item received: {name,category,file_name}"})
+"""
 
 
 # add search end point for 5-2
@@ -350,14 +356,15 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
 def search_items(keyword:str):
 
     # connect database
-    conn = sqlite3.connect("./db/mercari.sqlite3")
+    db_gen = get_db()  # get_db()を呼び出してジェネレータを取得
+    conn = next(db_gen)  # ジェネレータを消費してデータベース接続を取得
     cursor = conn.cursor()
 
     # fetch item table from database
     cursor.execute("SELECT * FROM items WHERE name = ?",(keyword,))
     items = cursor.fetchall()
 
-    conn.close()
+    db_gen.close()
     
     lst = []
     for i in items:
@@ -372,22 +379,22 @@ def search_items(keyword:str):
     return resjson
 
 # changed get endpoint for 5-3
-# 本来であればitemテーブルのカラムを更新するのが正しいと思いますが、ログを残したかったのでnewitemsというテーブルを作成しました。
 @app.get("/items",response_model = GetimageItemResponse)
 def get_items():
 
     # connect database
-    conn = sqlite3.connect("./db/mercari.sqlite3")
+    db_gen = get_db()  # get_db()を呼び出してジェネレータを取得
+    conn = next(db_gen)  # ジェネレータを消費してデータベース接続を取得
     cursor = conn.cursor()
 
     # fetch item table from database
-    cursor.execute("SELECT * FROM newitems")
+    cursor.execute("SELECT * FROM items")
     items = cursor.fetchall()
 
     cursor.execute("SELECT * FROM categories")
     category = cursor.fetchall()
 
-    conn.close()
+    db_gen.close()
     
     # print(items)
     # print(category)
@@ -405,6 +412,54 @@ def get_items():
     resjson = GetimageItemResponse(items = lst)
 
     return resjson
+
+
+@app.post("/items",response_model = AddItemResponse)
+async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
+
+    # print("kakuninn!!!",image)
+    file_name = image.filename
+    # Create image path
+    image_path = images / file_name
+
+
+    if not image.filename.endswith(".jpg"):
+        raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
+
+    if not image_path.exists():
+        logger.info(f"Image not found: {image}")
+        image = images / "default.jpg"
+
+    # hashlibの引数はバイナリを読み込むので一度データを読み込む必要がある
+    file_hash = hashlib.sha256()
+    contents = await image.read()  # ファイルの内容を読み込む
+    file_hash.update(contents)
+    file_hash_name= file_hash.hexdigest()+".jpg"
+
+    # connect database
+    db_gen = get_db()  # get_db()を呼び出してジェネレータを取得
+    conn = next(db_gen)  # ジェネレータを消費してデータベース接続を取得
+    cursor = conn.cursor()
+
+    # print("kakuninnshite!!!!")
+    cursor.execute("SELECT id FROM categories WHERE name = ?",(category,))
+    result = cursor.fetchall()
+
+    if result:
+        id = result[0][0]
+    else:
+        cursor.execute("INSERT INTO categories (name) VALUES (?)", (category,))
+        id = cursor.lastrowid  # 新しく挿入したカテゴリの id を取得
+
+
+    # insert to database
+    cursor.execute("""INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)""", (name, id, file_hash_name))
+
+    # saved change data
+    conn.commit()
+    db_gen.close()
+    
+    return AddItemResponse(**{"message": f"item received: {name,category,file_name}"})
 
 
 

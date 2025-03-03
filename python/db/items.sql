@@ -7,7 +7,7 @@
 -- );
 
 -- FOR 5-2 itemsというテーブルを削除して作り直すのが正しい方法だと思いますが、履歴を残すためnewitemsというテーブルを作ります。
-CREATE TABLE IF NOT EXISTS newitems (
+CREATE TABLE IF NOT EXISTS items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
     category_id INTEGER,
