@@ -29,6 +29,7 @@ type JsonFormat struct {
 //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
+	GetFileName() string
 }
 
 // itemRepository is an implementation of ItemRepository
@@ -78,6 +79,10 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	encoder.SetIndent("", "  ")
 
 	return encoder.Encode(decodeData)
+}
+
+func (i *itemRepository) GetFileName() string {
+	return i.fileName
 }
 
 // StoreImage stores an image and returns an error if any.

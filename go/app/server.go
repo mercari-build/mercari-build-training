@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -42,6 +43,7 @@ func (s Server) Run() int {
 	// set up routes
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", h.Hello)
+	mux.HandleFunc("GET /items", h.GetItems)
 	mux.HandleFunc("POST /items", h.AddItem)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
@@ -70,6 +72,43 @@ type HelloResponse struct {
 func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 	resp := HelloResponse{Message: "Hello, world!"}
 	err := json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+type GetItemsResponse struct {
+	Items []Item `json:"items"`
+}
+
+func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
+
+	// open json file
+	fileName := s.itemRepo.GetFileName()
+	jsonFile, err := os.Open(fileName)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer jsonFile.Close()
+
+	// read json file as bytes
+	bytes, _ := io.ReadAll(jsonFile)
+
+	// decode bytes to map
+	var decodeData map[string][]Item
+	json.Unmarshal(bytes, &decodeData)
+
+	var items []Item
+	for _, v := range decodeData {
+		items = append(items, v...)
+	}
+
+	// make response
+	resp := GetItemsResponse{Items: items}
+	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
