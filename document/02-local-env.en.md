@@ -113,6 +113,7 @@ $ go run cmd/api/main.go
 ```
 
 If successful, you can access the local host `http://127.0.0.1:9000` on our browser and you will see`{"message": "Hello, world!"}`.
+To stop the server, press Ctrl+C.
 
 ---
 **:beginner: Points**
