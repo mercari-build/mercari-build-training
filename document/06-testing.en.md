@@ -239,9 +239,10 @@ This demonstrates writing code with testing in mind.
 
 **:book: Reference**
 
-(EN)[pytest: helps you write better programs — pytest documentation](https://docs.pytest.org/en/stable/)
-(EN)pytest fixtures: explicit, modular, scalable — pytest documentation
-(EN)Parametrizing fixtures and test functions — pytest documentation
+- (EN)[pytest: helps you write better programs — pytest documentation](https://docs.pytest.org/en/stable/)
+- (EN)[pytest fixtures: explicit, modular, scalable — pytest documentation](https://docs.pytest.org/en/6.2.x/fixture.html)
+- (EN)[Parametrizing fixtures and test functions — pytest documentation](https://docs.pytest.org/en/stable/how-to/parametrize.html)
+
 
 While Python has the standard unittest library built-in for testing, the **pytest** library is widely used to write more flexible and readable tests. pytest comes with a simple API and powerful features, and can be easily installed with `pip install pytest`. You can run tests with the `$ pytest` command.
 
