@@ -26,6 +26,7 @@ type Item struct {
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 	FindAll(ctx context.Context) ([]Item, error)
+	FindByID(ctx context.Context, id int) (*Item, error)
 }
 
 // itemRepository is an implementation of ItemRepository
@@ -110,4 +111,23 @@ func StoreImage(fileName string, image []byte) error {
 	// }
 
 	return nil
+}
+
+// STEP4-5:  商品の詳細を返す
+// mux.HandleFunc("GET /item/{id}", h.GetItemByID)で呼び出される
+func (i *itemRepository) FindByID(ctx context.Context, id int) (*Item, error) {
+	// 全商品を取得
+	items, err := i.FindAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve items: %w", err)
+	}
+
+	// 0から始まるインデックスなので、id - 1が配列のインデックスになる
+	// ここでidの範囲チェックを行う
+	if id <= 0 || id > len(items) {
+		return nil, fmt.Errorf("item with id %d not found", id)
+	}
+
+	// 配列は0始まりなのでid-1のアイテムを返す
+	return &items[id-1], nil
 }

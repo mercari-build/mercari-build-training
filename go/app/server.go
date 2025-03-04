@@ -49,10 +49,11 @@ func (s Server) Run() int {
 	// (3) ルーティング（リクエストの振り分け）
 	// set up routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", h.Hello)
 	mux.HandleFunc("POST /items", h.AddItem)
 	mux.HandleFunc("GET /items", h.GetItems)
+	mux.HandleFunc("GET /items/{id}", h.GetItemByID)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
+	mux.HandleFunc("GET /", h.Hello)
 
 	// (4) サーバーの起動
 	// start the server
@@ -327,4 +328,42 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 	}
 
 	return imgPath, nil
+}
+
+// STEP4-5: 商品詳細を取得する
+func (s *Handlers) GetItemByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// 1. リクエストデータの取得（IDの取得とパース）
+	idStr := r.PathValue("id")
+	if idStr == "" {
+		http.Error(w, "id is required", http.StatusBadRequest)
+		return
+	}
+
+	// 文字列をintに変換
+	var id int
+	_, err := fmt.Sscanf(idStr, "%d", &id)
+	if err != nil {
+		slog.Error("invalid id format", "error", err)
+		http.Error(w, "invalid id format", http.StatusBadRequest)
+		return
+	}
+
+	// 2. アイテムの取得
+	item, err := s.itemRepo.FindByID(ctx, id)
+	if err != nil {
+		slog.Error("failed to retrieve item", "id", id, "error", err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	// 3. レスポンスを返す
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(item)
+	if err != nil {
+		slog.Error("failed to encode response", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
