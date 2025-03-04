@@ -1,7 +1,8 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException, Depends
+import hashlib
+from fastapi import FastAPI, Form, HTTPException, Depends, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
@@ -57,9 +58,17 @@ app.add_middleware(
 class Item(BaseModel):
     name: str
     category: str
+    image_name: str
+
 
 class HelloResponse(BaseModel):
     message: str
+
+class AddItemResponse(BaseModel):
+    message: str
+
+class GetItemsResponse(BaseModel):
+    items: List[Item]
 
 
 @app.get("/", response_model=HelloResponse)
@@ -67,40 +76,50 @@ def hello():
     return HelloResponse(**{"message": "Hello, world!"})
 
 
-class AddItemResponse(BaseModel):
-    message: str
-
-
 # add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
-def add_item(
+async def add_item(
     name: str = Form(...),
     category: str = Form(...),
+    image: UploadFile = File(...),
     db: sqlite3.Connection = Depends(get_db),
 ):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
     if not category:
         raise HTTPException(status_code=400, detail="category is required")
+
+    #load image
+    image_contents = await image.read() 
+
+    # Hashing images with SHA-256
+    sha256 = hashlib.sha256(image_contents).hexdigest()
+    image_name = f"{sha256}.jpg"  
+
+    # Save images to images directory
+    image_path = images / image_name
+    with open(image_path, "wb") as f:
+        f.write(image_contents)
     
     # insert items to items.json
-    insert_item(Item(name=name, category=category))
+    insert_item(Item(name=name, category=category, image_name=image_name))
 
     return AddItemResponse(**{"message": f"item received: {name}"})
 
 
-class GetItemsResponse(BaseModel):
-    items: List[Item]
-
 # STEP 4-3: Retrieve product list
 @app.get("/items", response_model=GetItemsResponse)
 def get_items():
+    # if no json data
+    if not ITEMS_FILE_PATH.exists():
+        return GetItemsResponse(items=[])
+    
     with open(ITEMS_FILE_PATH, "r") as f:
         data = json.load(f)
     
     items = []
-    for i in data["items"]:
-        items.append(i)
+    for item in data["items"]:
+        items.append(item)
     
     return GetItemsResponse(items=items)
 
@@ -126,12 +145,17 @@ ITEMS_FILE_PATH = Path("items.json")
 
 def insert_item(item: Item):
     # STEP 4-2: add an implementation to store an item
+    # if no json data
+    if not ITEMS_FILE_PATH.exists():
+        with open(ITEMS_FILE_PATH, "w") as f:
+            json.dump({"items": []}, f)
+
     # open items.json
-    with open(ITEMS_FILE_PATH, "r") as f:
-        data = json.load(f)
+    with open(ITEMS_FILE_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)  
 
     # add new item
-    new_item = {"name": item.name, "category": item.category}
+    new_item = {"name": item.name, "category": item.category, "image_name": item.image_name}
     data["items"].append(new_item)
 
     # write to items.json
