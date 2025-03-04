@@ -7,6 +7,10 @@
         {
             "name": "t-shirt",
             "category": "fasion"
+        },
+        {
+            "name": "skirt",
+            "category": "fasion"
         }
     ]
 }

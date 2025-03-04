@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from contextlib import asynccontextmanager
 import json
 from pathlib import Path
+from typing import List
 
 
 # Define the path to the images & sqlite3 database
@@ -53,6 +54,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class Item(BaseModel):
+    name: str
+    category: str
 
 class HelloResponse(BaseModel):
     message: str
@@ -79,10 +83,26 @@ def add_item(
     if not category:
         raise HTTPException(status_code=400, detail="category is required")
     
-    # 商品情報をJSONに保存
+    # insert items to items.json
     insert_item(Item(name=name, category=category))
+
+    return AddItemResponse(**{"message": f"item received: {name}"})
+
+
+class GetItemsResponse(BaseModel):
+    items: List[Item]
+
+# STEP 4-3: Retrieve product list
+@app.get("/items", response_model=GetItemsResponse)
+def get_items():
+    with open(ITEMS_FILE_PATH, "r") as f:
+        data = json.load(f)
     
-    return AddItemResponse(**{"message": f"item received: {name} (category: {category})"})
+    items = []
+    for i in data["items"]:
+        items.append(i)
+    
+    return GetItemsResponse(items=items)
 
 
 # get_image is a handler to return an image for GET /images/{filename} .
@@ -101,27 +121,19 @@ async def get_image(image_name):
     return FileResponse(image)
 
 
-class Item(BaseModel):
-    name: str
-    category: str
-
-
-# items.jsonのパス
+# items.json's pash
 ITEMS_FILE_PATH = Path("items.json")
 
 def insert_item(item: Item):
-    # STEP 4-1: add an implementation to store an item
-    # items.json が存在する場合は読み込み、しない場合は初期化
-    if ITEMS_FILE_PATH.exists():
-        with open(ITEMS_FILE_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    else:
-        data = {"items": []}
+    # STEP 4-2: add an implementation to store an item
+    # open items.json
+    with open(ITEMS_FILE_PATH, "r") as f:
+        data = json.load(f)
 
-    # 新しいアイテムを追加
+    # add new item
     new_item = {"name": item.name, "category": item.category}
     data["items"].append(new_item)
 
-    # 更新したデータを items.json に保存
-    with open(ITEMS_FILE_PATH, "w", encoding="utf-8") as f:
+    # write to items.json
+    with open(ITEMS_FILE_PATH, "w") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
