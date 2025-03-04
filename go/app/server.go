@@ -27,11 +27,18 @@ type Server struct {
 func (s Server) Run() int {
 	// (1) ロガーのセットアップ
 	// set up logger
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil)) //ログを JSON 形式で stderr に出力
-	slog.SetDefault(logger)                                 //slog.Info() などのログ出力をこのロガーに統一
-	// STEP 4-6: set the log level to DEBUG
+
+	//ログを JSON 形式で stderr に出力
+	// logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	//slog.Info() などのログ出力をこのロガーに統一
+	// slog.SetDefault(logger)
 	// INFO 以上のログを出力するよう設定
-	slog.SetLogLoggerLevel(slog.LevelInfo)
+	// slog.SetLogLoggerLevel(slog.LevelInfo)
+
+	// STEP 4-6: set the log level to DEBUG
+	// DEBUG 以上のログを出力するよう設定
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(logger)
 
 	// (2) CORS（クロスオリジン）設定
 	// set up CORS settings
