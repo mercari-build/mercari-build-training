@@ -50,9 +50,11 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	// jsonファイルを読み込み
 	jsonFile, err := os.ReadFile(i.fileName)
 	if err != nil {
-		return err
+		if errors.Is(err, os.ErrNotExist) {
+			println("file does not exist.")
+		}
+		println("Error:", err)
 	}
-
 	if len(jsonFile) == 0 {
 		jsonFile = []byte(`{"items":[]}`)
 	}
@@ -90,7 +92,10 @@ func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
 	// jsonファイルを読み込み
 	jsonFile, err := os.ReadFile(i.fileName)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, os.ErrNotExist) {
+			println("file does not exist.")
+		}
+		println("Error:", err)
 	}
 
 	// jsonから構造体に変換
@@ -129,9 +134,11 @@ func (i *itemRepository) GetItemById(ctx context.Context, item_id string) (Item,
 	// jsonファイルを読み込み
 	jsonFile, err := os.ReadFile(i.fileName)
 	if err != nil {
-		return Item{}, err
+		if errors.Is(err, os.ErrNotExist) {
+			println("file does not exist.")
+		}
+		println("Error:", err)
 	}
-
 	// jsonから構造体に変換
 	var data struct {
 		Items []Item `json:"items"`
@@ -188,7 +195,7 @@ HTTPリクエストメソッド
 	-> Webサーバーにどのような処理をするかを伝える役割
 	-> GET/POST/PUT(更新)/PATCH(一部更新)/DELETE(削除)
 
-	
+
 */
 
 // curlじゃなくて curl.exe で実行
