@@ -29,11 +29,17 @@ If the version number is shown after executing the command above, cURL is instal
 
 ### Sending a GET Request
 
-Let's send a GET reaquest with cURL to the API server we launched in the previous section. 
+Let's send a GET reaquest with cURL to the API server we launched in the previous section.
+If you haven't started the server, run the following command:
+
+| Python                                                                                       | Go                                                                            |
+|----------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| Move to python folder before running the command <br>`uvicorn main:app --reload --port 9000` | Move to python folder before running the command <br>`go run cmd/api/main.go` |
+
 
 Before sending the request with cURL, check that you can access `http://127.0.0.1:9000` in a browser and see `{"message": "Hello, world!"}` displayed. If not, refer to the section 4 of the STEP2: Run Python/Go app([Python](./02-local-env.en.md#4-run-the-python-app), [Go](./02-local-env.en.md#4-run-the-go-app)).
 
-Now, it's time to send the request with cURL. Open a new terminal and run the following command: 
+Now, it's time to send the request with cURL. **Open a new terminal** and run the following command:
 
 ```shell
 $ curl -X GET 'http://127.0.0.1:9000'
@@ -52,7 +58,7 @@ $ curl -X POST 'http://127.0.0.1:9000/items'
 
 This endpoint expects to return `{"message": "item received: <name>"}` as an successful response. However, you should receive a different response here.
 
-Modify the command as follows and see that you receive `{"message": "item received: jacket"}`. Investigate why that happens and the differences.
+Modify the command as follows and you will receive `{"message": "item received: jacket"}`. Investigate why that happens and check the `python/main.py` or `go/app/server.go` file.
 
 ```shell
 $ curl -X POST \
@@ -128,7 +134,7 @@ type itemRepository struct {
 }
 
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	// STEP 4-1: add an implementation to store an item
+	// STEP 4-2: add an implementation to store an item
 
 	return nil
 }

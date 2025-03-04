@@ -182,6 +182,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	slog.Info(message)
 
 	// STEP 4-2: add an implementation to store an item -- done?
+
 	err = s.itemRepo.Insert(ctx, item)
 	if err != nil {
 		slog.Error("failed to store item: ", "error", err)
