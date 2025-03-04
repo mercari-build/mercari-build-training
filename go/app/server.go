@@ -50,7 +50,7 @@ func (s Server) Run() int {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", h.Hello)
 	mux.HandleFunc("POST /items", h.AddItem)
-	mux.HandleFunc("GET /items", h.getItems)
+	mux.HandleFunc("GET /items", h.GetItems)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 	mux.HandleFunc("GET /items/{item_id}", h.GetItemById)
 
@@ -85,8 +85,8 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// getItems ハンドラーを実装 for GET /items
-func (s *Handlers) getItems(w http.ResponseWriter, r *http.Request) {
+// GetItems ハンドラーを実装 for GET /items
+func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
 	// GetAllメソッドを呼び出す
 	items, err := s.itemRepo.GetAll(r.Context())
 	if err != nil {
