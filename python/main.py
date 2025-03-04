@@ -21,7 +21,7 @@ def get_db():
     if not db.exists():
         yield
 
-    conn = sqlite3.connect(db)
+    conn = sqlite3.connect(db,check_same_thread=False)
     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
     try:
         yield conn
@@ -31,7 +31,21 @@ def get_db():
 
 # STEP 5-1: set up the database connection
 def setup_database():
-    pass
+    
+    print("set up db!!")
+    # connect database
+    db_gen = get_db()  # get_db()を呼び出してジェネレータを取得
+    conn = next(db_gen)  # ジェネレータを消費してデータベース接続を取得
+    
+    cursor = conn.cursor()
+
+    # open sql schema　file
+    with open('db/items.sql', 'r') as f:
+        sql_script = f.read()
+        cursor.executescript(sql_script)
+    
+    conn.commit()
+    db_gen.close()
 
 
 @asynccontextmanager
@@ -91,8 +105,6 @@ def get_item():
     return  resjson
 """
 
-# get_image is a handler to return an image 
-
 # add image_name
 class GetItemimage(BaseModel):
     name: str
@@ -103,6 +115,7 @@ class GetItemimage(BaseModel):
 class GetimageItemResponse(BaseModel):
     items: List[GetItemimage]
 
+"""
 # get endpoint for 4-4
 @app.get("/items",response_model = GetimageItemResponse)
 def get_items():
@@ -126,8 +139,8 @@ def get_items():
     
     resjson = GetimageItemResponse(items = resdata)
 
-    # return FileResponse(image)
     return resjson
+"""
 
 # add index for 4-5
 @app.get("/items/{ind}",response_model = GetItemimage)
@@ -167,7 +180,9 @@ def add_item(
     return AddItemResponse(**{"message": f"item received: {name}"})
 """
 
+
 # change post for 4-4
+"""
 @app.post("/items",response_model = AddItemResponse)
 async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
 # async def get_image(image_name):
@@ -196,8 +211,7 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
     insert_imageitem(insert_data)
     
     return AddItemResponse(**{"message": f"item received: {file_name}"})
-
-
+"""
 
 # 4-6
 @app.get("/image/{image_name}")
@@ -256,6 +270,189 @@ def insert_item(item: Item):
     with open("item.json", "w") as f:
         json.dump(data,f,indent=2)
 
+
+
+# ==================STEP5===============================================================
+
+# changed get endpoint for 5-1
+"""
+@app.get("/items",response_model = GetimageItemResponse)
+def get_items():
+
+    # connect database
+    db_gen = get_db()  # get_db()を呼び出してジェネレータを取得
+    conn = next(db_gen)  # ジェネレータを消費してデータベース接続を取得
+    cursor = conn.cursor()
+
+    # fetch item table from database
+    cursor.execute("SELECT * FROM items")
+    items = cursor.fetchall()
+
+    db_gen.close()
+
+
+    # print(items)
+    # items = [(1, 'jacket', 'fashion', 'ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg'), 
+    # (2, 'pen', 'stationery', 'ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg'), 
+    # (3, 'bottoms', 'fashion', 'ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg')]
+    
+    lst = []
+    for i in items:
+        if len(i) == 4:
+            ele = GetItemimage(name=i[1],category = i[2],image_name= i[3])
+        else:
+            ele = GetItemimage(name=i[1],category = i[2],image_name= "Nan")
+        lst.append(ele)
+
+    resjson = GetimageItemResponse(items = lst)
+
+    return resjson
+"""
+
+"""
+# change post end point for 5-1
+@app.post("/items",response_model = AddItemResponse)
+async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
+
+    # print("kakuninn!!!",image)
+    file_name = image.filename
+    # Create image path
+    image_path = images / file_name
+
+
+    if not image.filename.endswith(".jpg"):
+        raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
+
+    if not image_path.exists():
+        logger.info(f"Image not found: {image}")
+        image = images / "default.jpg"
+
+    # hashlibの引数はバイナリを読み込むので一度データを読み込む必要がある
+    file_hash = hashlib.sha256()
+    contents = await image.read()  # ファイルの内容を読み込む
+    file_hash.update(contents)
+    file_hash_name= file_hash.hexdigest()+".jpg"
+
+    # connect database
+    db_gen = get_db()  # get_db()を呼び出してジェネレータを取得
+    conn = next(db_gen)  # ジェネレータを消費してデータベース接続を取得
+    cursor = conn.cursor()
+
+    print("kakuninnshite!!!!")
+    # insert to database
+"""
+    # cursor.execute("""INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)""", (name, category, file_hash_name))
+"""
+    # saved change data
+    conn.commit()
+    db_gen.close()
+    
+    return AddItemResponse(**{"message": f"item received: {name,category,file_name}"})
+"""
+
+
+# add search end point for 5-2
+@app.get("/search",response_model = GetimageItemResponse)
+def search_items(keyword:str):
+
+    # connect database
+    db_gen = get_db()  # get_db()を呼び出してジェネレータを取得
+    conn = next(db_gen)  # ジェネレータを消費してデータベース接続を取得
+    cursor = conn.cursor()
+
+    # fetch item table from database
+    cursor.execute("SELECT * FROM items WHERE name = ?",(keyword,))
+    items = cursor.fetchall()
+
+    db_gen.close()
+    
+    lst = []
+    for i in items:
+        if len(i) == 4:
+            ele = GetItemimage(name=i[1],category = i[2],image_name= i[3])
+        else:
+            ele = GetItemimage(name=i[1],category = i[2],image_name= "Nan")
+        lst.append(ele)
+
+    resjson = GetimageItemResponse(items = lst)
+
+    return resjson
+
+# changed get endpoint for 5-3
+@app.get("/items",response_model = GetimageItemResponse)
+def get_items(db: sqlite3.Connection = Depends(get_db)):
+
+    # connect database
+    cursor = db.cursor()
+
+    # fetch item table from database
+    cursor.execute("SELECT * FROM items")
+    items = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM categories")
+    category = cursor.fetchall()
+    
+    # print(items)
+    # print(category)
+    # [(1, 'jacket', 1, 'ad55d25f2c10c56522147b214aeed7ad13319808d7ce999787ac8c239b24f71d.jpg')]
+    # [(1, 'fashion')]
+
+    lst = []
+    for i in items:
+        if len(i) == 4:
+            ele = GetItemimage(name=i[1],category = category[int(i[2])-1][1],image_name= i[3])
+        else:
+            ele = GetItemimage(name=i[1],category = category[int(i[2])-1][1],image_name= "Nan")
+        lst.append(ele)
+
+    resjson = GetimageItemResponse(items = lst)
+
+    return resjson
+
+
+@app.post("/items",response_model = AddItemResponse)
+async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...),db: sqlite3.Connection = Depends(get_db)):
+
+    # print("kakuninn!!!",image)
+    file_name = image.filename
+    # Create image path
+    image_path = images / file_name
+
+
+    if not image.filename.endswith(".jpg"):
+        raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
+
+    if not image_path.exists():
+        logger.info(f"Image not found: {image}")
+        image = images / "default.jpg"
+
+    # hashlibの引数はバイナリを読み込むので一度データを読み込む必要がある
+    file_hash = hashlib.sha256()
+    contents = await image.read()  # ファイルの内容を読み込む
+    file_hash.update(contents)
+    file_hash_name= file_hash.hexdigest()+".jpg"
+
+    # connect database
+    cursor = db.cursor()
+
+    # print("kakuninnshite!!!!")
+    cursor.execute("SELECT id FROM categories WHERE name = ?",(category,))
+    result = cursor.fetchall()
+
+    if result:
+        id = result[0][0]
+    else:
+        cursor.execute("INSERT INTO categories (name) VALUES (?)", (category,))
+        id = cursor.lastrowid  # 新しく挿入したカテゴリの id を取得
+
+
+    # insert to database
+    cursor.execute("""INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)""", (name, id, file_hash_name))
+
+    # saved change data
+    db.commit()
+    
+    return AddItemResponse(**{"message": f"item received: {name,category,file_name}"})
 
 
 
