@@ -70,6 +70,9 @@ class AddItemResponse(BaseModel):
 class GetItemsResponse(BaseModel):
     items: List[Item]
 
+class GetItemResponse(BaseModel):
+    item: Item
+
 
 @app.get("/", response_model=HelloResponse)
 def hello():
@@ -123,6 +126,25 @@ def get_items():
     
     return GetItemsResponse(items=items)
 
+#STEP 4-5: Return product details
+@app.get("/items/{item_id}", response_model=GetItemResponse)
+def get_item(item_id: int):
+    # if no json data
+    if not ITEMS_FILE_PATH.exists():
+        return GetItemResponse(item=None)
+    
+    with open(ITEMS_FILE_PATH, "r") as f:
+        data = json.load(f)
+
+    # check if item_id exists
+    if item_id > len(data["items"]):
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    # get item with item_id 
+    item = data["items"][item_id - 1]
+    
+    return GetItemResponse(item=item)
+    
 
 # get_image is a handler to return an image for GET /images/{filename} .
 @app.get("/image/{image_name}")
