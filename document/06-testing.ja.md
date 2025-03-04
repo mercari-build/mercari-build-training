@@ -236,11 +236,12 @@ func TestSayHelloWithTime(t *testing.T) {
 ### Python
 
 Pythonにおけるテスト戦略
+
 **:book: Reference**
 
-(EN)[pytest: helps you write better programs — pytest documentation](https://docs.pytest.org/en/stable/)
-(EN)pytest fixtures: explicit, modular, scalable — pytest documentation
-(EN)Parametrizing fixtures and test functions — pytest documentation
+- (EN)[pytest: helps you write better programs — pytest documentation](https://docs.pytest.org/en/stable/)
+- (EN)[pytest fixtures: explicit, modular, scalable — pytest documentation](https://docs.pytest.org/en/6.2.x/fixture.html)
+- (EN)[Parametrizing fixtures and test functions — pytest documentation](https://docs.pytest.org/en/stable/how-to/parametrize.html)
 
 Pythonにはtest用のライブラリとして標準搭載されているunittestがありますが、より柔軟で可読性の高いテストを書くために**pytest**というライブラリが広く利用されています。pytestはシンプルなAPIと強力な機能を備えており、`pip install pytest`で簡単にインストールできます。`$ pytest`コマンドでテストを実行することができます。
 
@@ -412,7 +413,7 @@ Goには様々なモックライブラリがありますが、今回は `gomock`
 - モックを満たすためにinterfaceを用いていますが、interfaceのメリットについて考えてみましょう
 - モックを利用するメリットとデメリットについて考えてみましょう
 
-### Python
+### Python (Read Only)
 
 **:book: Reference**
 
