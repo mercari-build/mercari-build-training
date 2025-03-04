@@ -18,10 +18,10 @@ db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
 
 
 def get_db():
-    # if not db.exists():
-    #     yield
+    if not db.exists():
+        yield
 
-    conn = sqlite3.connect(db)
+    conn = sqlite3.connect(db,check_same_thread=False)
     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
     try:
         yield conn
@@ -380,12 +380,10 @@ def search_items(keyword:str):
 
 # changed get endpoint for 5-3
 @app.get("/items",response_model = GetimageItemResponse)
-def get_items():
+def get_items(db: sqlite3.Connection = Depends(get_db))-> List[dict]:
 
     # connect database
-    db_gen = get_db()  # get_db()を呼び出してジェネレータを取得
-    conn = next(db_gen)  # ジェネレータを消費してデータベース接続を取得
-    cursor = conn.cursor()
+    cursor = db.cursor()
 
     # fetch item table from database
     cursor.execute("SELECT * FROM items")
@@ -393,8 +391,6 @@ def get_items():
 
     cursor.execute("SELECT * FROM categories")
     category = cursor.fetchall()
-
-    db_gen.close()
     
     # print(items)
     # print(category)
@@ -415,7 +411,7 @@ def get_items():
 
 
 @app.post("/items",response_model = AddItemResponse)
-async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...)):
+async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...),db: sqlite3.Connection = Depends(get_db)) -> List[dict]:
 
     # print("kakuninn!!!",image)
     file_name = image.filename
@@ -437,9 +433,7 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
     file_hash_name= file_hash.hexdigest()+".jpg"
 
     # connect database
-    db_gen = get_db()  # get_db()を呼び出してジェネレータを取得
-    conn = next(db_gen)  # ジェネレータを消費してデータベース接続を取得
-    cursor = conn.cursor()
+    cursor = db.cursor()
 
     # print("kakuninnshite!!!!")
     cursor.execute("SELECT id FROM categories WHERE name = ?",(category,))
@@ -456,8 +450,7 @@ async def add_item(name: str = Form(...), category: str = Form(...), image: Uplo
     cursor.execute("""INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)""", (name, id, file_hash_name))
 
     # saved change data
-    conn.commit()
-    db_gen.close()
+    db.commit()
     
     return AddItemResponse(**{"message": f"item received: {name,category,file_name}"})
 
