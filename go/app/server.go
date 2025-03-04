@@ -42,6 +42,7 @@ func (s Server) Run() int {
 	mux.HandleFunc("POST /items", h.AddItem)
 	mux.HandleFunc("GET /items", h.GetItems)
 	mux.HandleFunc("GET /items/{item_id}", h.GetItemByID)
+	mux.HandleFunc("GET /search", h.SearchItems)
 
 	slog.Info("http server started on", "port", s.Port)
 	err = http.ListenAndServe(":"+s.Port, mux)
@@ -93,6 +94,28 @@ func (s *Handlers) GetItemByID(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func (s *Handlers) SearchItems(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// クエリパラメータから `keyword` を取得
+	keyword := r.URL.Query().Get("keyword")
+	if keyword == "" {
+		http.Error(w, "keyword is required", http.StatusBadRequest)
+		return
+	}
+
+	// `keyword` を含む商品を検索
+	items, err := s.itemRepo.SearchByName(ctx, keyword)
+	if err != nil {
+		http.Error(w, "failed to search items", http.StatusInternalServerError)
+		return
+	}
+
+	// JSON でレスポンスを返す
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(GetItemsResponse{Items: items})
 }
 
 // Hello is a handler to return a Hello, world! message for GET / .

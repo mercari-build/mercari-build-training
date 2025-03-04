@@ -83,3 +83,18 @@ func (mr *MockItemRepositoryMockRecorder) Insert(ctx, item any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockItemRepository)(nil).Insert), ctx, item)
 }
+
+// SearchByName mocks base method.
+func (m *MockItemRepository) SearchByName(ctx context.Context, keyword string) ([]Item, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SearchByName", ctx, keyword)
+	ret0, _ := ret[0].([]Item)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchByName indicates an expected call of SearchByName.
+func (mr *MockItemRepositoryMockRecorder) SearchByName(ctx, keyword any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchByName", reflect.TypeOf((*MockItemRepository)(nil).SearchByName), ctx, keyword)
+}

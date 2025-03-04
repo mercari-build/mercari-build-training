@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"log/slog"
+
+	_ "github.com/mattn/go-sqlite3"
 	// STEP 5-1: uncomment this line
 	// _ "github.com/mattn/go-sqlite3"
 )
@@ -26,6 +28,7 @@ type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 	GetAll(ctx context.Context) ([]Item, error)
 	GetByID(ctx context.Context, itemID int) (*Item, error)
+	SearchByName(ctx context.Context, keyword string) ([]Item, error)
 }
 
 // func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
@@ -126,6 +129,25 @@ func (i *itemRepository) GetByID(ctx context.Context, itemID int) (*Item, error)
 
 	slog.Info("Item found", "itemID", itemID, "item", items[itemID-1])
 	return &items[itemID-1], nil
+}
+
+func (i *itemRepository) SearchByName(ctx context.Context, keyword string) ([]Item, error) {
+	// データベースで `name` に `keyword` を含む商品を検索
+	rows, err := i.db.QueryContext(ctx, "SELECT id, name, category, image_name FROM items WHERE name LIKE ?", "%"+keyword+"%")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []Item
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	return items, nil
 }
 
 // StoreImage stores an image and returns an error if any.
