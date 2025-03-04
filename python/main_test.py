@@ -52,8 +52,13 @@ client = TestClient(app)
 )
 def test_hello(want_status_code, want_body):
     response_body = client.get("/").json()
+    response_status_code = client.get("/").status_code
     # STEP 6-2: confirm the status code
     # STEP 6-2: confirm response body
+    assert response_body == want_body, f"unexpected result of test_hello: want={want_body}, got={response_body}"
+
+    assert response_status_code == want_status_code,f"unexpected result of test_hello: want={want_status_code},got={response_status_code}"
+
 
 
 # STEP 6-4: uncomment this test
