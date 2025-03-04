@@ -59,6 +59,7 @@ class HelloResponse(BaseModel):
     message: str
 
 
+# APIサーバが正しく動作しているかの簡単なテストとして利用
 @app.get("/", response_model=HelloResponse)
 def hello():
     return HelloResponse(**{"message": "Hello, world!"})
@@ -68,7 +69,7 @@ class AddItemResponse(BaseModel):
     message: str
 
 
-# add_item is a handler to add a new item for POST /items .
+# POST-/item リクエストで呼び出され、アイテム情報の追加を行う
 @app.post("/items", response_model=AddItemResponse)
 def add_item(
     name: str = Form(...),
@@ -87,6 +88,7 @@ def add_item(
 
 
 # get_image is a handler to return an image for GET /images/{filename} .
+# GET-/image/{image_name} リクエストで呼び出され、指定された画像を返す
 @app.get("/image/{image_name}")
 async def get_image(image_name):
     # Create image path
@@ -101,6 +103,7 @@ async def get_image(image_name):
 
     return FileResponse(image)
 
+# GET-/items リクエストで呼び出され、items.jsonファイルの内容(今まで保存された全てのitemの情報)を返す
 @app.get("/items")
 def get_items():
     if not items_file.exists():
@@ -118,7 +121,7 @@ class Item(BaseModel):
     name: str
     category: str
 
-
+# app.post("/items" ... のハンドラ内で用いられる。items.jsonファイルへ新しい要素の追加を行う。
 def insert_item(item: Item):
     # STEP 4-1: add an implementation to store an item
     global items_file

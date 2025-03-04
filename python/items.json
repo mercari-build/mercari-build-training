@@ -3,6 +3,10 @@
     {
       "name": "skirt",
       "category": "fashion"
+    },
+    {
+      "name": "cap",
+      "category": "fashion"
     }
   ]
 }
