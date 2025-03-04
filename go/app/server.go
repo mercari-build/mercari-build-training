@@ -160,7 +160,7 @@ type itemRepository struct {
 }
 
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	// add implementation to store item
+	items = append(items, *item)
 
 	return nil
 }
