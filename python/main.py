@@ -1,8 +1,7 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, File, UploadFile, Form
-from fastapi import FastAPI, Form, HTTPException, Depends
+from fastapi import FastAPI, Form, HTTPException, Depends,File, UploadFile, Form
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
@@ -91,10 +90,9 @@ def add_item(
     db: sqlite3.Connection = Depends(get_db),
 ):
     if not name:
-        raise HTTPException(status_code=400, detail="category is required")
-    if not category:
         raise HTTPException(status_code=400, detail="name is required")
-    
+    if not category:
+        raise HTTPException(status_code=400, detail="category is required")
     image_content = image.file.read() 
     image_hash = hashlib.sha256(image_content).hexdigest()
     image_path =  images / f"{image_hash}.jpg"
@@ -102,7 +100,7 @@ def add_item(
     with open(image_path, "wb") as img_file:
         img_file.write(image_content)
 
-    insert_item(Item(name=name,category=category,image = f"{image_hash}.jpg"))
+    insert_item(Item(name=name,category=category,image_name = f"{image_hash}.jpg"))
     return AddItemResponse(**{"message": f"item received: name:{name},category:{category},image_name: {image_hash}.jpg"})
 
 
@@ -125,9 +123,7 @@ async def get_image(image_name):
 class Item(BaseModel):
     name: str
     category: str
-    image :str
-
-
+    image_name :str
 
 def insert_item(item: Item):
     #4-2
