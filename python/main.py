@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
+import json
+from pathlib import Path
 
 
 # Define the path to the images & sqlite3 database
@@ -74,9 +76,13 @@ def add_item(
 ):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
-
+    if not category:
+        raise HTTPException(status_code=400, detail="category is required")
+    
+    # 商品情報をJSONに保存
     insert_item(Item(name=name, category=category))
-    return AddItemResponse(**{"message": f"item received: {name}"})
+    
+    return AddItemResponse(**{"message": f"item received: {name} (category: {category})"})
 
 
 # get_image is a handler to return an image for GET /images/{filename} .
@@ -100,6 +106,22 @@ class Item(BaseModel):
     category: str
 
 
+# items.jsonのパス
+ITEMS_FILE_PATH = Path("items.json")
+
 def insert_item(item: Item):
     # STEP 4-1: add an implementation to store an item
-    pass
+    # items.json が存在する場合は読み込み、しない場合は初期化
+    if ITEMS_FILE_PATH.exists():
+        with open(ITEMS_FILE_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    else:
+        data = {"items": []}
+
+    # 新しいアイテムを追加
+    new_item = {"name": item.name, "category": item.category}
+    data["items"].append(new_item)
+
+    # 更新したデータを items.json に保存
+    with open(ITEMS_FILE_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
