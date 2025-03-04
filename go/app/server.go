@@ -1,9 +1,11 @@
 package app
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -97,6 +99,12 @@ type AddItemResponse struct {
 
 // parseAddItemRequest parses and validates the request to add an item.
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
+	// Parse multipart form data with 10MB max memory
+	err := r.ParseMultipartForm(10 << 20) // 10MB max memory
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse multipart form: %w", err)
+	}
+
 	req := &AddItemRequest{
 		Name: r.FormValue("name"),
 		// STEP 4-2: add a category field
@@ -104,6 +112,20 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	}
 
 	// STEP 4-4: add an image field
+	file, _, err := r.FormFile("image")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get image: %w", err)
+	}
+
+	// Read the image file only if it exists
+	if file != nil {
+		defer file.Close()
+		imageData, err := io.ReadAll(file)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read image file: %w", err)
+		}
+		req.Image = imageData
+	}
 
 	// validate the request
 	if req.Name == "" {
@@ -116,6 +138,10 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	}
 
 	// STEP 4-4: validate the image field
+	if len(req.Image) == 0 {
+		return nil, errors.New("image is required")
+	}
+
 	return req, nil
 }
 
@@ -128,17 +154,18 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	// (1) リクエストデータの取得
 	req, err := parseAddItemRequest(r)
 	if err != nil {
+		slog.Error("Request parsing error", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	// STEP 4-4: uncomment on adding an implementation to store an image
-	// fileName, err := s.storeImage(req.Image)
-	// if err != nil {
-	// 	slog.Error("failed to store image: ", "error", err)
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
+	fileName, err := s.storeImage(req.Image)
+	if err != nil {
+		slog.Error("failed to store image: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	// (2) アイテムの保存
 	item := &Item{
@@ -146,6 +173,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		// STEP 4-2: add a category field
 		Category: req.Category,
 		// STEP 4-4: add an image field
+		Image: fileName,
 	}
 	message := fmt.Sprintf("item received: %s", item.Name)
 	slog.Info(message)
@@ -201,8 +229,29 @@ func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
 	// - check if the image already exists
 	// - store image
 	// - return the image file path
+	// Calculate SHA-256 hash of the image
+	hasher := sha256.New()
+	hasher.Write(image)
+	hashSum := hasher.Sum(nil)
+	fileName := fmt.Sprintf("%x.jpg", hashSum)
 
-	return
+	// Build the full file path
+	filePath = filepath.Join(s.imgDirPath, fileName)
+
+	// Check if the image already exists
+	_, err = os.Stat(filePath)
+	if err == nil {
+		// Image already exists, return the filename
+		return fileName, nil
+	}
+
+	// Store the image
+	err = os.WriteFile(filePath, image, 0644)
+	if err != nil {
+		return "", fmt.Errorf("failed to write image file: %w", err)
+	}
+
+	return fileName, nil
 }
 
 type GetImageRequest struct {

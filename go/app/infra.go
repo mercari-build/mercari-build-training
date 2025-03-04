@@ -16,6 +16,7 @@ type Item struct {
 	ID       int    `db:"id" json:"-"`
 	Name     string `db:"name" json:"name"`
 	Category string `db:"category" json:"category"`
+	Image    string `db:"image" json:"image"`
 }
 
 // Please run `go generate ./...` to generate the mock implementation
@@ -98,6 +99,15 @@ func (i *itemRepository) FindAll(ctx context.Context) ([]Item, error) {
 // This package doesn't have a related interface for simplicity.
 func StoreImage(fileName string, image []byte) error {
 	// STEP 4-4: add an implementation to store an image
+	// data, err := json.Marshal(image)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to marshal image: %w", err)
+	// }
+
+	// err = os.WriteFile(fileName, data, 0644)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to write image file: %w", err)
+	// }
 
 	return nil
 }
