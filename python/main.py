@@ -380,7 +380,7 @@ def search_items(keyword:str):
 
 # changed get endpoint for 5-3
 @app.get("/items",response_model = GetimageItemResponse)
-def get_items(db: sqlite3.Connection = Depends(get_db))-> List[dict]:
+def get_items(db: sqlite3.Connection = Depends(get_db)):
 
     # connect database
     cursor = db.cursor()
@@ -411,7 +411,7 @@ def get_items(db: sqlite3.Connection = Depends(get_db))-> List[dict]:
 
 
 @app.post("/items",response_model = AddItemResponse)
-async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...),db: sqlite3.Connection = Depends(get_db)) -> List[dict]:
+async def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile = File(...),db: sqlite3.Connection = Depends(get_db)):
 
     # print("kakuninn!!!",image)
     file_name = image.filename
