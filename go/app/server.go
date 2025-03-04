@@ -41,7 +41,7 @@ func (s Server) Run() int {
 
 	// set up routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", h.Hello)
+	mux.HandleFunc("GET /items", h.GetItem)
 	mux.HandleFunc("POST /items", h.AddItem)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
@@ -104,7 +104,17 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	// STEP 4-4: validate the image field
 	return req, nil
 }
+//GetItem is a handler to get items for GET /items
+func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
+    items := s.itemRepo.GetAllItems(r.Context()) 
 
+    response := map[string][]Item{"items": items} 
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(response)
+}
+func (i *itemRepository) GetAllItems(ctx context.Context) []Item {
+    return i.items
+}
 // AddItem is a handler to add a new item for POST /items .
 func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -157,10 +167,11 @@ func NewItemRepository() ItemRepository {
 
 type itemRepository struct {
 	fileName string
+	items Item[]
 }
 
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	items = append(items, *item)
+	i.items = append(items, *item)
 
 	return nil
 }
