@@ -105,7 +105,7 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	return req, nil
 }
 //GetItem is a handler to get items for GET /items
-func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
+func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
     items := s.itemRepo.GetAllItems(r.Context()) 
 
     response := map[string][]Item{"items": items} 
@@ -171,7 +171,7 @@ type itemRepository struct {
 }
 
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	i.items = append(items, *item)
+	i.items = append(i.items, *item)
 
 	return nil
 }
