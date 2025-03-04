@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log/slog"
 
 	_ "github.com/mattn/go-sqlite3"
 	// STEP 5-1: uncomment this line
@@ -52,7 +51,11 @@ type ItemRepository interface {
 // }
 
 func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
-	rows, err := i.db.QueryContext(ctx, "SELECT id, name, category, image_name FROM items")
+	rows, err := i.db.QueryContext(ctx, `
+		SELECT items.id, items.name, categories.name AS category, items.image_name
+		FROM items
+		JOIN categories ON items.category_id = categories.id
+	`)
 	if err != nil {
 		return nil, err
 	}
@@ -108,32 +111,41 @@ func NewItemRepository(dbPath string) (ItemRepository, error) {
 // }
 
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	_, err := i.db.ExecContext(ctx, "INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
-		item.Name, item.Category, item.Image)
+	// カテゴリ名から category_id を取得
+	var categoryID int
+	err := i.db.QueryRowContext(ctx, "SELECT id FROM categories WHERE name = ?", item.Category).Scan(&categoryID)
+	if err != nil {
+		return err
+	}
+
+	_, err = i.db.ExecContext(ctx, "INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
+		item.Name, categoryID, item.Image)
 	return err
 }
 
 // GetByID retrieves an item by its index (1-based).
 func (i *itemRepository) GetByID(ctx context.Context, itemID int) (*Item, error) {
-	items, err := i.GetAll(ctx)
-	if err != nil {
-		slog.Error("Failed to get all items", "error", err)
+	row := i.db.QueryRowContext(ctx, `
+		SELECT items.id, items.name, categories.name AS category, items.image_name
+		FROM items
+		JOIN categories ON items.category_id = categories.id
+		WHERE items.id = ?
+	`, itemID)
+
+	var item Item
+	if err := row.Scan(&item.ID, &item.Name, &item.Category, &item.Image); err != nil {
 		return nil, err
 	}
-
-	// itemIDは1から始まる想定
-	if itemID < 1 || itemID > len(items) {
-		slog.Warn("Item not found", "itemID", itemID, "totalItems", len(items))
-		return nil, errors.New("item not found")
-	}
-
-	slog.Info("Item found", "itemID", itemID, "item", items[itemID-1])
-	return &items[itemID-1], nil
+	return &item, nil
 }
 
 func (i *itemRepository) SearchByName(ctx context.Context, keyword string) ([]Item, error) {
-	// データベースで `name` に `keyword` を含む商品を検索
-	rows, err := i.db.QueryContext(ctx, "SELECT id, name, category, image_name FROM items WHERE name LIKE ?", "%"+keyword+"%")
+	rows, err := i.db.QueryContext(ctx, `
+		SELECT items.id, items.name, categories.name AS category, items.image_name
+		FROM items
+		JOIN categories ON items.category_id = categories.id
+		WHERE items.name LIKE ?
+	`, "%"+keyword+"%")
 	if err != nil {
 		return nil, err
 	}

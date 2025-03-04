@@ -272,7 +272,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	// データベースにアイテムを追加
 	item := &Item{
 		Name:     req.Name,
-		Category: req.Category,
+		Category: req.Category, // ここでカテゴリIDに変換
 		Image:    fileName,
 	}
 
