@@ -142,6 +142,13 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 		return nil, errors.New("image is required")
 	}
 
+	// 拡張子を取得して、jpgのみ受け付ける
+	fName := r.FormValue("image")
+	ex := filepath.Ext(fName)
+	if ex != ".jpg" {
+		return nil, errors.New("invalid image extension. Only accept: jpg")
+	}
+
 	return req, nil
 }
 
