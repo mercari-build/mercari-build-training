@@ -2,10 +2,9 @@ package app
 
 import (
 	"context"
-	"encoding/json"
+	"database/sql"
 	"errors"
 	"log/slog"
-	"os"
 	// STEP 5-1: uncomment this line
 	// _ "github.com/mattn/go-sqlite3"
 )
@@ -29,59 +28,86 @@ type ItemRepository interface {
 	GetByID(ctx context.Context, itemID int) (*Item, error)
 }
 
+// func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
+// 	file, err := os.Open(i.fileName)
+// 	if err != nil {
+// 		if errors.Is(err, os.ErrNotExist) {
+// 			// ファイルが存在しない場合、空のリストを返す
+// 			return []Item{}, nil
+// 		}
+// 		return nil, err
+// 	}
+// 	defer file.Close()
+
+// 	var items []Item
+// 	err = json.NewDecoder(file).Decode(&items)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	return items, nil
+// }
+
 func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
-	file, err := os.Open(i.fileName)
+	rows, err := i.db.QueryContext(ctx, "SELECT id, name, category, image_name FROM items")
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			// ファイルが存在しない場合、空のリストを返す
-			return []Item{}, nil
-		}
 		return nil, err
 	}
-	defer file.Close()
+	defer rows.Close()
 
 	var items []Item
-	err = json.NewDecoder(file).Decode(&items)
-	if err != nil {
-		return nil, err
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
 	}
-
 	return items, nil
 }
 
 // itemRepository is an implementation of ItemRepository
 type itemRepository struct {
-	// fileName is the path to the JSON file storing items.
-	fileName string
+	db *sql.DB
 }
 
 // NewItemRepository creates a new itemRepository.
-func NewItemRepository() ItemRepository {
-	return &itemRepository{fileName: "items.json"}
+func NewItemRepository(dbPath string) (ItemRepository, error) {
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return nil, err
+	}
+	return &itemRepository{db: db}, nil
 }
 
 // Insert inserts an item into the repository.
+// func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
+// 	// 既存のアイテムを取得
+// 	items, err := i.GetAll(ctx)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	// デバッグログ
+// 	slog.Info("Inserting item", "name", item.Name, "category", item.Category, "image", item.Image)
+
+// 	// 新しいアイテムを追加
+// 	items = append(items, *item)
+
+// 	// JSONファイルに保存
+// 	file, err := os.Create(i.fileName)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer file.Close()
+
+// 	return json.NewEncoder(file).Encode(items)
+// }
+
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	// 既存のアイテムを取得
-	items, err := i.GetAll(ctx)
-	if err != nil {
-		return err
-	}
-
-	// デバッグログ
-	slog.Info("Inserting item", "name", item.Name, "category", item.Category, "image", item.Image)
-
-	// 新しいアイテムを追加
-	items = append(items, *item)
-
-	// JSONファイルに保存
-	file, err := os.Create(i.fileName)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	return json.NewEncoder(file).Encode(items)
+	_, err := i.db.ExecContext(ctx, "INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
+		item.Name, item.Category, item.Image)
+	return err
 }
 
 // GetByID retrieves an item by its index (1-based).

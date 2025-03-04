@@ -25,40 +25,30 @@ type Server struct {
 // Run is a method to start the server.
 // This method returns 0 if the server started successfully, and 1 otherwise.
 func (s Server) Run() int {
-	// set up logger
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
-	// STEP 4-6: set the log level to DEBUG
 	slog.SetLogLoggerLevel(slog.LevelInfo)
 
-	// set up CORS settings
-	frontURL, found := os.LookupEnv("FRONT_URL")
-	if !found {
-		frontURL = "http://localhost:3000"
+	dbPath := "db/mercari.sqlite3"
+	itemRepo, err := NewItemRepository(dbPath)
+	if err != nil {
+		slog.Error("failed to connect to database", "error", err)
+		return 1 // エラーが発生したら終了
 	}
 
-	// STEP 5-1: set up the database connection
-
-	// set up handlers
-	itemRepo := NewItemRepository()
 	h := &Handlers{imgDirPath: s.ImageDirPath, itemRepo: itemRepo}
 
-	// set up routes
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /items", h.AddItem)
 	mux.HandleFunc("GET /items", h.GetItems)
-	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 	mux.HandleFunc("GET /items/{item_id}", h.GetItemByID)
-	mux.HandleFunc("GET /", h.Hello)
 
-	// start the server
 	slog.Info("http server started on", "port", s.Port)
-	err := http.ListenAndServe(":"+s.Port, simpleCORSMiddleware(simpleLoggerMiddleware(mux), frontURL, []string{"GET", "HEAD", "POST", "OPTIONS"}))
+	err = http.ListenAndServe(":"+s.Port, mux)
 	if err != nil {
-		slog.Error("failed to start server: ", "error", err)
+		slog.Error("failed to start server", "error", err)
 		return 1
 	}
-
 	return 0
 }
 
@@ -200,65 +190,113 @@ func (s *Handlers) hashAndStoreImage(filePath string) (string, error) {
 
 // AddItem is a handler to add a new item for POST /items .
 // AddItem is a handler to add a new item for POST /items .
+// func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
+// 	ctx := r.Context()
+
+// 	// `default.jpg` のパス
+// 	defaultImagePath := filepath.Join(s.imgDirPath, "default.jpg")
+
+// 	// 画像のハッシュ化 & 保存
+// 	fileName, err := s.hashAndStoreImage(defaultImagePath)
+// 	if err != nil {
+// 		slog.Error("failed to store image: ", "error", err)
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	slog.Info("Hashed image file name", "fileName", fileName)
+
+// 	// アイテムの追加
+// 	item := &Item{
+// 		Name:     "Default Item",
+// 		Category: "Default Category",
+// 		Image:    fileName, // ハッシュ化された画像のファイル名
+// 	}
+
+// 	message := fmt.Sprintf("item received: %s", item.Name)
+// 	slog.Info("Saving item", "item", item)
+// 	err = s.itemRepo.Insert(ctx, item)
+// 	if err != nil {
+// 		slog.Error("failed to store item: ", "error", err)
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	resp := AddItemResponse{Message: message}
+// 	err = json.NewEncoder(w).Encode(resp)
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+// }
+
 func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// `default.jpg` のパス
-	defaultImagePath := filepath.Join(s.imgDirPath, "default.jpg")
-
-	// 画像のハッシュ化 & 保存
-	fileName, err := s.hashAndStoreImage(defaultImagePath)
+	req, err := parseAddItemRequest(r)
 	if err != nil {
-		slog.Error("failed to store image: ", "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	slog.Info("Hashed image file name", "fileName", fileName)
-
-	// アイテムの追加
-	item := &Item{
-		Name:     "Default Item",
-		Category: "Default Category",
-		Image:    fileName, // ハッシュ化された画像のファイル名
+	// 画像の保存処理
+	fileName, err := s.storeImage(req.Image)
+	if err != nil {
+		http.Error(w, "failed to store image", http.StatusInternalServerError)
+		return
 	}
 
-	message := fmt.Sprintf("item received: %s", item.Name)
-	slog.Info("Saving item", "item", item)
+	// データベースにアイテムを追加
+	item := &Item{
+		Name:     req.Name,
+		Category: req.Category,
+		Image:    fileName,
+	}
+
 	err = s.itemRepo.Insert(ctx, item)
 	if err != nil {
-		slog.Error("failed to store item: ", "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to save item", http.StatusInternalServerError)
 		return
 	}
 
-	resp := AddItemResponse{Message: message}
-	err = json.NewEncoder(w).Encode(resp)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	// 成功レスポンス
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"message": "item added"})
 }
 
 // GetItems メソッド（アイテム一覧を取得する処理）
+// func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
+// 	ctx := r.Context()
+
+// 	// アイテムを取得
+// 	items, err := s.itemRepo.GetAll(ctx)
+// 	if err != nil {
+// 		slog.Error("failed to retrieve items: ", "error", err)
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+
+// 	// JSON で返す
+// 	resp := GetItemsResponse{Items: items}
+// 	err = json.NewEncoder(w).Encode(resp)
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+// }
+
 func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// アイテムを取得
 	items, err := s.itemRepo.GetAll(ctx)
 	if err != nil {
-		slog.Error("failed to retrieve items: ", "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to retrieve items", http.StatusInternalServerError)
 		return
 	}
 
-	// JSON で返す
-	resp := GetItemsResponse{Items: items}
-	err = json.NewEncoder(w).Encode(resp)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	// JSON形式でデータを返す
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(GetItemsResponse{Items: items})
 }
 
 // storeImage stores an image and returns the file path and an error if any.
