@@ -147,6 +147,24 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type ItemRepository interface {
+	Insert(ctx context.Context, item *Item) error
+}
+
+func NewItemRepository() ItemRepository {
+	return &itemRepository{fileName: "items.json"}
+}
+
+type itemRepository struct {
+	fileName string
+}
+
+func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
+	// add implementation to store item
+
+	return nil
+}
+
 // storeImage stores an image and returns the file path and an error if any.
 // this method calculates the hash sum of the image as a file name to avoid the duplication of a same file
 // and stores it in the image directory.
