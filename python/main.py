@@ -1,7 +1,7 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException, Depends,File, UploadFile
+from fastapi import FastAPI, Form, HTTPException, Depends,File, UploadFile,Query
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
@@ -66,11 +66,25 @@ def hello():
 class AddItemResponse(BaseModel):
     message: str
 
-@app.get("/items") #4-3getエンドポイント作成
-def get_items():
-    with open('items.json', 'r') as json_open:
-        json_load = json.load(json_open)
-    return json_load
+@app.get("/items")
+def get_items(db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
+    cursor.execute("SELECT items.id, items.name, categories.name AS category, items.image_name FROM items JOIN categories ON items.category_id = categories.id")
+    items = cursor.fetchall()
+    return {"items": [dict(item) for item in items]}
+
+@app.get("/search")
+def get_items(
+    keyword:str = Query(...),
+    db: sqlite3.Connection = Depends(get_db)
+):
+    cursor = db.cursor()
+    cursor.execute("SELECT id, name, category, image_name FROM items WHERE name LIKE ?",
+        (f"%{keyword}%",))
+    items = cursor.fetchall()
+    return {"items": [dict(item) for item in items]}
+
+
 
 @app.get("/items/{item_id}") #4-5
 def get_items_by_id(item_id: int):
@@ -78,7 +92,6 @@ def get_items_by_id(item_id: int):
         json_load = json.load(json_open)
     item = json_load["items"][item_id]
     return item
-
 
 
 # add_item is a handler to add a new item for POST /items .
@@ -96,12 +109,16 @@ def add_item(
     image_content = image.file.read() 
     image_hash = hashlib.sha256(image_content).hexdigest()
     image_path =  images / f"{image_hash}.jpg"
-
     with open(image_path, "wb") as img_file:
         img_file.write(image_content)
+    cursor = db.cursor()
+    cursor.execute(
+        "INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
+        (name, category, f"{image_hash}.jpg"),
+    )
+    db.commit()  # 変更を保存
 
-    insert_item(Item(name=name,category=category,image_name = f"{image_hash}.jpg"))
-    return AddItemResponse(**{"message": f"item received: name:{name},category:{category},image_name: {image_hash}.jpg"})
+    return AddItemResponse(**{"message": f"item received: name:{name}, category:{category}, image_name: {image_hash}.jpg"})
 
 
 # get_image is a handler to return an image for GET /images/{filename} .
