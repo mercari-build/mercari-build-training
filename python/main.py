@@ -1,12 +1,16 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException, Depends
+import json
+import hashlib
+from fastapi import FastAPI, Form, HTTPException, Depends, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
+
+
 
 
 # Define the path to the images & sqlite3 database
@@ -28,7 +32,8 @@ def get_db():
 
 # STEP 5-1: set up the database connection
 def setup_database():
-    pass
+   pass
+
 
 
 @asynccontextmanager
@@ -55,27 +60,46 @@ app.add_middleware(
 class HelloResponse(BaseModel):
     message: str
 
+@app.get("/items") 
+def get_items():
+    with open('items.json', 'r') as json_open:
+        json_load = json.load(json_open)
+    return json_load
 
-@app.get("/", response_model=HelloResponse)
-def hello():
-    return HelloResponse(**{"message": "Hello, world!"})
-
+@app.get("/items/{item_id}") 
+def get_items_by_id(item_id: int):
+    with open('items.json', 'r') as json_open:
+        json_load = json.load(json_open)
+    item = json_load["items"][item_id]
+    return item
 
 class AddItemResponse(BaseModel):
     message: str
-
 
 # add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
 def add_item(
     name: str = Form(...),
+    category: str = Form(...),
+    image: UploadFile = File(...),
     db: sqlite3.Connection = Depends(get_db),
 ):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
+    if not category:
+        raise HTTPException(status_code=400, detail="category is required")
+    
+    #画像を読み込む
+    image_content = image.file.read()
+    #hash値を作成
+    image_hash = hashlib.sha256(image_content).hexdigest()
+    image_path = images / f"{image_hash}.jpg"
 
-    insert_item(Item(name=name))
-    return AddItemResponse(**{"message": f"item received: {name}"})
+    with open(image_path,"wb") as img_file:
+        img_file.write(image_content)
+
+    insert_item(Item(name=name, category=category,image=f"{image_hash}.jpg"))
+    return AddItemResponse(**{"message": f"item received: name:{name},category:{category},image_name:{image_hash}.jpg"})
 
 
 # get_image is a handler to return an image for GET /images/{filename} .
@@ -96,8 +120,19 @@ async def get_image(image_name):
 
 class Item(BaseModel):
     name: str
+    category: str
+    image:str
 
 
 def insert_item(item: Item):
     # STEP 4-1: add an implementation to store an item
-    pass
+    # 読み込む
+    with open('items.json', 'r') as json_open:
+        json_load = json.load(json_open)  
+
+    # 追加
+    json_load["items"].append(item.dict())
+
+    # 書き込む
+    with open('items.json', 'w') as json_open:
+        json.dump(json_load, json_open, indent=4)
