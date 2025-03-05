@@ -29,7 +29,7 @@ func (s Server) Run() int {
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
 	// STEP 4-6: set the log level to DEBUG
-	slog.SetLogLoggerLevel(slog.LevelInfo)
+	slog.SetLogLoggerLevel(slog.LevelDebug)
 
 	// set up CORS settings
 	frontURL, found := os.LookupEnv("FRONT_URL")
