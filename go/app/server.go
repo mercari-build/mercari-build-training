@@ -1,9 +1,12 @@
 package app
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -84,7 +87,9 @@ type AddItemRequest struct {
 }
 
 type AddItemResponse struct {
-	Message string `json:"message"`
+	Name      string `json:"name"`
+	Category  string `json:"category"`
+	ImageName string `json:"image_name"`
 }
 
 type GetItemsResponse struct {
@@ -100,6 +105,16 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	}
 
 	// STEP 4-4: add an image field
+	f, _, err := r.FormFile("image")
+	if err != nil {
+		return nil, errors.New("Failed to read form file")
+	}
+	defer f.Close()
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return nil, errors.New("Failed to read image data")
+	}
+	req.Image = b
 
 	// validate the request
 	if req.Name == "" {
@@ -138,21 +153,18 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// STEP 4-4: uncomment on adding an implementation to store an image
-	// fileName, err := s.storeImage(req.Image)
-	// if err != nil {
-	// 	slog.Error("failed to store image: ", "error", err)
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
+	fileName, err := s.storeImage(req.Image)
+	if err != nil {
+		slog.Error("failed to store image: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	item := &Item{
-		Name:     req.Name,
-		Category: req.Category,
-		// STEP 4-2: add a category field
-		// STEP 4-4: add an image field
+		Name:      req.Name,
+		Category:  req.Category,
+		ImageName: fileName,
 	}
-	message := fmt.Sprintf("item received: %s", item.Name)
-	slog.Info(message)
 
 	// STEP 4-2: add an implementation to store an item
 	err = s.itemRepo.Insert(ctx, item)
@@ -162,7 +174,20 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := AddItemResponse{Message: message}
+	itemJson, err := json.Marshal(item)
+	if err != nil {
+		slog.Error("failed to marshal item", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	message := string(itemJson)
+	slog.Info(message)
+
+	resp := AddItemResponse{
+		Name:      item.Name,
+		Category:  item.Category,
+		ImageName: item.ImageName,
+	}
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -175,14 +200,16 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 // and stores it in the image directory.
 func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
 	// STEP 4-4: add an implementation to store an image
-	// TODO:
-	// - calc hash sum
-	// - build image file path
-	// - check if the image already exists
-	// - store image
-	// - return the image file path
+	hash := sha256.Sum256(image)
+	fname := hex.EncodeToString(hash[:]) + ".jpg"
+	filePath = filepath.Join(s.imgDirPath, fname)
 
-	return
+	err = os.WriteFile(filePath, image, 0644)
+	if err != nil {
+		return "", err
+	}
+
+	return fname, nil
 }
 
 type GetImageRequest struct {
