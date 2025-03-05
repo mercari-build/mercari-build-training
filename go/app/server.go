@@ -52,7 +52,6 @@ func (s Server) Run() int {
 	// start the server
 	slog.Info("http server started on", "port", s.Port)
 	err := http.ListenAndServe(":"+s.Port, simpleCORSMiddleware(simpleLoggerMiddleware(mux), frontURL, []string{"GET", "HEAD", "POST", "OPTIONS"}))
-
 	if err != nil {
 		slog.Error("failed to start server: ", "error", err)
 		return 1
