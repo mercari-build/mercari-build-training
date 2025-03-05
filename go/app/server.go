@@ -90,7 +90,7 @@ type AddItemResponse struct {
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	req := &AddItemRequest{
 		Name: r.FormValue("name"),
-		Name: r.FormValue("category")
+		Name: r.FormValue("category"),
 		// STEP 4-2: add a category field
 	}
 
@@ -115,16 +115,14 @@ func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
 	items, err := s.itemRepo.FindAll(ctx)
 	if err != nil {
 		slog.Error("Could not retrieve items: ", "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return;
+		return http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
 	response := map[string][]Item{"items: ", items}
-	w.Header().Set("Content-Type", application/json")
+	w.Header().Set("Content-Type", "application/json")
 		       err = json.NewEncoder(w).Encode(response)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 }
 // AddItem is a handler to add a new item for POST /items .
@@ -133,8 +131,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 
 	req, err := parseAddItemRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
 	// STEP 4-4: uncomment on adding an implementation to store an image
@@ -166,8 +163,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	resp := AddItemResponse{Message: message}
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
