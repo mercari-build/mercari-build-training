@@ -49,11 +49,17 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 
 	// jsonファイルを読み込み
 	jsonFile, err := os.ReadFile(i.fileName)
+	// error処理
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
+			// ファイルがなかったらnilを返す
 			println("file does not exist.")
+			return nil
+		} else {
+			// その他のエラーだったら中断、エラーを返す
+			println("Error:", err)
+			return err
 		}
-		println("Error:", err)
 	}
 	if len(jsonFile) == 0 {
 		jsonFile = []byte(`{"items":[]}`)
@@ -93,9 +99,14 @@ func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
 	jsonFile, err := os.ReadFile(i.fileName)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
+			// ファイルが存在しなかったら空のスライスとnilを返す
 			println("file does not exist.")
+			return []Item{}, nil
+		} else {
+			// その他のエラーだったら中断、空のスライスとエラーを返す
+			println("Error:", err)
+			return []Item{}, err
 		}
-		println("Error:", err)
 	}
 
 	// jsonから構造体に変換
@@ -136,8 +147,12 @@ func (i *itemRepository) GetItemById(ctx context.Context, item_id string) (Item,
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			println("file does not exist.")
+			return Item{}, nil
+		} else {
+			println("Error:", err)
+			return Item{}, err
 		}
-		println("Error:", err)
+
 	}
 	// jsonから構造体に変換
 	var data struct {

@@ -317,6 +317,10 @@ func (s *Handlers) GetItemById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item, err := s.itemRepo.GetItemById(r.Context(), req.Id)
+	// if &item == nil {
+	// 	http.Error(w, err.Error(), http.StatusNotFound)
+	// 	return
+	// }
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
@@ -343,6 +347,6 @@ func (s *Handlers) GetItemById(w http.ResponseWriter, r *http.Request) {
 	--url 'http://localhost:9000/items' \
 	-F 'name=jacket' \
 	-F 'category=fashion' \
-	-F 'image=@images/local_image.jpg' <-ローカルのuploadしたいiamgeのパス "image=@go/images/default.jpg"とか
+	-F 'image=@images/local_image.jpg' <-ローカルのuploadしたいiamgeのパス "image=go/images/default.jpg"とか
 
 */
