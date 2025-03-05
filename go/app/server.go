@@ -78,7 +78,7 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 
 type AddItemRequest struct {
 	Name string `form:"name"`
-	// Category string `form:"category"` // STEP 4-2: add a category field
+	Category string `form:"category"` // STEP 4-2: add a category field
 	Image []byte `form:"image"` // STEP 4-4: add an image field
 }
 
@@ -90,6 +90,7 @@ type AddItemResponse struct {
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	req := &AddItemRequest{
 		Name: r.FormValue("name"),
+		Name: r.FormValue("category")
 		// STEP 4-2: add a category field
 	}
 
@@ -101,19 +102,30 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	}
 
 	// STEP 4-2: validate the category field
+	if req.Category == ""{
+		return nil, errors.New("category is required")
+	}
 	// STEP 4-4: validate the image field
 	return req, nil
 }
 //GetItem is a handler to get items for GET /items
 func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
-    items := s.itemRepo.GetAllItems(r.Context()) 
+    ctx := r.Context()
 
-    response := map[string][]Item{"items": items} 
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(response)
-}
-func (i *itemRepository) GetAllItems(ctx context.Context) []Item {
-    return i.items
+	items, err := s.itemRepo.FindAll(ctx)
+	if err != nil {
+		slog.Error("Could not retrieve items: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return;
+		}
+
+	response := map[string][]Item{"items: ", items}
+	w.Header().Set("Content-Type", application/json")
+		       err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+		}
 }
 // AddItem is a handler to add a new item for POST /items .
 func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
@@ -159,6 +171,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
+	Find(ctx context.Context)([]Item, error)
 }
 
 func NewItemRepository() ItemRepository {
@@ -171,8 +184,27 @@ type itemRepository struct {
 }
 
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	i.items = append(i.items, *item)
+	current := os.ReadFile(i.fileName)
 
+	if err == nil {
+		if err := json.Unmarshal(data, &current); err != nil{
+			fmt.Errorf("Could not parse JSON: %w", err)
+			return
+			}
+		}
+	current = append(current, *item)
+
+	data,err = json.MarshalIndent(current, "", " ")
+	if err != nil {
+		fmt.Errorf("Could not marshal JSON: %w", err)
+		return
+		}
+
+	err = os.WriteFile(i.fileName, data, 0644)
+	if err != nil {
+		fmt.Errorf("Could not write to file: %w", err)
+		return
+		}
 	return nil
 }
 
