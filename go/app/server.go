@@ -237,26 +237,25 @@ func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
 	// - check if the image already exists
 	// - store image
 	// - return the image file path
-	// Calculate SHA-256 hash of the image
+
+	// Calculate SHA-256 hash of the image (ハッシュ化)
 	hasher := sha256.New()
 	hasher.Write(image)
 	hashSum := hasher.Sum(nil)
 	fileName := fmt.Sprintf("%x.jpg", hashSum)
 
-	// Build the full file path
-	filePath = filepath.Join(s.imgDirPath, fileName)
-
 	// Check if the image already exists
-	_, err = os.Stat(filePath)
+	GetImageRequest := &GetImageRequest{FileName: fileName}
+	_, err = s.buildImagePath(GetImageRequest.FileName)
 	if err == nil {
 		// Image already exists, return the filename
 		return fileName, nil
 	}
 
 	// Store the image
-	err = os.WriteFile(filePath, image, 0644)
+	err = StoreImage(filePath, image)
 	if err != nil {
-		return "", fmt.Errorf("failed to write image file: %w", err)
+		return "", fmt.Errorf("failed to store image: %w", err)
 	}
 
 	return fileName, nil
