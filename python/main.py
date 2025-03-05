@@ -100,16 +100,9 @@ def add_item(
     image_path = os.path.join(IMAGES_DIR, hashed_filename)
     with open(image_path, "wb") as buffer:
         buffer.write(image_bytes)
-    
-    #データを返す（データベースには未保存）
-    #return{
-       # "name": name,
-       # "category": category,
-        #"image_name": hashed_filename
-    #}
 
     insert_item(Item(name=name, category=category, image_name=hashed_filename))
-    return AddItemResponse(**{"message": f"item received: {name},{category}, {hashed_filename}"})
+    return AddItemResponse(**{"message": f"item received, name:{name},category:{category}, hashed_filename:{hashed_filename}"})
 
 
 # JSON ファイルのパス
@@ -210,13 +203,3 @@ def insert_item(item: Item):
         json.dump(items_data, file, ensure_ascii=False, indent=4)
 
     # STEP 4-2: add an implementation to store an item
-    pass
-
-
-
-
-
-
-
-
-
