@@ -41,7 +41,7 @@ func (s Server) Run() int {
 
 	// set up routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /items", h.GetItem)
+	mux.HandleFunc("GET /", h.Hello)
 	mux.HandleFunc("POST /items", h.AddItem)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
@@ -78,7 +78,7 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 
 type AddItemRequest struct {
 	Name string `form:"name"`
-	Category string `form:"category"` // STEP 4-2: add a category field
+	// Category string `form:"category"` // STEP 4-2: add a category field
 	Image []byte `form:"image"` // STEP 4-4: add an image field
 }
 
@@ -90,7 +90,6 @@ type AddItemResponse struct {
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	req := &AddItemRequest{
 		Name: r.FormValue("name"),
-		Category: r.FormValue("category"),
 		// STEP 4-2: add a category field
 	}
 
@@ -102,53 +101,18 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	}
 
 	// STEP 4-2: validate the category field
-	if req.Category == ""{
-		return nil, errors.New("category is required")
-	}
 	// STEP 4-4: validate the image field
 	return req, nil
 }
-//GetItem is a handler to get items for GET /items
-func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
-    ctx := r.Context()
 
-	items, err := s.itemRepo.FindAll(ctx)
-	if err != nil {
-		slog.Error("Could not retrieve items: ", "error", err)
-		return http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-
-	response := map[string][]Item{"items: ", items}
-	w.Header().Set("Content-Type", "application/json")
-		       err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		return http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-}
-func (i *itemRepository) FindAll(ctx context.Context)([Item, error) {
-	data, err := os.ReadFile(i.fileName)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return []Item{}, nil
-		}
-		return nil, fmt.Errorf("Could not read file: %w", err)
-	}
-
-	var items []Item
-	if len(data) > 0 {
-		if err := json.Unmarshal(data, &items); err != nil {
-			return nil, fmt.Errorf("Could not parse JSON: %w", err)
-		}
-	}
-	return items, nil
-}
 // AddItem is a handler to add a new item for POST /items .
 func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	req, err := parseAddItemRequest(r)
 	if err != nil {
-		return http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	// STEP 4-4: uncomment on adding an implementation to store an image
@@ -161,12 +125,10 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 
 	item := &Item{
 		Name: req.Name,
-		Category: req.category,
+		// STEP 4-2: add a category field
 		// STEP 4-4: add an image field
 	}
 	message := fmt.Sprintf("item received: %s", item.Name)
-	// DEBUG
-	message := fmt.Sprintf("item category: %s", item.Category)
 	slog.Info(message)
 
 	// STEP 4-2: add an implementation to store an item
@@ -180,47 +142,9 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	resp := AddItemResponse{Message: message}
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {
-		return http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-}
-
-type ItemRepository interface {
-	Insert(ctx context.Context, item *Item) error
-	Find(ctx context.Context)([]Item, error)
-}
-
-func NewItemRepository() ItemRepository {
-	return &itemRepository{fileName: "items.json"}
-}
-
-type itemRepository struct {
-	fileName string
-	items []Item
-}
-
-func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	current := os.ReadFile(i.fileName)
-
-	if err == nil {
-		if err := json.Unmarshal(data, &current); err != nil{
-			fmt.Errorf("Could not parse JSON: %w", err)
-			return
-			}
-		}
-	current = append(current, *item)
-
-	data,err = json.MarshalIndent(current, "", " ")
-	if err != nil {
-		fmt.Errorf("Could not marshal JSON: %w", err)
-		return
-		}
-
-	err = os.WriteFile(i.fileName, data, 0644)
-	if err != nil {
-		fmt.Errorf("Could not write to file: %w", err)
-		return
-		}
-	return nil
 }
 
 // storeImage stores an image and returns the file path and an error if any.
