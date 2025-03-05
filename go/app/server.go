@@ -47,7 +47,7 @@ func (s Server) Run() int {
 	mux.HandleFunc("GET /", h.Hello)
 	mux.HandleFunc("GET /items", h.GetItems)
 	mux.HandleFunc("POST /items", h.AddItem)
-	mux.HandleFunc("GET /items/{id}", h.GetItemToId)
+	mux.HandleFunc("GET /items/{id}", h.GetItemById)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
 	// start the server
@@ -191,7 +191,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		// STEP 4-2: add a category field
 		Category: req.Category,
 		// STEP 4-4: add an image field
-		Image_Name: fileName,
+		ImageName: fileName,
 	}
 	message := fmt.Sprintf("item received: %s", item.Name)
 	slog.Info(message)
@@ -279,13 +279,13 @@ func parseGetImageRequest(r *http.Request) (*GetImageRequest, error) {
 	return req, nil
 }
 
-type GetItemToIdResponse struct {
+type GetItemByIdResponse struct {
 	Name string `json:"name"`
 	Category string `json:"category"`
-	Image_Name string `json:"image_name"`
+	ImageName string `json:"image_name"`
 }
 
-func (s *Handlers) GetItemToId(w http.ResponseWriter, r *http.Request) {
+func (s *Handlers) GetItemById(w http.ResponseWriter, r *http.Request) {
 	// get itemId from URL
 	uri := strings.Split(r.URL.Path, "/")
 	if len(uri) < 3 {
@@ -316,10 +316,10 @@ func (s *Handlers) GetItemToId(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// find item by itemId
-	resp := GetItemToIdResponse{
+	resp := GetItemByIdResponse{
 		Name: items[itemId].Name,
 		Category: items[itemId].Category,
-		Image_Name: items[itemId].Image_Name,
+		ImageName: items[itemId].ImageName,
 	}
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {

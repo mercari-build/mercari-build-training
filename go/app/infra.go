@@ -17,7 +17,7 @@ type Item struct {
 	ID   int    `db:"id" json:"-"`
 	Name string `db:"name" json:"name"`
 	Category string `db:"category" json:"category"`
-	Image_Name string `db:"image_name" json:"image_name"`
+	ImageName string `db:"image_name" json:"image_name"`
 }
 
 type JsonFormat struct {
