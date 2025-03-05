@@ -154,7 +154,7 @@ def get_item(item_id: int):
         with open(items_file, "r", encoding="utf-8") as f:
             data = json.load(f)
     except json.JSONDecodeError:
-        raise HTTPException(status_code=404, detail="Failed to open the file")
+        raise HTTPException(status_code=500, detail="Failed to open the file")
     
     items_list = data.get("items", [])
     
@@ -163,7 +163,7 @@ def get_item(item_id: int):
     
     item_index = item_id - 1
     if item_index < 0 or item_index >= len(items_list):
-        raise HTTPException(status_code=404, detail="index is invalid")
+        raise HTTPException(status_code=400, detail="index is invalid")
     
     return items_list[item_index]
     
