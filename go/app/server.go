@@ -180,32 +180,23 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
-	// get the id from path
-	idStr := strings.TrimPrefix(r.URL.Path, "/items/")
-	id, err := strconv.Atoi(idStr)
-
+	// get id from URL
+	id, err := strconv.Atoi(strings.TrimPrefix(r.URL.Path, "/items/"))
 	if err != nil {
 		http.Error(w, "Invalid item ID", http.StatusBadRequest)
 		return
 	}
-	items, err := s.itemRepo.GetAll(r.Context())
-	if err != nil {
-		http.Error(w, "Failed to get items", http.StatusInternalServerError)
-		return
-	}
 
-	if id < 0 || id >= len(items) {
+	// get Item (id)
+	item, err := s.itemRepo.GetByID(r.Context(), id)
+	if err != nil {
 		http.Error(w, "Item not found", http.StatusNotFound)
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(items[id])
-	if err != nil {
-		http.Error(w, "failed to encode items", http.StatusInternalServerError)
-		return
-	}
-	return
-
+	// encode JSON
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(item)
 }
 
 func (s *Handlers) GetAllItems(w http.ResponseWriter, r *http.Request) {
@@ -272,7 +263,6 @@ func parseGetImageRequest(r *http.Request) (*GetImageRequest, error) {
 // GetImage is a handler to return an image for GET /images/{filename} .
 // If the specified image is not found, it returns the default image.
 func (s *Handlers) GetImage(w http.ResponseWriter, r *http.Request) {
-
 	req, err := parseGetImageRequest(r)
 	if err != nil {
 		slog.Warn("failed to parse get image request: ", "error", err)

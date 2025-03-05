@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"sync"
 	// STEP 5-1: uncomment this line
-	// _ "github.com/mattn/go-sqlite3"
+	//"github.com/mattn/go-sqlite3"
 )
 
 var errImageNotFound = errors.New("image not found")
@@ -19,6 +19,10 @@ type Item struct {
 	Name     string `db:"name" json:"name"`
 	Category string `db:"category" json:"category"`
 	Image    string `db:"image" json:"image"`
+}
+
+var jsonData struct {
+	Items []Item `json:"items"`
 }
 
 // Please run `go generate ./...` to generate the mock implementation
@@ -40,16 +44,23 @@ type itemRepository struct {
 
 // NewItemRepository creates a new itemRepository.
 func NewItemRepository() ItemRepository {
-	return &itemRepository{fileName: "/Users/sui/mercari-build-training/go/items.json"}
+	relPath := "../../items.json"
+
+	dir, err := os.Getwd()
+	if err != nil {
+		panic(fmt.Errorf("failed to get working directory: %w", err))
+	}
+
+	filePath := filepath.Join(dir, relPath)
+
+	return &itemRepository{fileName: filePath}
 
 }
-
 func (i *itemRepository) GetByID(ctx context.Context, id int) (*Item, error) {
 	items, err := i.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	if id < 0 || id >= len(items) {
 		return nil, fmt.Errorf("item not found")
 	}
@@ -77,9 +88,6 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 		}
 	}
 
-	var jsonData struct {
-		Items []Item `json:"items"`
-	}
 	if err := json.Unmarshal(data, &jsonData); err != nil {
 		return fmt.Errorf("failed to parse JSON: %w", err)
 	}
@@ -97,7 +105,7 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	if err := os.WriteFile(i.fileName, newData, 0644); err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
-	//write lastID to JSON
+
 	return nil
 
 }
@@ -106,11 +114,19 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 // This package doesn't have a related interface for simplicity.
 func StoreImage(fileName string, image []byte) error {
 	// STEP 4-4: add an implementation to store an image
-	imageDirPath := "/Users/sui/mercari-build-training/go/images"
+	RelPath := "images"
+
+	dir, err := os.Getwd()
+	if err != nil {
+		panic(fmt.Errorf("failed to get working directory: %w", err))
+	}
+
+	imageDirPath := filepath.Join(dir, RelPath)
+
 	filePath := filepath.Join(imageDirPath, fileName)
 
 	//save file to the filepath
-	err := os.WriteFile(filePath, image, 0644)
+	err = os.WriteFile(filePath, image, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to save image: %w", err)
 	}
@@ -123,10 +139,6 @@ func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 
-	}
-	//content of struct
-	var jsonData struct {
-		Items []Item `json:"items"`
 	}
 
 	//parse JSON to struct(change data to jsonData(struct))
