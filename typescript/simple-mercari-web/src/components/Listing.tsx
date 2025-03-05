@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { postItem } from '~/api';
 
 interface Prop {
@@ -19,6 +19,8 @@ export const Listing = ({ onListingCompleted }: Prop) => {
   };
   const [values, setValues] = useState<FormDataType>(initialState);
 
+  const uploadImageRef = useRef<HTMLInputElement>(null);
+
   const onValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setValues({
       ...values,
@@ -33,11 +35,27 @@ export const Listing = ({ onListingCompleted }: Prop) => {
   };
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    // Validate field before submit
+    const REQUIRED_FILEDS = ['name', 'image'];
+    const missingFields = Object.entries(values)
+      .filter(([, value]) => !value && REQUIRED_FILEDS.includes(value))
+      .map(([key]) => key);
+
+    if (missingFields.length) {
+      alert(`Missing fields: ${missingFields.join(', ')}`);
+      return;
+    }
+
+    // Submit the form
     postItem({
       name: values.name,
       category: values.category,
       image: values.image,
     })
+      .then(() => {
+        alert('Item listed successfully');
+      })
       .catch((error) => {
         console.error('POST error:', error);
         alert('Failed to list this item');
@@ -45,6 +63,9 @@ export const Listing = ({ onListingCompleted }: Prop) => {
       .finally(() => {
         onListingCompleted();
         setValues(initialState);
+        if (uploadImageRef.current) {
+          uploadImageRef.current.value = '';
+        }
       });
   };
   return (
@@ -58,6 +79,7 @@ export const Listing = ({ onListingCompleted }: Prop) => {
             placeholder="name"
             onChange={onValueChange}
             required
+            value={values.name}
           />
           <input
             type="text"
@@ -65,6 +87,7 @@ export const Listing = ({ onListingCompleted }: Prop) => {
             id="category"
             placeholder="category"
             onChange={onValueChange}
+            value={values.category}
           />
           <input
             type="file"
@@ -72,6 +95,7 @@ export const Listing = ({ onListingCompleted }: Prop) => {
             id="image"
             onChange={onFileChange}
             required
+            ref={uploadImageRef}
           />
           <button type="submit">List this item</button>
         </div>
