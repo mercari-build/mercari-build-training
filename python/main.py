@@ -131,4 +131,3 @@ def get_items():
         data = {"items": []}
 
     return data
-    pass
