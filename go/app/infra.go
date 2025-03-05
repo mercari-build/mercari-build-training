@@ -24,6 +24,7 @@ type Item struct {
 //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
+	List(ctx context.Context) ([]*Item, error)
 }
 
 // itemRepository is an implementation of ItemRepository
@@ -67,6 +68,28 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	}
 
 	return nil
+}
+
+// List lists items from the repository.
+func (i *itemRepository) List(ctx context.Context) ([]*Item, error) {
+	// STEP 4-2: add an implementation to list items
+	var data struct {
+		Items []*Item `json:"items"`
+	}
+
+	dataBytes, err := os.ReadFile(i.fileName)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+
+	if err := json.Unmarshal(dataBytes, &data); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
+	}
+
+	return data.Items, nil
 }
 
 // StoreImage stores an image and returns an error if any.
