@@ -178,7 +178,7 @@ func NewItemRepository() ItemRepository {
 
 type itemRepository struct {
 	fileName string
-	items Item[]
+	items []Item
 }
 
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
