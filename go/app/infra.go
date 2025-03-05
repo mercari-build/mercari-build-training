@@ -27,6 +27,7 @@ type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 	FindAll(ctx context.Context) ([]Item, error)
 	FindByID(ctx context.Context, id int) (*Item, error)
+	Search(ctx context.Context, keyword string) ([]Item, error)
 }
 
 // itemRepository is an implementation of ItemRepository
