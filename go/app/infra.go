@@ -220,6 +220,12 @@ HTTPリクエストメソッド
 	-> Webサーバーにどのような処理をするかを伝える役割
 	-> GET/POST/PUT(更新)/PATCH(一部更新)/DELETE(削除)
 
+HTTPステータスコード (1XX, 2XX, 3XX, 4XX, 5XXはそれぞれどんな意味を持ちますか？)
+	-> 1XX: リクエストが受け付けられて処理が続いている(Informational)
+	-> 2XX: リクエストが正常に完了(Success)
+	-> 3XX: リクエストを完了するために追加のアクションが必要(Redirection)
+	-> 4XX: リクエストに問題あり(Client Error)
+	-> 5XX: サーバーがリクエストを処理できなかった(Server Error)
 
 */
 
