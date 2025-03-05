@@ -30,7 +30,7 @@ type Item struct {
 //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
-	SelectAll(ctx context.Context) (*Items, error)
+	SelectAll(ctx context.Context) ([]*Item, error)
 }
 
 // itemRepository is an implementation of ItemRepository
@@ -55,7 +55,7 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 }
 
 // Insert inserts an item into the repository.
-func (i *itemRepository) SelectAll(ctx context.Context) (*Items, error) {
+func (i *itemRepository) SelectAll(ctx context.Context) ([]*Item, error) {
 	// Added this to leave the code for the JSON implementation.
 	if i.fileName != "" {
 		items, err := i.getItemsFromFile(ctx)
@@ -65,7 +65,7 @@ func (i *itemRepository) SelectAll(ctx context.Context) (*Items, error) {
 	return nil, fmt.Errorf("SelectAll is not implemented")
 }
 
-func (i *itemRepository) getItemsFromFile(ctx context.Context) (*Items, error) {
+func (i *itemRepository) getItemsFromFile(ctx context.Context) ([]*Item, error) {
 	var items Items
 	if _, err := os.Stat(i.fileName); err == nil {
 		// File exists, open it for reading
@@ -86,7 +86,7 @@ func (i *itemRepository) getItemsFromFile(ctx context.Context) (*Items, error) {
 		// Some other error occurred
 		return nil, err
 	}
-	return &items, nil
+	return items.Items, nil
 }
 func (i *itemRepository) insertToFile(ctx context.Context, item *Item) error {
 	items, err := i.getItemsFromFile(ctx)
@@ -97,10 +97,11 @@ func (i *itemRepository) insertToFile(ctx context.Context, item *Item) error {
 	slog.Info("items before insert", "items", items)
 
 	// Append the new item
-	items.Items = append(items.Items, item)
+	items = append(items, item)
+	newItems := Items{Items: items}
 
 	// Marshal items to JSON
-	b, err := json.Marshal(items)
+	b, err := json.Marshal(newItems)
 	if err != nil {
 		return err
 	}

@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -47,6 +48,7 @@ func (s Server) Run() int {
 	mux.HandleFunc("GET /", h.Hello)
 	mux.HandleFunc("POST /items", h.AddItem)
 	mux.HandleFunc("GET /items", h.GetItems)
+	mux.HandleFunc("GET /items/{item_id}", h.GetItem)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
 	// start the server
@@ -86,14 +88,22 @@ type AddItemRequest struct {
 	Image    []byte `form:"image"`    // STEP 4-4: add an image field
 }
 
-type AddItemResponse struct {
+type ItemResponse struct {
 	Name      string `json:"name"`
-	Category  string `json:"category"`
-	ImageName string `json:"image_name"`
+	Category  string `json:"category"`   // STEP 4-2: add a category field
+	ImageName string `json:"image_name"` // STEP 4-4: add an image field
 }
 
-type GetItemsResponse struct {
-	Items *Items `json:"items"`
+type ItemsResponse struct {
+	Items []ItemResponse `json:"items"`
+}
+
+func itemToItemResponse(item *Item) ItemResponse {
+	return ItemResponse{
+		Name:      item.Name,
+		Category:  item.Category,
+		ImageName: item.ImageName,
+	}
 }
 
 // parseAddItemRequest parses and validates the request to add an item.
@@ -134,7 +144,48 @@ func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	items, err := s.itemRepo.SelectAll(ctx)
-	resp := GetItemsResponse{Items: items}
+	if err != nil {
+		slog.Error("failed to get items ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	resItems := make([]ItemResponse, len(items))
+	for i, item := range items {
+		resItems[i] = ItemResponse{
+			Name:      item.Name,
+			Category:  item.Category,
+			ImageName: item.ImageName, // STEP 4-4: add an image field
+		}
+	}
+	resp := ItemsResponse{Items: resItems}
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// GetItems is a handler to return items for GET /items .
+func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	req, err := parseGetItemRequest(r)
+	if err != nil {
+		slog.Error("failed to parse get item request: ", "error", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	items, err := s.itemRepo.SelectAll(ctx)
+	if err != nil {
+		slog.Error("failed to get item ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if items == nil || len(items) <= req.ItemID {
+		slog.Error("item not found ", "error", err)
+		http.Error(w, "no item found", http.StatusNotFound)
+		return
+	}
+	resp := itemToItemResponse(items[req.ItemID])
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -183,7 +234,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	message := string(itemJson)
 	slog.Info(message)
 
-	resp := AddItemResponse{
+	resp := ItemResponse{
 		Name:      item.Name,
 		Category:  item.Category,
 		ImageName: item.ImageName,
@@ -216,6 +267,10 @@ type GetImageRequest struct {
 	FileName string // path value
 }
 
+type GetItemRequest struct {
+	ItemID int
+}
+
 // parseGetImageRequest parses and validates the request to get an image.
 func parseGetImageRequest(r *http.Request) (*GetImageRequest, error) {
 	req := &GetImageRequest{
@@ -227,6 +282,18 @@ func parseGetImageRequest(r *http.Request) (*GetImageRequest, error) {
 		return nil, errors.New("filename is required")
 	}
 
+	return req, nil
+}
+
+func parseGetItemRequest(r *http.Request) (*GetItemRequest, error) {
+	itemID := r.PathValue("item_id")
+	i, err := strconv.Atoi(itemID)
+	if err != nil {
+		return nil, errors.New("item_id is required")
+	}
+	req := &GetItemRequest{
+		ItemID: i,
+	}
 	return req, nil
 }
 
