@@ -249,18 +249,16 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 // storeImage stores an image and returns the file path and an error if any.
 // this method calculates the hash sum of the image as a file name to avoid the duplication of a same file
 // and stores it in the image directory.
-func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
+func (s *Handlers) storeImage(image []byte) (fileName string, err error) {
 	// STEP 4-4: add an implementation to store an image
 	hash := sha256.Sum256(image)
-	fname := hex.EncodeToString(hash[:]) + ".jpg"
-	filePath = filepath.Join(s.imgDirPath, fname)
-
-	err = os.WriteFile(filePath, image, 0644)
+	fileName = hex.EncodeToString(hash[:]) + ".jpg"
+	filePath := filepath.Join(s.imgDirPath, fileName)
+	err = StoreImage(filePath, image)
 	if err != nil {
 		return "", err
 	}
-
-	return fname, nil
+	return fileName, nil
 }
 
 type GetImageRequest struct {

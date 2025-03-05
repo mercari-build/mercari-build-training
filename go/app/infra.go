@@ -13,6 +13,7 @@ import (
 
 var errImageNotFound = errors.New("image not found")
 
+// Items is a struct to store a list of items to json.
 type Items struct {
 	Items []*Item `json:"items"`
 }
@@ -51,7 +52,7 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 		return i.insertToFile(ctx, item)
 	}
 
-	return nil
+	return fmt.Errorf("SelectAll is not implemented")
 }
 
 // Insert inserts an item into the repository.
@@ -125,8 +126,6 @@ func (i *itemRepository) insertToFile(ctx context.Context, item *Item) error {
 
 // StoreImage stores an image and returns an error if any.
 // This package doesn't have a related interface for simplicity.
-func StoreImage(fileName string, image []byte) error {
-	// STEP 4-4: add an implementation to store an image
-
-	return nil
+func StoreImage(filePath string, image []byte) error {
+	return os.WriteFile(filePath, image, 0644)
 }
