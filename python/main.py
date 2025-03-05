@@ -1,7 +1,8 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException, Depends
+import hashlib
+from fastapi import FastAPI, Form, HTTPException, Depends, UploadFile, File
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
@@ -74,6 +75,7 @@ class AddItemResponse(BaseModel):
 def add_item(
     name: str = Form(...),
     category: str = Form(...),
+    image: UploadFile = File(...),
     db: sqlite3.Connection = Depends(get_db),
 ):
     if not name:
@@ -81,27 +83,43 @@ def add_item(
     
     if not category:
         raise HTTPException(status_code=400, detail="category is required")
-
-    new_item = Item(name=name, category=category)
+    
+    # 画像の内容を読み込む
+    image_bytes = image.file.read()
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="No image file content")
+    
+    # SHA-256 でファイル名をハッシュ化
+    hash_value = hashlib.sha256(image_bytes).hexdigest()
+    hashed_image = f"{hash_value}.jpg"
+    image_path = images / hashed_image
+    
+    # 画像ファイルを python/images ディレクトリに保存する
+    with open(image_path, "wb") as f:
+        f.write(image_bytes)
+    
+    # 新しいアイテムを作成
+    new_item = Item(name=name, category=category, image_name=hashed_image)
     insert_item(new_item)
-    return AddItemResponse(**{"message": f"item received: {name} category received: {category}"})
-
+    
+    return AddItemResponse(**{"message": f"item received: {name} / category received: {category} / image received: {hashed_image}"})
 
 # get_image is a handler to return an image for GET /images/{filename} .
 # GET-/image/{image_name} リクエストで呼び出され、指定された画像を返す
 @app.get("/image/{image_name}")
-async def get_image(image_name):
-    # Create image path
-    image = images / image_name
+async def get_image(image_name: str):
+    # 画像ファイルのパスを生成する
+    image_file_path = images / image_name
 
     if not image_name.endswith(".jpg"):
         raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
 
-    if not image.exists():
-        logger.debug(f"Image not found: {image}")
-        image = images / "default.jpg"
+    if not image_file_path.exists():
+        logger.debug(f"Image not found: {image_file_path}")
+        image_file_path = images / "default.jpg"
 
-    return FileResponse(image)
+    return FileResponse(image_file_path)
+
 
 # GET-/items リクエストで呼び出され、items.jsonファイルの内容(今まで保存された全てのitemの情報)を返す
 @app.get("/items")
@@ -120,6 +138,7 @@ def get_items():
 class Item(BaseModel):
     name: str
     category: str
+    image_name: str
 
 # app.post("/items" ... のハンドラ内で用いられる。items.jsonファイルへ新しい要素の追加を行う。
 def insert_item(item: Item):
@@ -141,7 +160,7 @@ def insert_item(item: Item):
         data = {"items": []}
         
     # 新しいアイテムを追加する
-    data["items"].append({"name": item.name, "category": item.category})
+    data["items"].append({"name": item.name, "category": item.category, "image_name": item.image_name})
     
     #更新したデータを書き戻す
     with open(items_file, "w", encoding="utf-8") as f:

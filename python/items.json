@@ -7,6 +7,21 @@
     {
       "name": "cap",
       "category": "fashion"
+    },
+    {
+      "name": "jacket",
+      "category": "fashion",
+      "image_name": "d437b09fc69881e1e48afe081fb9baa917f55b62c7582954efa6ec28381fcd9d.jpg"
+    },
+    {
+      "name": "jacket",
+      "category": "fashion",
+      "image_name": "d437b09fc69881e1e48afe081fb9baa917f55b62c7582954efa6ec28381fcd9d.jpg"
+    },
+    {
+      "name": "jacket",
+      "category": "fashion",
+      "image_name": "d437b09fc69881e1e48afe081fb9baa917f55b62c7582954efa6ec28381fcd9d.jpg"
     }
   ]
 }
