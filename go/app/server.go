@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -46,6 +47,7 @@ func (s Server) Run() int {
 	mux.HandleFunc("GET /", h.Hello)
 	mux.HandleFunc("GET /items", h.GetItems)
 	mux.HandleFunc("POST /items", h.AddItem)
+	mux.HandleFunc("GET /items/{id}", h.GetItemToId)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
 	// start the server
@@ -275,6 +277,55 @@ func parseGetImageRequest(r *http.Request) (*GetImageRequest, error) {
 	}
 
 	return req, nil
+}
+
+type GetItemToIdResponse struct {
+	Name string `json:"name"`
+	Category string `json:"category"`
+	Image_Name string `json:"image_name"`
+}
+
+func (s *Handlers) GetItemToId(w http.ResponseWriter, r *http.Request) {
+	// get itemId from URL
+	uri := strings.Split(r.URL.Path, "/")
+	if len(uri) < 3 {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	itemId, _ := strconv.Atoi(uri[2])
+
+	// open json file
+	fileName := s.itemRepo.GetFileName()
+	jsonFile, err := os.Open(fileName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer jsonFile.Close()
+
+	// read json file as bytes
+	bytes, _ := io.ReadAll(jsonFile)
+
+	// decode bytes to map
+	var decodeData map[string][]Item
+	json.Unmarshal(bytes, &decodeData)
+
+	var items []Item
+	for _, v := range decodeData {
+		items = append(items, v...)
+	}
+
+	// find item by itemId
+	resp := GetItemToIdResponse{
+		Name: items[itemId].Name,
+		Category: items[itemId].Category,
+		Image_Name: items[itemId].Image_Name,
+	}
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 // GetImage is a handler to return an image for GET /images/{filename} .
