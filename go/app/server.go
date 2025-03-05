@@ -317,11 +317,13 @@ func (s *Handlers) GetItemById(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item, err := s.itemRepo.GetItemById(r.Context(), req.Id)
-	// if &item == nil {
-	// 	http.Error(w, err.Error(), http.StatusNotFound)
-	// 	return
-	// }
+	// エラーがerrItemNotFoundだったら404返す
 	if err != nil {
+		if errors.Is(err, errItemNotFound) {
+			slog.Warn("item not exist: ", "error", err)
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 

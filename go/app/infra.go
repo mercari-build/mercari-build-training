@@ -12,6 +12,7 @@ import (
 )
 
 var errImageNotFound = errors.New("image not found")
+var errItemNotFound = errors.New("item not found")
 
 type Item struct {
 	ID       int    `db:"id" json:"-"`
@@ -174,7 +175,10 @@ func (i *itemRepository) GetItemById(ctx context.Context, item_id string) (Item,
 	}
 
 	item := data.Items[idx]
-	return item, err
+	if item == (Item{}) {
+		return Item{}, errItemNotFound
+	}
+	return item, nil
 }
 
 /*
