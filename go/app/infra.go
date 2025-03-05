@@ -21,7 +21,7 @@ type Item struct {
 	Image    string `db:"image" json:"image"`
 }
 
-var jsonData struct {
+type jsonData struct {
 	Items []Item `json:"items"`
 }
 
@@ -88,6 +88,7 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 		}
 	}
 
+	var jsonData jsonData
 	if err := json.Unmarshal(data, &jsonData); err != nil {
 		return fmt.Errorf("failed to parse JSON: %w", err)
 	}
@@ -114,14 +115,14 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 // This package doesn't have a related interface for simplicity.
 func StoreImage(fileName string, image []byte) error {
 	// STEP 4-4: add an implementation to store an image
-	RelPath := "images"
+	relPath := "images"
 
 	dir, err := os.Getwd()
 	if err != nil {
 		panic(fmt.Errorf("failed to get working directory: %w", err))
 	}
 
-	imageDirPath := filepath.Join(dir, RelPath)
+	imageDirPath := filepath.Join(dir, relPath)
 
 	filePath := filepath.Join(imageDirPath, fileName)
 
@@ -140,7 +141,7 @@ func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 
 	}
-
+	var jsonData jsonData
 	//parse JSON to struct(change data to jsonData(struct))
 	if err := json.Unmarshal(data, &jsonData); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON: %w", err)
