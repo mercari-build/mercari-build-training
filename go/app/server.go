@@ -148,7 +148,6 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	item := &Item{
 		Name: req.Name,
 		Category: req.category,
-		// STEP 4-2: add a category field
 		// STEP 4-4: add an image field
 	}
 	message := fmt.Sprintf("item received: %s", item.Name)
