@@ -43,6 +43,7 @@ func (s Server) Run() int {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", h.Hello)
 	mux.HandleFunc("POST /items", h.AddItem)
+	mux.HandleFunc("GET /items", h.GetItems)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
 	// start the server
@@ -86,6 +87,10 @@ type AddItemResponse struct {
 	Message string `json:"message"`
 }
 
+type GetItemsResponse struct {
+	Items *Items `json:"items"`
+}
+
 // parseAddItemRequest parses and validates the request to add an item.
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	req := &AddItemRequest{
@@ -107,6 +112,19 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	}
 	// STEP 4-4: validate the image field
 	return req, nil
+}
+
+// GetItems is a handler to return items for GET /items .
+func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	items, err := s.itemRepo.SelectAll(ctx)
+	resp := GetItemsResponse{Items: items}
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 // AddItem is a handler to add a new item for POST /items .
@@ -137,7 +155,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	slog.Info(message)
 
 	// STEP 4-2: add an implementation to store an item
-	err = s.itemRepo.InsertToFile(ctx, item)
+	err = s.itemRepo.Insert(ctx, item)
 	if err != nil {
 		slog.Error("failed to store item: ", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

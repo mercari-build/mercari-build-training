@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	// STEP 5-1: uncomment this line
@@ -28,8 +29,7 @@ type Item struct {
 //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
-	// Added this function to leave the code for the JSON implementation.
-	InsertToFile(ctx context.Context, item *Item) error
+	SelectAll(ctx context.Context) (*Items, error)
 }
 
 // itemRepository is an implementation of ItemRepository
@@ -45,35 +45,54 @@ func NewItemRepository() ItemRepository {
 
 // Insert inserts an item into the repository.
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	// STEP 4-2: add an implementation to store an item
+	// Added this to leave the code for the JSON implementation.
+	if i.fileName != "" {
+		return i.insertToFile(ctx, item)
+	}
 
 	return nil
 }
 
-func (i *itemRepository) InsertToFile(ctx context.Context, item *Item) error {
-	var items Items
+// Insert inserts an item into the repository.
+func (i *itemRepository) SelectAll(ctx context.Context) (*Items, error) {
+	// Added this to leave the code for the JSON implementation.
+	if i.fileName != "" {
+		items, err := i.getItemsFromFile(ctx)
+		return items, err
+	}
 
-	// Check if the file exists
+	return nil, fmt.Errorf("SelectAll is not implemented")
+}
+
+func (i *itemRepository) getItemsFromFile(ctx context.Context) (*Items, error) {
+	var items Items
 	if _, err := os.Stat(i.fileName); err == nil {
 		// File exists, open it for reading
 		f, err := os.Open(i.fileName)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		defer f.Close()
 
 		// Decode existing items from the file
 		if err := json.NewDecoder(f).Decode(&items); err != nil {
-			return err
+			return nil, err
 		}
 	} else if os.IsNotExist(err) {
 		// File does not exist, initialize items list
 		items.Items = []*Item{}
 	} else {
 		// Some other error occurred
+		return nil, err
+	}
+	return &items, nil
+}
+func (i *itemRepository) insertToFile(ctx context.Context, item *Item) error {
+	items, err := i.getItemsFromFile(ctx)
+
+	if err != nil {
 		return err
 	}
-
 	slog.Info("items before insert", "items", items)
 
 	// Append the new item
