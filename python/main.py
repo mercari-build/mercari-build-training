@@ -9,6 +9,8 @@ import sqlite3
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 import json
+from typing import Optional
+
 
 
 # Define the path to the images & sqlite3 database
@@ -79,7 +81,7 @@ class AddItemResponse(BaseModel):
 def add_item(
     name: str = Form(...),
     category: str = Form(...),
-    image: UploadFile = File(...),
+    image: Optional[UploadFile] = File(None), 
     db: sqlite3.Connection = Depends(get_db),
 ):
     if not name:
@@ -87,28 +89,32 @@ def add_item(
     
     if not category:
         raise HTTPException(status_code=400, detail="category is required")
-    
-    # 画像の内容を読み込む
-    image_bytes = image.file.read()
-    if not image_bytes:
-        raise HTTPException(status_code=400, detail="No image file content")
-    
-    # SHA-256 でファイル名をハッシュ化
-    hash_value = hashlib.sha256(image_bytes).hexdigest()
-    hashed_image = f"{hash_value}.jpg"
-    image_path = images / hashed_image
-    
-    # 画像ファイルを python/images ディレクトリに保存する
-    with open(image_path, "wb") as f:
-        f.write(image_bytes)
+
+    # 画像が送られて来なかった時も空文字を登録する
+    image_name = ""
+    if image is not None:
+        # アップロードされた画像ファイルの内容をバイト列として読み込む
+        image_bytes = image.file.read()
+        if image_bytes:
+            # 画像のバイト列データをハッシュ化
+            hash_value = hashlib.sha256(image_bytes).hexdigest()
+            # 画像の名前をハッシュ化した後の名前に変更
+            hashed_image_name = f"{hash_value}.jpg"
+            image_path = images / hashed_image_name
+            
+            # 画像を保存する場所（パス）がバイナリ書き込みモードで開かれ書き込まれる
+            with open(image_path, "wb") as f:
+                f.write(image_bytes)
+                
+            image_name = hashed_image_name
     
     # 新しいアイテムを作成
-    new_item = Item(name=name, category=category, image_name=hashed_image)
+    new_item = Item(name=name, category=category, image_name=image_name)
     insert_item(new_item)
     
-    return AddItemResponse(**{"message": f"item received: {name} / category received: {category} / image received: {hashed_image}"})
+    return AddItemResponse(**{"message": f"item received: {name} / category received: {category} / image received: {image_name}"})
 
-# get_image is a handler to return an image for GET /images/{filename} .
+
 # GET-/image/{image_name} リクエストで呼び出され、指定された画像を返す
 @app.get("/image/{image_name}")
 async def get_image(image_name: str):

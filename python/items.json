@@ -2,11 +2,13 @@
   "items": [
     {
       "name": "skirt",
-      "category": "fashion"
+      "category": "fashion",
+      "image_name": ""
     },
     {
       "name": "cap",
-      "category": "fashion"
+      "category": "fashion",
+      "image_name": ""
     },
     {
       "name": "jacket",
@@ -22,6 +24,21 @@
       "name": "jacket",
       "category": "fashion",
       "image_name": "d437b09fc69881e1e48afe081fb9baa917f55b62c7582954efa6ec28381fcd9d.jpg"
+    },
+    {
+      "name": "pants",
+      "category": "fashion",
+      "image_name": ""
+    },
+    {
+      "name": "jacket",
+      "category": "fashion",
+      "image_name": ""
+    },
+    {
+      "name": "jacket",
+      "category": "fashion",
+      "image_name": ""
     }
   ]
 }
