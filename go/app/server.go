@@ -2,6 +2,7 @@ package app
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,6 +20,7 @@ type Server struct {
 	Port string
 	// ImageDirPath is the path to the directory storing images.
 	ImageDirPath string
+	DB           *sql.DB
 }
 
 // Run メソッド: サーバーの起動処理
@@ -27,14 +29,6 @@ type Server struct {
 func (s Server) Run() int {
 	// (1) ロガーのセットアップ
 	// set up logger
-
-	//ログを JSON 形式で stderr に出力
-	// logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
-	//slog.Info() などのログ出力をこのロガーに統一
-	// slog.SetDefault(logger)
-	// INFO 以上のログを出力するよう設定
-	// slog.SetLogLoggerLevel(slog.LevelInfo)
-
 	// STEP 4-6: set the log level to DEBUG
 	// DEBUG 以上のログを出力するよう設定
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
@@ -48,9 +42,15 @@ func (s Server) Run() int {
 	}
 
 	// STEP 5-1: set up the database connection
+	db, err := sql.Open("sqlite3", "./db/mercari.sqlite3")
+	if err != nil {
+		slog.Error("failed to open database", "error", err)
+		return 1
+	}
+	defer db.Close()
 
 	// set up handlers
-	itemRepo := NewItemRepository()
+	itemRepo := NewItemRepository(db)
 	h := &Handlers{imgDirPath: s.ImageDirPath, itemRepo: itemRepo}
 
 	// (3) ルーティング（リクエストの振り分け）
@@ -65,7 +65,7 @@ func (s Server) Run() int {
 	// (4) サーバーの起動
 	// start the server
 	slog.Info("http server started on", "port", s.Port)
-	err := http.ListenAndServe(":"+s.Port, simpleCORSMiddleware(simpleLoggerMiddleware(mux), frontURL, []string{"GET", "HEAD", "POST", "OPTIONS"}))
+	err = http.ListenAndServe(":"+s.Port, simpleCORSMiddleware(simpleLoggerMiddleware(mux), frontURL, []string{"GET", "HEAD", "POST", "OPTIONS"}))
 	if err != nil {
 		slog.Error("failed to start server: ", "error", err)
 		return 1
@@ -167,7 +167,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// STEP 4-4: uncomment on adding an implementation to store an image
+	// STEP 4-4: store an image
 	fileName, err := s.storeImage(req.Image)
 	if err != nil {
 		slog.Error("failed to store image: ", "error", err)
@@ -181,13 +181,13 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		// STEP 4-2: add a category field
 		Category: req.Category,
 		// STEP 4-4: add an image field
-		Image: fileName,
+		ImageName: fileName,
 	}
 	message := fmt.Sprintf("item received: %s", item.Name)
 	slog.Info(message)
 
 	// STEP 4-2: add an implementation to store an item
-	err = s.itemRepo.Insert(ctx, item) // アイテムを JSON ファイルに保存
+	err = s.itemRepo.Insert(ctx, item)
 	if err != nil {
 		slog.Error("failed to store item: ", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -203,12 +203,10 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// 　STEP 4-3: 商品一覧を取得する
 // GetItems ハンドラー: 登録された商品の一覧を取得
 func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// 1. `items.json` からすべてのアイテムを取得
 	items, err := s.itemRepo.FindAll(ctx)
 	if err != nil {
 		slog.Error("failed to retrieve items: ", "error", err)
@@ -216,7 +214,6 @@ func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. レスポンスをJSONに変換
 	response := map[string][]Item{"items": items}
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(response)
@@ -226,18 +223,48 @@ func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// STEP4-5: 商品詳細を取得する
+func (s *Handlers) GetItemByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// 1. リクエストデータの取得（IDの取得とパース）
+	idStr := r.PathValue("id")
+	if idStr == "" {
+		http.Error(w, "id is required", http.StatusBadRequest)
+		return
+	}
+
+	// 文字列をintに変換
+	var id int
+	_, err := fmt.Sscanf(idStr, "%d", &id)
+	if err != nil {
+		slog.Error("invalid id format", "error", err)
+		http.Error(w, "invalid id format", http.StatusBadRequest)
+		return
+	}
+
+	// 2. アイテムの取得
+	item, err := s.itemRepo.FindByID(ctx, id)
+	if err != nil {
+		slog.Error("failed to retrieve item", "id", id, "error", err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	// 3. レスポンスを返す
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(item)
+	if err != nil {
+		slog.Error("failed to encode response", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 // storeImage stores an image and returns the file path and an error if any.
 // this method calculates the hash sum of the image as a file name to avoid the duplication of a same file
 // and stores it in the image directory.
 func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
-	// STEP 4-4: add an implementation to store an image
-	// TODO:
-	// - calc hash sum
-	// - build image file path
-	// - check if the image already exists
-	// - store image
-	// - return the image file path
-
 	// Calculate SHA-256 hash of the image (ハッシュ化)
 	hasher := sha256.New()
 	hasher.Write(image)
@@ -334,42 +361,4 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 	}
 
 	return imgPath, nil
-}
-
-// STEP4-5: 商品詳細を取得する
-func (s *Handlers) GetItemByID(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	// 1. リクエストデータの取得（IDの取得とパース）
-	idStr := r.PathValue("id")
-	if idStr == "" {
-		http.Error(w, "id is required", http.StatusBadRequest)
-		return
-	}
-
-	// 文字列をintに変換
-	var id int
-	_, err := fmt.Sscanf(idStr, "%d", &id)
-	if err != nil {
-		slog.Error("invalid id format", "error", err)
-		http.Error(w, "invalid id format", http.StatusBadRequest)
-		return
-	}
-
-	// 2. アイテムの取得
-	item, err := s.itemRepo.FindByID(ctx, id)
-	if err != nil {
-		slog.Error("failed to retrieve item", "id", id, "error", err)
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
-	// 3. レスポンスを返す
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(item)
-	if err != nil {
-		slog.Error("failed to encode response", "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 }
