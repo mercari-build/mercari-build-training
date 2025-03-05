@@ -292,7 +292,12 @@ func (s *Handlers) GetItemById(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-	itemId, _ := strconv.Atoi(uri[2])
+
+	itemId, err := strconv.Atoi(uri[2])
+	if err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
 
 	// open json file
 	fileName := s.itemRepo.GetFileName()
