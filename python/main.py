@@ -112,9 +112,24 @@ def add_item(
     with open(image_path, "wb") as img_file:
         img_file.write(image_content)
     cursor = db.cursor()
+
+    cursor.execute("SELECT id FROM categories WHERE name = ?", (category,))
+    row = cursor.fetchone()
+
+    # なければ作る
+    if row is None:
+        cursor.execute(
+            "INSERT INTO categories (name) VALUES (?)",
+            (category,)
+        )
+        db.commit()
+        category_id = cursor.lastrowid
+    else:
+        category_id = row["id"]
+
     cursor.execute(
-        "INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
-        (name, category, f"{image_hash}.jpg"),
+        "INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
+        (name, category_id, f"{image_hash}.jpg"),
     )
     db.commit()  # 変更を保存
 
