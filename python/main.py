@@ -17,6 +17,10 @@ db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
 # items.jsonに新しいアイテムを追加した時のデータを追加するためにjsonファイルのパスを指定
 items_file = pathlib.Path(__file__).parent.resolve() / "items.json"
 
+class Item(BaseModel):
+    name: str
+    category: str
+    image_name: str
 
 def get_db():
     if not db.exists():
@@ -135,10 +139,28 @@ def get_items():
         
     return data
 
-class Item(BaseModel):
-    name: str
-    category: str
-    image_name: str
+@app.get("/items/{item_id}", response_model=Item)
+def get_item(item_id: int):
+    if not items_file.exists():
+        raise HTTPException(status_code=404, detail="Items file not found")
+    
+    try:
+        with open(items_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=404, detail="Failed to open the file")
+    
+    items_list = data.get("items", [])
+    
+    if not items_list:
+        raise HTTPException(status_code=404, detail="no items found")
+    
+    item_index = item_id - 1
+    if item_index < 0 or item_index >= len(items_list):
+        raise HTTPException(status_code=404, detail="index is invalid")
+    
+    return items_list[item_index]
+    
 
 # app.post("/items" ... のハンドラ内で用いられる。items.jsonファイルへ新しい要素の追加を行う。
 def insert_item(item: Item):
