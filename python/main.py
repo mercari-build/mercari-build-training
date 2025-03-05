@@ -241,28 +241,3 @@ async def get_image(image_name: str):
         image = images / "default.jpg"
 
     return FileResponse(image)
-
-#ここから下もいらない気がする
-#class Item(BaseModel):
-    #name: str
-    #category: str
-    #image_name: str
-
-#def insert_item(item: Item):
-    # 新しい商品情報の辞書を作成
-    #new_item = {
-        #"name": item.name,
-       # "category": item.category, 
-       #"image_name": item.image_name}
-    
-     
-
-   
-
-
-
-
-
-
-
-
