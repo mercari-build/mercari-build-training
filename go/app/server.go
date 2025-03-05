@@ -1,9 +1,12 @@
 package app
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -120,6 +123,17 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	}
 
 	// STEP 4-4: add an image field
+	uploadedFile, _, err := r.FormFile("image")
+	if err != nil {
+		return nil, errors.New("image is required")
+	}
+	defer uploadedFile.Close()
+
+	imageData, err := io.ReadAll(uploadedFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read image file: %w", err)
+	}
+	req.Image = imageData
 
 	// validate the request
 	if req.Name == "" {
@@ -132,6 +146,10 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	}
 
 	// STEP 4-4: validate the image field
+	if len(req.Image) == 0 {
+		return nil, errors.New("uploaded image file is empty")
+	}
+
 	return req, nil
 }
 
@@ -146,18 +164,19 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// STEP 4-4: uncomment on adding an implementation to store an image
-	// fileName, err := s.storeImage(req.Image)
-	// if err != nil {
-	// 	slog.Error("failed to store image: ", "error", err)
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
+	fileName, err := s.storeImage(req.Image)
+	if err != nil {
+		slog.Error("failed to store image: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	item := &Item{
 		Name: req.Name,
 		// STEP 4-2: add a category field
 		Category: req.Category,
 		// STEP 4-4: add an image field
+		ImageName: fileName,
 	}
 	message := fmt.Sprintf("item received: %s", item.Name)
 	slog.Info(message)
@@ -183,14 +202,33 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 // and stores it in the image directory.
 func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
 	// STEP 4-4: add an implementation to store an image
-	// TODO:
-	// - calc hash sum
-	// - build image file path
-	// - check if the image already exists
-	// - store image
-	// - return the image file path
+	// STEP 1: calc SHA256 hash sum of the image
+	hash := sha256.Sum256(image)
+	hashStr := hex.EncodeToString(hash[:])
 
-	return
+	// STEP 2: build image file path
+	const imageDir = "images"
+	if err := os.MkdirAll(imageDir, os.ModePerm); err != nil {
+		return "", fmt.Errorf("failed to create image directory: %w", err)
+	}
+
+	fileName := fmt.Sprintf("%s.jpg", hashStr) // you can handle other extensions properly based on content-type
+	filePath = filepath.Join(imageDir, fileName)
+
+	// STEP 3: check if the image already exists
+	if _, err := os.Stat(filePath); err == nil {
+		return filePath, nil
+	} else if !os.IsNotExist(err) {
+		return "", fmt.Errorf("error checking image existence: %w", err)
+	}
+
+	// STEP 4: store the image
+	if err := os.WriteFile(filePath, image, 0644); err != nil {
+		return "", fmt.Errorf("failed to write image file: %w", err)
+	}
+
+	// STEP 5: return the image file path
+	return fileName, nil
 }
 
 type GetImageRequest struct {
