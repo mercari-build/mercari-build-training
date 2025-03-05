@@ -90,7 +90,7 @@ type AddItemResponse struct {
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	req := &AddItemRequest{
 		Name: r.FormValue("name"),
-		Name: r.FormValue("category"),
+		Category: r.FormValue("category"),
 		// STEP 4-2: add a category field
 	}
 
@@ -124,6 +124,23 @@ func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+}
+func (i *itemRepository) FindAll(ctx context.Context)([Item, error) {
+	data, err := os.ReadFile(i.fileName)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []Item{}, nil
+		}
+		return nil, fmt.Errorf("Could not read file: %w", err)
+	}
+
+	var items []Item
+	if len(data) > 0 {
+		if err := json.Unmarshal(data, &items); err != nil {
+			return nil, fmt.Errorf("Could not parse JSON: %w", err)
+		}
+	}
+	return items, nil
 }
 // AddItem is a handler to add a new item for POST /items .
 func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
