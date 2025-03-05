@@ -167,7 +167,13 @@ func (i *itemRepository) GetItemById(ctx context.Context, item_id string) (Item,
 		return Item{}, errors.New("invalid item id")
 	}
 
-	item := data.Items[itemIdInt-1]
+	// 範囲外参照を確認
+	idx := itemIdInt - 1
+	if idx < 0 || idx >= len(data.Items) {
+		return Item{}, errors.New("item not found: index out of range")
+	}
+
+	item := data.Items[idx]
 	return item, err
 }
 
