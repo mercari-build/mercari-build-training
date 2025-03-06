@@ -41,12 +41,21 @@ def setup_database():
     
     conn = sqlite3.connect(db)
     try:
+        # UNIQUEによって同じカテゴリ名を重複して挿入できなくなる
+        conn.excute("""
+            CREATE TABLE IF NOT EXISTS categories (
+                id INTEGER PRIMARY KEY,
+                name TEXT UNIQUE  
+            );    
+        """)
+        # category_idは、categoriesテーブルのidを参照する外部キー。
         conn.execute("""
             CREATE TABLE IF NOT EXISTS items (
               id INTEGER PRIMARY KEY,
               name TEXT,
-              category TEXT,
-              image_name TEXT
+              category_id INTEGER,
+              image_name TEXT,
+              FOREIGN KEY (category_id) REFERENCES categories(id)
             );         
         """)
         conn.commit()
@@ -186,3 +195,16 @@ def insert_item(item: Item, db: sqlite3.Connection):
         (item.name, item.category, item.image_name)
     )
     db.commit()
+    
+    
+# categories tableからカテゴリー名のidを返す関数 
+def get_category(category_name: str, db: sqlite3.Connection) -> int:
+    cursor = db.execute("SELECT id FROM categories WHERE name = ?", (category_name,))
+    row = cursor.fetchall()
+    # カテゴリー名が存在する場合はidを返す
+    if row is not None:
+        return row["id"]
+    # 存在しない場合は新しくcategories tableに追加し、idを発行
+    cursor = db.execute("INSERT INTO categories (name) VALUES (?)", (category_name,))
+    db.commit()
+    return cursor.lastrowid
