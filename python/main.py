@@ -128,6 +128,21 @@ def add_item(
     return AddItemResponse(**{"message": f"item received: {name} / category received: {category} / image received: {image_name}"})
 
 
+#  GET /search　商品検索エンドポイント
+@app.get("/search")
+def get_searched_item(keyword: str, db: sqlite3.Connection = Depends(get_db)):
+    query = "SELECT name, category, image_name FROM items WHERE name LIKE ?"
+    # "% %" で囲むことで、keywordという文字列を含むデータを検索する
+    pattern = f"%{keyword}%"
+    # sqlクエリを実行した結果返されるオプジェクトがcursorに入る。クエリ実行には,クエリとパラメータ(あれば)を渡す。
+    cursor = db.execute(query, (pattern,))
+    # 全ての実行結果を取得
+    rows = cursor.fetchall()
+    # rowsのオフジェクトを、要素が辞書型の配列に変換し、itemsに代入
+    items = [dict(row) for row in rows]
+    return {"items": items}
+    
+
 # GET-/items リクエストで呼び出され、items.jsonファイルの内容(今まで保存された全てのitemの情報)を返す
 @app.get("/items")
 def get_items(db: sqlite3.Connection = Depends(get_db)):
@@ -161,7 +176,8 @@ async def get_image(image_name: str):
 
     return FileResponse(image_file_path)
 
-    
+
+
 
 # app.post("/items" ... のハンドラ内で用いられる。items.jsonファイルへ新しい要素の追加を行う。
 def insert_item(item: Item, db: sqlite3.Connection):
