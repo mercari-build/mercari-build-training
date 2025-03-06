@@ -87,26 +87,12 @@ type GetItemsResponse struct {
 
 func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
 
-	// open json file
+	// open json file and decode
 	fileName := s.itemRepo.GetFileName()
-	jsonFile, err := os.Open(fileName)
-
+	items, err := decodeItemsFromFile(fileName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	}
-	defer jsonFile.Close()
-
-	// read json file as bytes
-	bytes, _ := io.ReadAll(jsonFile)
-
-	// decode bytes to map
-	var decodeData map[string][]Item
-	json.Unmarshal(bytes, &decodeData)
-
-	var items []Item
-	for _, v := range decodeData {
-		items = append(items, v...)
 	}
 
 	// make response
@@ -278,6 +264,29 @@ type GetItemByIdResponse struct {
 	ImageName string `json:"image_name"`
 }
 
+func decodeItemsFromFile(fileName string) ([]Item, error) {
+	// open json file
+	jsonFile, err := os.Open(fileName)
+	if err != nil {
+		slog.Error("failed to open jsonFile: ", "error", err)
+		return nil, err
+	}
+	defer jsonFile.Close()
+	
+	// read json file as bytes
+	bytes, _ := io.ReadAll(jsonFile)
+	
+	// decode bytes to map
+	var decodeData map[string][]Item
+	json.Unmarshal(bytes, &decodeData)
+
+	var items []Item
+	for _, v := range decodeData {
+		items = append(items, v...)
+	}
+	return items, nil
+}
+
 func (s *Handlers) GetItemById(w http.ResponseWriter, r *http.Request) {
 	// get itemId from URL
 	itemIdStr := r.PathValue("id")
@@ -287,25 +296,12 @@ func (s *Handlers) GetItemById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// open json file
+	// open json file and decode
 	fileName := s.itemRepo.GetFileName()
-	jsonFile, err := os.Open(fileName)
+	items, err := decodeItemsFromFile(fileName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	}
-	defer jsonFile.Close()
-
-	// read json file as bytes
-	bytes, _ := io.ReadAll(jsonFile)
-
-	// decode bytes to map
-	var decodeData map[string][]Item
-	json.Unmarshal(bytes, &decodeData)
-
-	var items []Item
-	for _, v := range decodeData {
-		items = append(items, v...)
 	}
 
 	// check itemId is valid

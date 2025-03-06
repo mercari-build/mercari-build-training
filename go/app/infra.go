@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
 	"log/slog"
 	"os"
 	// STEP 5-1: uncomment this line
@@ -47,25 +46,14 @@ func NewItemRepository() ItemRepository {
 // Insert inserts an item into the repository.
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	// STEP 4-1: add an implementation to store an item
-	
-	// open json file
-	jsonFile, err := os.Open(i.fileName)
-
+	items, err := decodeItemsFromFile(i.fileName)
 	if err != nil {
-		slog.Error("failed to open jsonFile: ", "error", err)
+		slog.Error("failed to decode items from file: ", "error", err)
 		return err
 	}
-	defer jsonFile.Close()
-	
-	// read json file as bytes
-	bytes, _ := io.ReadAll(jsonFile)
-
-	// decode bytes to map
-	var decodeData JsonFormat
-	json.Unmarshal(bytes, &decodeData)
 
 	// append new item
-	decodeData.Items = append(decodeData.Items, *item)
+	items = append(items, *item)
 
 	// create json file to write
 	newJsonFile, err := os.Create(i.fileName)
@@ -78,6 +66,9 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	// encode and wrute to json file
 	encoder := json.NewEncoder(newJsonFile)
 	encoder.SetIndent("", "  ")
+
+	decodeData := make(map[string][]Item)
+	decodeData["items"] = items
 
 	return encoder.Encode(decodeData)
 }
