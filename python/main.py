@@ -63,7 +63,7 @@ class HelloResponse(BaseModel):
 @app.get("/items") 
 def get_items():
     if not ITEMS_JSON.exists():
-        raise HTTPException(status_code=404, detail="Items file not found")
+        raise HTTPException(status_code=404, detail="Items[]")
     with open('items.json', 'r') as json_open:
         json_load = json.load(json_open)
     return json_load
@@ -71,7 +71,7 @@ def get_items():
 @app.get("/items/{item_id}") 
 def get_items_by_id(item_id: int):
     if not ITEMS_JSON.exists():
-        raise HTTPException(status_code=404, detail="Items file not found")
+        raise HTTPException(status_code=404, detail="Item not found")
     with open('items.json', 'r') as json_open:
         json_load = json.load(json_open)
     if item_id < 0 or item_id >= len(json_load["items"]):
