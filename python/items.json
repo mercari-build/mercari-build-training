@@ -1,0 +1,14 @@
+{
+    "items": [
+        {
+            "name": "jacket",
+            "category": "fashion",
+            "image_name": null
+        },
+        {
+            "name": "jacket",
+            "category": "fashion",
+            "image_name": "1d8fb98df518bd4e1f7d37230a4e406877184088f15d480b97bfd58db4c8310d.jpg"
+        }
+    ]
+}
