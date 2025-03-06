@@ -1,5 +1,7 @@
 import os
 import logging
+import json
+import hashlib
 import pathlib
 from fastapi import FastAPI, Form, HTTPException, Depends
 from fastapi.responses import FileResponse
@@ -12,7 +14,7 @@ from contextlib import asynccontextmanager
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
 db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
-
+items_file = pathlib.Path(__file__).parent.resolve() / "items.json"
 
 def get_db():
     if not db.exists():
@@ -64,18 +66,29 @@ def hello():
 class AddItemResponse(BaseModel):
     message: str
 
-
+#added
+    
 # add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
-def add_item(
-    name: str = Form(...),
-    db: sqlite3.Connection = Depends(get_db),
-):
-    if not name:
-        raise HTTPException(status_code=400, detail="name is required")
+def insert_item(item: Item):
+    logger.info(f"Inserting item: {item.dict()}")
+    try:
+        with open(items_file, "r") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        data = {"items": []}
+    except json.decoder.JSONDecodeError as e:
+        logger.error(f"Error decoding JSON: {e}")
+        return #Exit the function, or raise an exception.
 
-    insert_item(Item(name=name))
-    return AddItemResponse(**{"message": f"item received: {name}"})
+    data["items"].append(item.dict())
+
+    try:
+        with open(items_file, "w") as f:
+            json.dump(data, f, indent=4)
+        logger.info(f"Item inserted successfully: {item.dict()}")
+    except Exception as e:
+        logger.error(f"Error writing to JSON: {e}")
 
 
 # get_image is a handler to return an image for GET /images/{filename} .
@@ -100,4 +113,15 @@ class Item(BaseModel):
 
 def insert_item(item: Item):
     # STEP 4-1: add an implementation to store an item
-    pass
+    try:
+        with open(items_file, "r") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        data = {"items": []}
+
+    data["items"].append(item.dict()) #add the item as a dictionary.
+
+    with open(items_file, "w") as f:
+        json.dump(data, f, indent=4) #write the data back to the file with indentation.
+
+   
