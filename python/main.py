@@ -131,13 +131,13 @@ def get_items():
 def get_item(item_id: int):
     # if no json data
     if not ITEMS_FILE_PATH.exists():
-        return GetItemResponse(item=None)
+        raise HTTPException(status_code=404, detail="item is not found")
     
     with open(ITEMS_FILE_PATH, "r") as f:
         data = json.load(f)
 
     # check if item_id exists
-    if item_id > len(data["items"]):
+    if item_id > len(data["items"]) and item_id > 0:
         raise HTTPException(status_code=404, detail="Item not found")
 
     # get item with item_id 
@@ -177,7 +177,7 @@ def insert_item(item: Item):
         data = json.load(f)  
 
     # add new item
-    new_item = {"name": item.name, "category": item.category, "image_name": item.image_name}
+    new_item = item.model_dump()
     data["items"].append(new_item)
 
     # write to items.json
