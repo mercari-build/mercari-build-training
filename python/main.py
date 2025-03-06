@@ -11,8 +11,6 @@ from contextlib import asynccontextmanager
 import json
 from typing import Optional
 
-
-
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
 db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
@@ -38,7 +36,22 @@ def get_db():
 
 # STEP 5-1: set up the database connection
 def setup_database():
-    pass
+    db_dir = db.parent
+    db_dir.mkdir(parents=True, exist_ok=True)
+    
+    conn = sqlite3.connect(db)
+    try:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS items (
+              id INTEGER PRIMARY KEY,
+              name TEXT,
+              category TEXT,
+              image_name TEXT
+            );         
+        """)
+        conn.commit()
+    finally:
+        conn.close()
 
 
 @asynccontextmanager
@@ -110,9 +123,27 @@ def add_item(
     
     # 新しいアイテムを作成
     new_item = Item(name=name, category=category, image_name=image_name)
-    insert_item(new_item)
+    insert_item(new_item, db)
     
     return AddItemResponse(**{"message": f"item received: {name} / category received: {category} / image received: {image_name}"})
+
+
+# GET-/items リクエストで呼び出され、items.jsonファイルの内容(今まで保存された全てのitemの情報)を返す
+@app.get("/items")
+def get_items(db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.execute("SELECT id, name, category, image_name FROM items")
+    rows = cursor.fetchall()
+    items = [dict(row) for row in rows]
+    return {"items": items}
+
+
+@app.get("/items/{item_id}", response_model=Item)
+def get_item(item_id: int, db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.execute("SELECT id, name, category, image_name FROM items WHERE id = ?", (item_id))
+    row = cursor.fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return dict(row)
 
 
 # GET-/image/{image_name} リクエストで呼び出され、指定された画像を返す
@@ -130,67 +161,12 @@ async def get_image(image_name: str):
 
     return FileResponse(image_file_path)
 
-
-# GET-/items リクエストで呼び出され、items.jsonファイルの内容(今まで保存された全てのitemの情報)を返す
-@app.get("/items")
-def get_items():
-    if not items_file.exists():
-        return {"items": []}
-    
-    try:
-        with open(items_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except json.JSONDecodeError:
-        data = {"items": []}
-        
-    return data
-
-@app.get("/items/{item_id}", response_model=Item)
-def get_item(item_id: int):
-    if not items_file.exists():
-        raise HTTPException(status_code=404, detail="Items file not found")
-    
-    try:
-        with open(items_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="Failed to open the file")
-    
-    items_list = data.get("items", [])
-    
-    if not items_list:
-        raise HTTPException(status_code=404, detail="no items found")
-    
-    item_index = item_id - 1
-    if item_index < 0 or item_index >= len(items_list):
-        raise HTTPException(status_code=400, detail="index is invalid")
-    
-    return items_list[item_index]
     
 
 # app.post("/items" ... のハンドラ内で用いられる。items.jsonファイルへ新しい要素の追加を行う。
-def insert_item(item: Item):
-    # STEP 4-1: add an implementation to store an item
-    global items_file
-    
-    # ファイルが存在しない場合初期状態で作成する
-    if not items_file.exists():
-        with open(items_file, "w", encoding="utf-8") as f:
-            json.dump({"items": []}, f, ensure_ascii=False, indent=2)
-            
-    # 既存のファイルがあった場合読み込み
-    try:
-        # すでにデータがある場合
-        with open(items_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        # ファイルはあるがデータが空の場合
-    except json.JSONDecodeError:
-        data = {"items": []}
-        
-    # 新しいアイテムを追加する
-    data["items"].append({"name": item.name, "category": item.category, "image_name": item.image_name})
-    
-    #更新したデータを書き戻す
-    with open(items_file, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii="False", indent=2)
-        
+def insert_item(item: Item, db: sqlite3.Connection):
+    db.execute(
+        "INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
+        (item.name, item.category, item.image_name)
+    )
+    db.commit()
