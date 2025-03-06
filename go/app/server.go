@@ -280,13 +280,8 @@ type GetItemByIdResponse struct {
 
 func (s *Handlers) GetItemById(w http.ResponseWriter, r *http.Request) {
 	// get itemId from URL
-	uri := strings.Split(r.URL.Path, "/")
-	if len(uri) < 3 {
-		http.Error(w, "invalid request", http.StatusBadRequest)
-		return
-	}
-
-	itemId, err := strconv.Atoi(uri[2])
+	itemIdStr := r.PathValue("id")
+	itemId, err := strconv.Atoi(itemIdStr)
 	if err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
