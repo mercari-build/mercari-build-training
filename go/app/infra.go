@@ -34,6 +34,7 @@ type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 	SelectAll(ctx context.Context) ([]*Item, error)
 	GetItem(ctx context.Context, id int) (*Item, error)
+	SearchFromName(ctx context.Context, name string) ([]*Item, error)
 }
 
 // itemRepository is an implementation of ItemRepository
@@ -112,6 +113,33 @@ func (i *itemRepository) SelectAll(ctx context.Context) ([]*Item, error) {
 	defer db.Close()
 
 	rows, err := db.Query("SELECT id, name, category, image_name FROM item")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+	items := []*Item{}
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.ImageName); err != nil {
+			log.Fatal(err)
+		}
+		items = append(items, &item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return items, nil
+}
+
+func (i *itemRepository) SearchFromName(ctx context.Context, name string) ([]*Item, error) {
+	db, err := sql.Open("sqlite3", i.dbPath)
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT id, name, category, image_name FROM item where name like ?", "%"+name+"%")
 	if err != nil {
 		log.Fatal(err)
 	}
