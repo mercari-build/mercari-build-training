@@ -57,7 +57,7 @@ func TestParseAddItemRequest(t *testing.T) {
 			}
 
 			// prepare HTTP request
-			req, err := http.NewRequest("POST", "http://localhost:9000/items", strings.NewReader(values.Encode()))
+			req, err := http.NewRequest("POST", "http://localhost:9001/items", strings.NewReader(values.Encode()))
 			if err != nil {
 				t.Fatalf("failed to create request: %v", err)
 			}

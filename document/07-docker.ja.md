@@ -113,7 +113,7 @@ STEP7-5 までで docker image の中は STEP2-2 と同じ状態になってい�
 **`Dockerfile`を変更し、必要なファイルをコピーしたり依存ライブラリをインストールしたりして, docker image 上で 出品 API が動くようにしましょう。**
 
 ```shell
-$ docker run -d -p 9000:9000 mercari-build-training/app:latest
+$ docker run -d -p 9001:9001 mercari-build-training/app:latest
 ```
 
 を実行し別のターミナルで
@@ -121,7 +121,7 @@ $ docker run -d -p 9000:9000 mercari-build-training/app:latest
 ```shell
 $ curl \
   -X POST \
-  --url 'http://localhost:9000/items' \
+  --url 'http://localhost:9001/items' \
   -F 'name=jacket' \
   -F 'category=fashion' \
   -F 'image=@images/local_image.jpg'

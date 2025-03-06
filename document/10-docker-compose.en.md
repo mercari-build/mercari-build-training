@@ -54,7 +54,7 @@ Make a new file `docker-compose.yml` considering the following points.
     * (Option 1: Difficulty ☆) Use `mercari-build-training/app:latest` and `mercari-build-training/web:latest` made in STEP7 and STEP10-1
     * (Option 2: Difficulty ☆☆☆) Build from `{go|python}/Dockerfile` and `typescript/simple-mercari-web/Dockerfile`
 * Port numbers
-    * API : 9000
+    * API : 9001
     * Frontend : 3000
 * Connecting between services
     * Frontend should send requests to an environment variable `REACT_APP_API_URL`

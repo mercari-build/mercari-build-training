@@ -34,16 +34,16 @@ cURLを用いて、前節で立ち上げたAPIサーバに対してGETリクエ�
 
 | Python                                                                                       | Go                                                                            |
 |----------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| Move to python folder before running the command <br>`uvicorn main:app --reload --port 9000` | Move to python folder before running the command <br>`go run cmd/api/main.go` |
+| Move to python folder before running the command <br>`uvicorn main:app --reload --port 9001` | Move to python folder before running the command <br>`go run cmd/api/main.go` |
 
-cURLでリクエストを送る前に、HTTPブラウザで `http://127.0.0.1:9000` にアクセスしたときに、 `{"message": "Hello, world!"}` が表示されることを確認してください。仮に表示されない場合は、STEP2-4: アプリにアクセスするを参照してください([Python](./02-local-env.ja.md#4-アプリにアクセスする), [Go](./02-local-env.ja.md#4-アプリにアクセスする-1))。
+cURLでリクエストを送る前に、HTTPブラウザで `http://127.0.0.1:9001` にアクセスしたときに、 `{"message": "Hello, world!"}` が表示されることを確認してください。仮に表示されない場合は、STEP2-4: アプリにアクセスするを参照してください([Python](./02-local-env.ja.md#4-アプリにアクセスする), [Go](./02-local-env.ja.md#4-アプリにアクセスする-1))。
 
 さて、実際にcURLコマンドを用いてリクエストを送ってみましょう。ここではGETリクエストとPOSTリクエストを送信します。
 
 **サーバーをたてたターミナルはそのままで、 新しいターミナルを開いて**以下のコマンドを実行してください。
 
 ```shell
-$ curl -X GET 'http://127.0.0.1:9000'
+$ curl -X GET 'http://127.0.0.1:9001'
 ```
 
 ブラウザと同じように`{"message": "Hello, world!"}` がコンソール上で返ってくることを確認してください。
@@ -53,7 +53,7 @@ $ curl -X GET 'http://127.0.0.1:9000'
 次に、POSTリクエストを送ってみましょう。サンプルコードには `/items` というエンドポイントが用意されているので、こちらのエンドポイントに対してcURLでリクエストを送ります。以下のコマンドを実行してください。
 
 ```shell
-$ curl -X POST 'http://127.0.0.1:9000/items'
+$ curl -X POST 'http://127.0.0.1:9001/items'
 ```
 
 このエンドポイントは、コールに成功すると`{"message": "item received: <name>"}`
@@ -64,14 +64,14 @@ $ curl -X POST 'http://127.0.0.1:9000/items'
 ```shell
 $ curl \
   -X POST \
-  --url 'http://localhost:9000/items' \
+  --url 'http://localhost:9001/items' \
   -d 'name=jacket'
 ```
 
 **:beginner: Point**
 
 * GETとPOSTのリクエストの違いについて調べてみましょう
-* ブラウザで `http://127.0.0.1:9000/items` にアクセスしても `{"message": "item received: <name>"}` が返ってこないのはなぜでしょうか？
+* ブラウザで `http://127.0.0.1:9001/items` にアクセスしても `{"message": "item received: <name>"}` が返ってこないのはなぜでしょうか？
   * アクセスしたときに返ってくる**HTTPステータスコード**はいくつですか？
   * それはどんな意味をもつステータスコードですか？
 
@@ -173,13 +173,13 @@ GETで`/items`にアクセスしたときに、以下のようなレスポンス
 # 商品の登録
 $ curl \
   -X POST \
-  --url 'http://localhost:9000/items' \
+  --url 'http://localhost:9001/items' \
   -d 'name=jacket' \
   -d 'category=fashion'
 # /itemsにPOSTリクエストを送った時のレスポンス
 {"message": "item received: jacket"}
 # 登録された商品一覧
-$ curl -X GET 'http://127.0.0.1:9000/items'
+$ curl -X GET 'http://127.0.0.1:9001/items'
 # /itemsにGETリクエストを送った時のレスポンス
 {"items": [{"name": "jacket", "category": "fashion"}, ...]}
 ```
@@ -197,7 +197,7 @@ $ curl -X GET 'http://127.0.0.1:9000/items'
 # ローカルから.jpgをポストする
 $ curl \
   -X POST \
-  --url 'http://localhost:9000/items' \
+  --url 'http://localhost:9001/items' \
   -F 'name=jacket' \
   -F 'category=fashion' \
   -F 'image=@images/local_image.jpg'
@@ -221,12 +221,12 @@ $ curl \
 `<item_id>` は何個目に登録した商品かを表すIDです。jsonファイルからitem一覧を呼び出して、`item_id` 番目のitemの情報を返しましょう。
 
 ```shell
-$ curl -X GET 'http://127.0.0.1:9000/items/1'
+$ curl -X GET 'http://127.0.0.1:9001/items/1'
 {"name": "jacket", "category": "fashion", "image_name": "..."}
 ```
 
 ## 6. (Optional) Loggerについて調べる
-`http://127.0.0.1:9000/image/no_image.jpg`にアクセスしてみましょう。
+`http://127.0.0.1:9001/image/no_image.jpg`にアクセスしてみましょう。
 `no image`という画像が帰ってきますが、 コード中にある
 ```
 Image not found: <image path>
