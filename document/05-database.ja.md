@@ -46,7 +46,7 @@ Items table example:
 
 ```shell
 # "jacket"という文字を含む商品一覧をリクエストする
-$ curl -X GET 'http://127.0.0.1:9000/search?keyword=jacket'
+$ curl -X GET 'http://127.0.0.1:9001/search?keyword=jacket'
 # "jacket"をnameに含む商品一覧が返ってくる
 {"items": [{"name": "jacket", "category": "fashion"}, ...]}
 ```

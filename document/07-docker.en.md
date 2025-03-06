@@ -117,7 +117,7 @@ The environment within the docker image should be the same as STEP2-2 after STEP
 Run
 
 ```shell
-$ docker run -d -p 9000:9000 mercari-build-training/app:latest
+$ docker run -d -p 9001:9001 mercari-build-training/app:latest
 ```
 
 and in another terminal, execute:
@@ -125,7 +125,7 @@ and in another terminal, execute:
 ```shell
 $ curl \
   -X POST \
-  --url 'http://localhost:9000/items' \
+  --url 'http://localhost:9001/items' \
   -F 'name=jacket' \
   -F 'category=fashion' \
   -F 'image=@images/local_image.jpg'

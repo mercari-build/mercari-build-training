@@ -52,7 +52,7 @@
     * (Option 1: 難易度 ☆) STEP7 と STEP10-1 でそれぞれ build した `mercari-build-training/app:latest` と `mercari-build-training/web:latest` を使う
     * (Option 2: 難易度 ☆☆☆) `{go|python}/Dockerfile` と `typescript/simple-mercari-web/Dockerfile` から build するようにする
 * 使用する port
-    * API : 9000
+    * API : 9001
     * フロントエンド : 3000
 * サービス間の接続
     * フロントエンドは`REACT_APP_API_URL`という環境変数で設定されたURLのAPIにリクエストを送ります

@@ -34,15 +34,15 @@ If you haven't started the server, run the following command:
 
 | Python                                                                                       | Go                                                                            |
 |----------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| Move to python folder before running the command <br>`uvicorn main:app --reload --port 9000` | Move to python folder before running the command <br>`go run cmd/api/main.go` |
+| Move to python folder before running the command <br>`uvicorn main:app --reload --port 9001` | Move to python folder before running the command <br>`go run cmd/api/main.go` |
 
 
-Before sending the request with cURL, check that you can access `http://127.0.0.1:9000` in a browser and see `{"message": "Hello, world!"}` displayed. If not, refer to the section 4 of the STEP2: Run Python/Go app([Python](./02-local-env.en.md#4-run-the-python-app), [Go](./02-local-env.en.md#4-run-the-go-app)).
+Before sending the request with cURL, check that you can access `http://127.0.0.1:9001` in a browser and see `{"message": "Hello, world!"}` displayed. If not, refer to the section 4 of the STEP2: Run Python/Go app([Python](./02-local-env.en.md#4-run-the-python-app), [Go](./02-local-env.en.md#4-run-the-go-app)).
 
 Now, it's time to send the request with cURL. **Open a new terminal** and run the following command:
 
 ```shell
-$ curl -X GET 'http://127.0.0.1:9000'
+$ curl -X GET 'http://127.0.0.1:9001'
 ```
 
 You should see `{"message": "Hello, world!"}` shown in the terminal as same as in the browser.
@@ -53,7 +53,7 @@ You should see `{"message": "Hello, world!"}` shown in the terminal as same as i
 Next, let's send a POST request. The sample code provides an endpoint `/items`, so let's send a request to this endpoint with cURL. Run the following command:
 
 ```shell
-$ curl -X POST 'http://127.0.0.1:9000/items'
+$ curl -X POST 'http://127.0.0.1:9001/items'
 ```
 
 This endpoint expects to return `{"message": "item received: <name>"}` as an successful response. However, you should receive a different response here.
@@ -62,14 +62,14 @@ Modify the command as follows and you will receive `{"message": "item received: 
 
 ```shell
 $ curl -X POST \
-  --url 'http://localhost:9000/items' \
+  --url 'http://localhost:9001/items' \
   -d 'name=jacket'
 ```
 
 **:beginner: Points**
 
 * Understand the difference between GET and POST requests.
-* Why do we not see `{"message": "item received: <name>"}` on accessing `http://127.0.0.1:9000/items` from your browser?
+* Why do we not see `{"message": "item received: <name>"}` on accessing `http://127.0.0.1:9001/items` from your browser?
   * What is the **HTTP Status Code** when you receive these responses?
   * What do different types of status code mean?
 
@@ -169,13 +169,13 @@ After implementing the endpoint, the response should be as follows:
 ```shell
 # Add a new item
 $ curl -X POST \
-  --url 'http://localhost:9000/items' \
+  --url 'http://localhost:9001/items' \
   -d 'name=jacket' \
   -d 'category=fashion'
 # Expected response for /items endpoint with POST request
 {"message": "item received: jacket"}
 # Get a list of items
-$ curl -X GET 'http://127.0.0.1:9000/items'
+$ curl -X GET 'http://127.0.0.1:9001/items'
 # Expected response for /items endpoint with GET request
 {"items": [{"name": "jacket", "category": "fashion"}, ...]}
 ```
@@ -193,7 +193,7 @@ Modify both `GET /items` and `POST /items` endpoints for that.
 ```shell
 # POST the jpg file
 curl -X POST \
-  --url 'http://localhost:9000/items' \
+  --url 'http://localhost:9001/items' \
   -F 'name=jacket' \
   -F 'category=fashion' \
   -F 'image=@images/local_image.jpg'
@@ -219,12 +219,12 @@ The `<item_id>` represents the ID indicating the order in which the item was reg
 Let's call up the list of items from the JSON file and return the information of the item at the item_id position.
 
 ```shell
-$ curl -X GET 'http://127.0.0.1:9000/items/1'
+$ curl -X GET 'http://127.0.0.1:9001/items/1'
 {"name": "jacket", "category": "fashion", "image_name": "..."}
 ```
 
 ## 6. (Optional) Understand Loggers
-Open `http://127.0.0.1:9000/image/no_image.jpg` on your browser.
+Open `http://127.0.0.1:9001/image/no_image.jpg` on your browser.
 This returns an image called `no image` but the debug log is not displayed on your console.
 ```
 Image not found: <image path>

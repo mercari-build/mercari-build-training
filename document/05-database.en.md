@@ -32,7 +32,7 @@ Make an endpoint to return a list of items that include a specified keyword call
 
 ```shell
 # Request a list of items containing string "jacket"
-$ curl -X GET 'http://127.0.0.1:9000/search?keyword=jacket'
+$ curl -X GET 'http://127.0.0.1:9001/search?keyword=jacket'
 # Expected response for a list of items with name containing "jacket"
 {"items": [{"name": "jacket", "category": "fashion"}, ...]}
 ```
