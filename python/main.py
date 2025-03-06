@@ -106,7 +106,7 @@ async def add_item(
     
     # insert items to items.json
     insert_item(Item(name=name, category=category, image_name=image_name))
-
+    
     return AddItemResponse(**{"message": f"item received: {name}"})
 
 
