@@ -11,8 +11,8 @@ const (
 )
 
 func main() {
-	// This is the entry point of the application.
-	// You don't need to modify this function.
+	// これはアプリケーションのエントリ ポイントです。___This is the entry point of the application.
+	// この関数を変更する必要はありません。___You don't need to modify this function.
 	os.Exit(app.Server{
 		Port:         port,
 		ImageDirPath: imageDirPath,

@@ -1,51 +1,50 @@
 package app
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	"log/slog"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
+	"encoding/json" // JSON のエンコード/デコードを行うためのパッケージ
+	"errors"        // エラーハンドリング用のパッケージ
+	"fmt"           // フォーマット付き文字列を扱うためのパッケージ
+	"log/slog"      // ログ出力用のパッケージ
+	"net/http"      // HTTP サーバーを扱うためのパッケージ
+	"os"            // 環境変数やファイル操作用のパッケージ
+	"path/filepath" // ファイルパスを扱うためのパッケージ
+	"strings"       // 文字列操作を行うためのパッケージ
 )
 
+// Server はサーバーの設定を管理する構造体___Server is a struct to manage server settings
 type Server struct {
-	// Port is the port number to listen on.
-	Port string
-	// ImageDirPath is the path to the directory storing images.
-	ImageDirPath string
+	Port        string // リッスンするポート番号___Port number to listen on
+	ImageDirPath string // 画像を保存するディレクトリのパス___Path to the directory storing images
 }
 
-// Run is a method to start the server.
-// This method returns 0 if the server started successfully, and 1 otherwise.
+// Run はサーバーを起動するメソッド___Run is a method to start the server
+// サーバーが正常に起動した場合は 0 を返し、エラーが発生した場合は 1 を返す___Returns 0 if the server started successfully, otherwise returns 1
 func (s Server) Run() int {
-	// set up logger
+	// ロガーの設定___Set up the logger
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
-	// STEP 4-6: set the log level to DEBUG
+	// ログレベルを DEBUG に設定___STEP 4-6: set the log level to DEBUG
 	slog.SetLogLoggerLevel(slog.LevelInfo)
 
-	// set up CORS settings
+	// CORS 設定のセットアップ___Set up CORS settings
 	frontURL, found := os.LookupEnv("FRONT_URL")
 	if !found {
 		frontURL = "http://localhost:3000"
 	}
 
-	// STEP 5-1: set up the database connection
+	// データベース接続のセットアップ (未実装)___STEP 5-1: set up the database connection
 
-	// set up handlers
+	// ハンドラーのセットアップ___Set up handlers
 	itemRepo := NewItemRepository()
 	h := &Handlers{imgDirPath: s.ImageDirPath, itemRepo: itemRepo}
 
-	// set up routes
+	// ルーティングの設定___Set up routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", h.Hello)
-	mux.HandleFunc("POST /items", h.AddItem)
-	mux.HandleFunc("GET /images/{filename}", h.GetImage)
+	mux.HandleFunc("GET /", h.Hello)                 // ルートパスで Hello メッセージを返す
+	mux.HandleFunc("POST /items", h.AddItem)        // 新しいアイテムを追加
+	mux.HandleFunc("GET /images/{filename}", h.GetImage) // 画像を取得
 
-	// start the server
+	// サーバーの起動___Start the server
 	slog.Info("http server started on", "port", s.Port)
 	err := http.ListenAndServe(":"+s.Port, simpleCORSMiddleware(simpleLoggerMiddleware(mux), frontURL, []string{"GET", "HEAD", "POST", "OPTIONS"}))
 	if err != nil {
@@ -56,17 +55,18 @@ func (s Server) Run() int {
 	return 0
 }
 
+// Handlers は各 HTTP ハンドラーを管理する構造体___Handlers struct to manage HTTP handlers
 type Handlers struct {
-	// imgDirPath is the path to the directory storing images.
-	imgDirPath string
-	itemRepo   ItemRepository
+	imgDirPath string       // 画像を保存するディレクトリのパス___Path to the directory storing images
+	itemRepo   ItemRepository // アイテムを管理するリポジトリ___Repository to manage items
 }
 
+// HelloResponse は Hello メッセージのレスポンス___HelloResponse is a response struct for Hello message
 type HelloResponse struct {
-	Message string `json:"message"`
+	Message string `json:"message"` // メッセージ本文___Response message
 }
 
-// Hello is a handler to return a Hello, world! message for GET / .
+// Hello は "Hello, world!" を返すハンドラー___Hello is a handler to return a "Hello, world!" message
 func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 	resp := HelloResponse{Message: "Hello, world!"}
 	err := json.NewEncoder(w).Encode(resp)
@@ -76,36 +76,37 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// AddItemRequest はアイテム追加のリクエストデータを表す構造体___AddItemRequest represents the request data for adding an item
 type AddItemRequest struct {
-	Name string `form:"name"`
-	// Category string `form:"category"` // STEP 4-2: add a category field
-	Image []byte `form:"image"` // STEP 4-4: add an image field
+	Name     string `form:"name"`      // アイテム名___Item name
+	Category string `form:"category"`  // カテゴリ___Category (STEP 4-2)
+	Image    []byte `form:"image"`     // 画像データ___Image data (STEP 4-4)
 }
 
+// AddItemResponse はアイテム追加のレスポンスデータを表す構造体___AddItemResponse represents the response data for adding an item
 type AddItemResponse struct {
-	Message string `json:"message"`
+	Message string `json:"message"` // メッセージ本文___Response message
 }
 
-// parseAddItemRequest parses and validates the request to add an item.
+// parseAddItemRequest はリクエストデータを解析し、検証する___parseAddItemRequest parses and validates the request to add an item
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	req := &AddItemRequest{
-		Name: r.FormValue("name"),
-		// STEP 4-2: add a category field
+		Name:     r.FormValue("name"),
+		Category: r.FormValue("category"),
 	}
 
-	// STEP 4-4: add an image field
-
-	// validate the request
+	// 必須フィールドの検証___Validate required fields
 	if req.Name == "" {
 		return nil, errors.New("name is required")
 	}
+	if req.Category == "" {
+		return nil, errors.New("category is required")
+	}
 
-	// STEP 4-2: validate the category field
-	// STEP 4-4: validate the image field
 	return req, nil
 }
 
-// AddItem is a handler to add a new item for POST /items .
+// AddItem は新しいアイテムを追加するハンドラー___AddItem is a handler to add a new item
 func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -115,23 +116,23 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// STEP 4-4: uncomment on adding an implementation to store an image
-	// fileName, err := s.storeImage(req.Image)
-	// if err != nil {
-	// 	slog.Error("failed to store image: ", "error", err)
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
+	// 画像を保存する (未実装)___STEP 4-4: store image
+	fileName, err := s.storeImage(req.Image)
+	if err != nil {
+		slog.Error("failed to store image: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	item := &Item{
-		Name: req.Name,
-		// STEP 4-2: add a category field
-		// STEP 4-4: add an image field
+		Name:     req.Name,
+		Category: req.Category,
 	}
+
 	message := fmt.Sprintf("item received: %s", item.Name)
 	slog.Info(message)
 
-	// STEP 4-2: add an implementation to store an image
+	// アイテムをデータベースに保存___Store item in database
 	err = s.itemRepo.Insert(ctx, item)
 	if err != nil {
 		slog.Error("failed to store item: ", "error", err)
@@ -147,41 +148,19 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// storeImage stores an image and returns the file path and an error if any.
-// this method calculates the hash sum of the image as a file name to avoid the duplication of a same file
-// and stores it in the image directory.
+// storeImage は画像を保存し、ファイルのパスを返す___storeImage stores an image and returns the file path
 func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
-	// STEP 4-4: add an implementation to store an image
 	// TODO:
-	// - calc hash sum
-	// - build image file path
-	// - check if the image already exists
-	// - store image
-	// - return the image file path
+	// - 画像のハッシュを計算し、ファイル名を決定する___Calculate hash sum of image and determine file name
+	// - 画像ファイルのパスを構築する___Build image file path
+	// - 既に同じ画像があるかチェックする___Check if the image already exists
+	// - 画像を保存する___Store image
+	// - 画像のファイルパスを返す___Return the image file path
 
 	return
 }
 
-type GetImageRequest struct {
-	FileName string // path value
-}
-
-// parseGetImageRequest parses and validates the request to get an image.
-func parseGetImageRequest(r *http.Request) (*GetImageRequest, error) {
-	req := &GetImageRequest{
-		FileName: r.PathValue("filename"), // from path parameter
-	}
-
-	// validate the request
-	if req.FileName == "" {
-		return nil, errors.New("filename is required")
-	}
-
-	return req, nil
-}
-
-// GetImage is a handler to return an image for GET /images/{filename} .
-// If the specified image is not found, it returns the default image.
+// GetImage は画像を返すハンドラー___GetImage is a handler to return an image
 func (s *Handlers) GetImage(w http.ResponseWriter, r *http.Request) {
 	req, err := parseGetImageRequest(r)
 	if err != nil {
@@ -198,35 +177,10 @@ func (s *Handlers) GetImage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// when the image is not found, it returns the default image without an error.
 		slog.Debug("image not found", "filename", imgPath)
 		imgPath = filepath.Join(s.imgDirPath, "default.jpg")
 	}
 
 	slog.Info("returned image", "path", imgPath)
 	http.ServeFile(w, r, imgPath)
-}
-
-// buildImagePath builds the image path and validates it.
-func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
-	imgPath := filepath.Join(s.imgDirPath, filepath.Clean(imageFileName))
-
-	// to prevent directory traversal attacks
-	rel, err := filepath.Rel(s.imgDirPath, imgPath)
-	if err != nil || strings.HasPrefix(rel, "..") {
-		return "", fmt.Errorf("invalid image path: %s", imgPath)
-	}
-
-	// validate the image suffix
-	if !strings.HasSuffix(imgPath, ".jpg") && !strings.HasSuffix(imgPath, ".jpeg") {
-		return "", fmt.Errorf("image path does not end with .jpg or .jpeg: %s", imgPath)
-	}
-
-	// check if the image exists
-	_, err = os.Stat(imgPath)
-	if err != nil {
-		return imgPath, errImageNotFound
-	}
-
-	return imgPath, nil
 }
