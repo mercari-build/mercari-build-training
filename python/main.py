@@ -129,12 +129,15 @@ def add_item(
                 f.write(image_bytes)
                 
             image_name = hashed_image_name
+            
+    # 5-3 カテゴリーidをゲット
+    category_id = get_category(category, db)
     
     # 新しいアイテムを作成
-    new_item = Item(name=name, category=category, image_name=image_name)
+    new_item = Item(name=name, category_id=category_id, image_name=image_name)
     insert_item(new_item, db)
     
-    return AddItemResponse(**{"message": f"item received: {name} / category received: {category} / image received: {image_name}"})
+    return AddItemResponse(**{"message": f"item received: {name} / category received: {category} / category_id: {category_id} / image received: {image_name}"})
 
 
 #  GET /search　商品検索エンドポイント
@@ -191,8 +194,8 @@ async def get_image(image_name: str):
 # app.post("/items" ... のハンドラ内で用いられる。items.jsonファイルへ新しい要素の追加を行う。
 def insert_item(item: Item, db: sqlite3.Connection):
     db.execute(
-        "INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
-        (item.name, item.category, item.image_name)
+        "INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
+        (item.name, item.category_id, item.image_name)
     )
     db.commit()
     
