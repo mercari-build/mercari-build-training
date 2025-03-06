@@ -64,6 +64,36 @@ func (mr *MockItemRepositoryMockRecorder) FindByID(ctx, id interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByID", reflect.TypeOf((*MockItemRepository)(nil).FindByID), ctx, id)
 }
 
+// GetCategories mocks base method.
+func (m *MockItemRepository) GetCategories(ctx context.Context) ([]Category, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCategories", ctx)
+	ret0, _ := ret[0].([]Category)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCategories indicates an expected call of GetCategories.
+func (mr *MockItemRepositoryMockRecorder) GetCategories(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCategories", reflect.TypeOf((*MockItemRepository)(nil).GetCategories), ctx)
+}
+
+// GetCategoryByName mocks base method.
+func (m *MockItemRepository) GetCategoryByName(ctx context.Context, name string) (*Category, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCategoryByName", ctx, name)
+	ret0, _ := ret[0].(*Category)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCategoryByName indicates an expected call of GetCategoryByName.
+func (mr *MockItemRepositoryMockRecorder) GetCategoryByName(ctx, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCategoryByName", reflect.TypeOf((*MockItemRepository)(nil).GetCategoryByName), ctx, name)
+}
+
 // Insert mocks base method.
 func (m *MockItemRepository) Insert(ctx context.Context, item *Item) error {
 	m.ctrl.T.Helper()
@@ -76,6 +106,21 @@ func (m *MockItemRepository) Insert(ctx context.Context, item *Item) error {
 func (mr *MockItemRepositoryMockRecorder) Insert(ctx, item interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockItemRepository)(nil).Insert), ctx, item)
+}
+
+// InsertCategory mocks base method.
+func (m *MockItemRepository) InsertCategory(ctx context.Context, name string) (*Category, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertCategory", ctx, name)
+	ret0, _ := ret[0].(*Category)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InsertCategory indicates an expected call of InsertCategory.
+func (mr *MockItemRepositoryMockRecorder) InsertCategory(ctx, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertCategory", reflect.TypeOf((*MockItemRepository)(nil).InsertCategory), ctx, name)
 }
 
 // Search mocks base method.
