@@ -1,13 +1,14 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException, Depends
+import json
+import hashlib  # SHA-256　ハッシュ化用
+from fastapi import FastAPI, Form, File, UploadFile, HTTPException, Depends
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
-import json
 
 
 # Define the path to the images & sqlite3 database
@@ -30,7 +31,7 @@ def get_db():
 
 # STEP 5-1: set up the database connection
 def setup_database():
-    pass
+    images.mkdir(exist_ok=True, parents=True)  # imagesディレクトリを作成
 
 
 @asynccontextmanager
@@ -62,16 +63,31 @@ class HelloResponse(BaseModel):
 def hello():
     return HelloResponse(**{"message": "Hello, world!"})
 
+# 画像をSHA-256でハッシュ化し、保存する関数
+def save_image(image: UploadFile) -> str:
+    # 画像データ読み込み
+    image_data = image.file.read()
+    # ハッシュ値作成
+    hash_value = hashlib.sha256(image_data).hexdigest()
+    # ハッシュ値を使ってファイル名を作成(重複を防ぐため)
+    file_name = f"{hash_value}.jpg"
+    # 画像を保存
+    image_path = images /file_name
+    with open(image_path,"wb") as file:
+        file.write(image_data)
+    return file_name #画像のハッシュ名を返す
+
 
 class AddItemResponse(BaseModel):
     message: str
 
 class Item(BaseModel):
     name: str
-    category: str  # カテゴリーも受け取れるように追加
+    category: str  # カテゴリー追加
+    image_name: str #　画像のファイル名追加
 
 
-# 初期データ読み込み（items.jsonが存在しない場合の対応）
+# items.jsonの初期データ読み込み（items.jsonが存在しない場合の対応を）
 def load_items():
     if items_json_path.exists():
         with open(items_json_path, "r", encoding="utf-8") as file:
@@ -92,20 +108,24 @@ def get_items():
     return {"items": load_items()}
 
 
+
+
 # add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
 def add_item(
     name: str = Form(...),
-    category: str = Form(...), #カテゴリーも受け取れるように追記
+    category: str = Form(...), #カテゴリーを受け取る
+    image: UploadFile = File(...), # 画像を受け取る
     db: sqlite3.Connection = Depends(get_db),
 ):
-    if not name:
-        raise HTTPException(status_code=400, detail="name is required")
+    if not name or not category:
+        raise HTTPException(status_code=400, detail="name and category is required")
     
-    new_item = Item(name=name, category=category)
-    save_item(new_item)  # JSONファイルに保存できるようにする
+    image_name = save_image(image) #画像を保存、ハッシュ名を取得
+    new_item = Item(name=name, category=category, image_name=image_name)
+    save_item(new_item)  # JSONファイルに保存
     insert_item(new_item)
-    return AddItemResponse(**{"message": f"item received: {name}"})
+    return AddItemResponse(**{"message": f"item received: {name}, {category}, {image_name}"})
 
 
 # get_image is a handler to return an image for GET /images/{filename} .
