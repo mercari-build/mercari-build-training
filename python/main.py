@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
 db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
-items_json_path = pathlib.Path(__file__).parent.resolve() / "items.json"  # items.json のパスを追記
+items_json_path = pathlib.Path(__file__).parent.resolve() / "items.json"  # items.json のパス追記
 
 
 def get_db():
@@ -86,8 +86,7 @@ class Item(BaseModel):
     category: str  # カテゴリー追加
     image_name: str #　画像のファイル名追加
 
-
-# items.jsonの初期データ読み込み（items.jsonが存在しない場合の対応を）
+# items.jsonのデータ読み込み
 def load_items():
     if items_json_path.exists():
         with open(items_json_path, "r", encoding="utf-8") as file:
@@ -98,7 +97,7 @@ def load_items():
 #item.jsonに商品を追加して保存する関数
 def save_item(item: Item):
     items = load_items()
-    items.append({"name": item.name, "category": item.category}) #商品を追加する
+    items.append({"name": item.name, "category": item.category, "image_name": item.image_name}) #商品を追加する
 
     with open(items_json_path, "w", encoding="utf-8") as file:
         json.dump({"items": items}, file, indent=2, ensure_ascii=False)  # JSONを保存
@@ -107,8 +106,14 @@ def save_item(item: Item):
 def get_items():
     return {"items": load_items()}
 
+@app.get("/items/{item_id}")
+def get_item(item_id: int):
+    items = load_items()
 
+    if item_id < 0 or item_id >= len(items):
+        raise HTTPException(status_code=404, detail=f"Item ID {item_id} is not found")
 
+    return items[item_id]  # 指定されたIDの商品を返す
 
 # add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
@@ -135,7 +140,7 @@ async def get_image(image_name):
     image = images / image_name
 
     if not image_name.endswith(".jpg"):
-        raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
+        raise HTTPException(status_code=404, detail=f"Image path does not end with .jpg")
 
     if not image.exists():
         logger.debug(f"Image not found: {image}")
