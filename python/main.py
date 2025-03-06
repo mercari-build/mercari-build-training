@@ -158,7 +158,16 @@ def get_searched_item(keyword: str, db: sqlite3.Connection = Depends(get_db)):
 # GET-/items リクエストで呼び出され、items.jsonファイルの内容(今まで保存された全てのitemの情報)を返す
 @app.get("/items")
 def get_items(db: sqlite3.Connection = Depends(get_db)):
-    cursor = db.execute("SELECT id, name, category, image_name FROM items")
+    cursor = db.execute("""
+                        SELECT
+                            items.id AS id, 
+                            items.name AS name, 
+                            categories.name AS category, 
+                            items.image_name AS items_name 
+                        FROM items
+                        JOIN categories
+                        ON items.category_id = categories.id
+                    """)
     rows = cursor.fetchall()
     items = [dict(row) for row in rows]
     return {"items": items}
