@@ -41,7 +41,7 @@ func (s Server) Run() int {
 
 	// set up routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", h.Hello)
+	mux.HandleFunc("GET /", h.GetItems)
 	mux.HandleFunc("POST /items", h.AddItem)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
@@ -76,10 +76,26 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	resp, err := s.itemRepo.Get(ctx)
+	if err != nil {
+		slog.Error("failed to get items: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	return
+}
+
 type AddItemRequest struct {
-	Name string `form:"name"`
-	// Category string `form:"category"` // STEP 4-2: add a category field
-	Image []byte `form:"image"` // STEP 4-4: add an image field
+	Name     string `form:"name"`
+	Category string `form:"category"` // STEP 4-2: add a category field
+	Image    []byte `form:"image"`    // STEP 4-4: add an image field
 }
 
 type AddItemResponse struct {
@@ -89,8 +105,8 @@ type AddItemResponse struct {
 // parseAddItemRequest parses and validates the request to add an item.
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	req := &AddItemRequest{
-		Name: r.FormValue("name"),
-		// STEP 4-2: add a category field
+		Name:     r.FormValue("name"),
+		Category: r.FormValue("category"), // STEP 4-2: add a category field
 	}
 
 	// STEP 4-4: add an image field
@@ -101,6 +117,10 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	}
 
 	// STEP 4-2: validate the category field
+	if req.Category == "" {
+		return nil, errors.New("category is required")
+	}
+
 	// STEP 4-4: validate the image field
 	return req, nil
 }
@@ -124,8 +144,8 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	item := &Item{
-		Name: req.Name,
-		// STEP 4-2: add a category field
+		Name:     req.Name,
+		Category: req.Category, // STEP 4-2: add a category field
 		// STEP 4-4: add an image field
 	}
 	message := fmt.Sprintf("item received: %s", item.Name)
