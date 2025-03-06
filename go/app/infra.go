@@ -49,19 +49,29 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	// /api内で go run main.go(パスを"items.json"でやるなら)
 
 	// jsonファイルを読み込み
+	// ここでエラーだったらjsonFileには空のバイト列が格納される
 	jsonFile, err := os.ReadFile(i.fileName)
 	// error処理
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			// ファイルがなかったらnilを返す
-			println("file does not exist.")
-			return nil
+			// ファイルが存在しなかったら作成
+			file, err := os.Create(i.fileName)
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+			defaultJson := []byte(`{"items":[]}`)
+			_, err = file.Write(defaultJson)
+			if err != nil {
+				return err
+			}
 		} else {
 			// その他のエラーだったら中断、エラーを返す
 			println("Error:", err)
 			return err
 		}
 	}
+	// os.ErrNotExistでデフォルトデータが書き込まれたらスキップされる
 	if len(jsonFile) == 0 {
 		jsonFile = []byte(`{"items":[]}`)
 	}
@@ -86,11 +96,12 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 
 	// jsonファイルに書き込み
 	// 0644 ファイルのパーミッション
+	// os.ErrNotExistで作成されたファイルと既に存在していたファイルは
+	// どちらにせよここで同じパスに書き込まれる(i.fileNameで指定しているから)
 	err = os.WriteFile(i.fileName, itemsJson, 0644)
 	if err != nil {
 		return err
 	}
-
 
 	return nil
 }
