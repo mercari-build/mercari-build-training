@@ -10,8 +10,8 @@ import sqlite3
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 
-
-
+BASE_DIR = pathlib.Path(__file__).parent.resolve()
+ITEMS_JSON = BASE_DIR / "items.json"
 
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
@@ -62,14 +62,20 @@ class HelloResponse(BaseModel):
 
 @app.get("/items") 
 def get_items():
+    if not ITEMS_JSON.exists():
+        raise HTTPException(status_code=404, detail="Items file not found")
     with open('items.json', 'r') as json_open:
         json_load = json.load(json_open)
     return json_load
 
 @app.get("/items/{item_id}") 
 def get_items_by_id(item_id: int):
+    if not ITEMS_JSON.exists():
+        raise HTTPException(status_code=404, detail="Items file not found")
     with open('items.json', 'r') as json_open:
         json_load = json.load(json_open)
+    if item_id < 0 or item_id >= len(json_load["items"]):
+        raise HTTPException(status_code=404, detail="Item not found")
     item = json_load["items"][item_id]
     return item
 
@@ -88,6 +94,8 @@ def add_item(
         raise HTTPException(status_code=400, detail="name is required")
     if not category:
         raise HTTPException(status_code=400, detail="category is required")
+    if not image:
+        raise HTTPException(status_code=400, detail="image is required")
     
     #画像を読み込む
     image_content = image.file.read()
@@ -127,6 +135,9 @@ class Item(BaseModel):
 def insert_item(item: Item):
     # STEP 4-1: add an implementation to store an item
     # 読み込む
+    if not ITEMS_JSON.exists():
+        with ITEMS_JSON.open('w', encoding="utf-8") as json_file:
+            json.dump({"items": []}, json_file, indent=4)
     with open('items.json', 'r') as json_open:
         json_load = json.load(json_open)  
 
