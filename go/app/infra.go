@@ -18,7 +18,7 @@ type Item struct {
 	ID       int    `db:"id" json:"-"`
 	Name     string `db:"name" json:"name"`
 	Category string `db:"category" json:"category"`
-	Image    string `db:"image" json:"image"`
+	Image    string `db:"image_name" json:"image"`
 }
 
 // Please run `go generate ./...` to generate the mock implementation
@@ -70,7 +70,8 @@ func NewItemRepository() (*itemRepository, error) {
 // Insert inserts an item into the repository.
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	//insert item struct to database
-	result, err := i.db.ExecContext(ctx, "INSERT INTO items (name, category, image) VALUES (?, ?, ?)", item.Name, item.Category, item.Image)
+	query := "INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)"
+	result, err := i.db.ExecContext(ctx, query, item.Name, item.Category, item.Image)
 	if err != nil {
 		return fmt.Errorf("failed to insert item: %w", err)
 	}
@@ -110,8 +111,28 @@ func StoreImage(fileName string, image []byte) error {
 }
 
 func (i *itemRepository) AddItem(ctx context.Context, item *Item) (*Item, error) {
-	query := "INSERT INTO items (name,category,image) VALUES (?,?,?)"
-	result, err := i.db.ExecContext(ctx, query, item.Name, item.Category, item.Image)
+	//get category_id from category name
+	var categoryID int
+	err := i.db.QueryRowContext(ctx, "SELECT id FROM categories WHERE name = ?", item.Category).Scan(&categoryID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			result, err := i.db.ExecContext(ctx, "INSERT INTO categories (name) VALUES (?)", item.Category)
+			if err != nil {
+				return nil, fmt.Errorf("failed to insert category: %w", err)
+			}
+			lastID, err := result.LastInsertId()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get last inserted category ID: %w", err)
+			}
+			categoryID = int(lastID)
+		} else {
+			return nil, fmt.Errorf("failed to fetch category ID : %w", err)
+		}
+	}
+
+	//insert items to item's table
+	query := "INSERT INTO items (name,category_id,image_name) VALUES (?,?,?)"
+	result, err := i.db.ExecContext(ctx, query, item.Name, categoryID, item.Image)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert item: %w", err)
 	}
@@ -122,12 +143,19 @@ func (i *itemRepository) AddItem(ctx context.Context, item *Item) (*Item, error)
 		return nil, fmt.Errorf("failed to get last inserted ID: %w", err)
 	}
 	item.ID = int(id)
+
+	item.Category = item.Category
 	return item, nil
 
 }
 
 func (i *itemRepository) GetItemByID(ctx context.Context, id int) (*Item, error) {
-	query := "SELECT id, name, category, image FROM items WHERE id = ?"
+	query := `
+	SELECT items.id, items.name, COALESCE(categories.name, '') AS category,items.image_name
+	FROM items
+	LEFT JOIN categories ON items.category_id = categories.id
+	WHERE items.id = ?
+	`
 	row := i.db.QueryRowContext(ctx, query, id)
 
 	var item Item
@@ -143,8 +171,13 @@ func (i *itemRepository) GetItemByID(ctx context.Context, id int) (*Item, error)
 }
 
 func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
+	query := `
+        SELECT items.id, items.name, COALESCE(categories.name, '') AS category, items.image_name
+        FROM items
+        LEFT JOIN categories ON items.category_id = categories.id
+    `
 	//receive data from database
-	rows, err := i.db.QueryContext(ctx, "SELECT id, name, category, image FROM items")
+	rows, err := i.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch items: %w", err)
 	}
@@ -163,7 +196,12 @@ func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
 }
 
 func (i *itemRepository) Getkeyword(ctx context.Context, keyword string) ([]Item, error) {
-	query := "SELECT id, name, category, image FROM items WHERE name LIKE ? OR category LIKE ?"
+	query := `
+        SELECT items.id, items.name, COALESCE(categories.name, '') AS category, items.image_name
+        FROM items
+        LEFT JOIN categories ON items.category_id = categories.id
+        WHERE items.name LIKE ? OR categories.name LIKE ?
+    `
 
 	rows, err := i.db.QueryContext(ctx, query, "%"+keyword+"%", "%"+keyword+"%")
 	if err != nil {
