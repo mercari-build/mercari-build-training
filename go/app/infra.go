@@ -28,6 +28,9 @@ type Item struct {
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 	GetAll(ctx context.Context) ([]Item, error)
+	GetItemByID(ctx context.Context, id int) (*Item, error)
+	Getkeyword(ctx context.Context, keyword string) ([]Item, error)
+	AddItem(ctx context.Context, item *Item) (*Item, error)
 }
 
 // itemRepository is an implementation of ItemRepository
@@ -36,7 +39,7 @@ type itemRepository struct {
 }
 
 // NewItemRepository creates a new itemRepository.
-func NewItemRepository() (ItemRepository, error) {
+func NewItemRepository() (*itemRepository, error) {
 	dbPath := "../../db/items.db"
 
 	absPath, err := filepath.Abs(dbPath)
@@ -53,7 +56,7 @@ func NewItemRepository() (ItemRepository, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
-	err = db.Ping() //confirm if database runs correctly
+	err = db.Ping() //confirm if database runs correctly (test connection)
 	if err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
@@ -84,7 +87,7 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 // StoreImage stores an image and returns an error if any.
 // This package doesn't have a related interface for simplicity.
 func StoreImage(fileName string, image []byte) error {
-	relPath := "../../" //main.go → go/cmd/api/main.go、　images→go/images
+	relPath := "../../images" //main.go → go/cmd/api/main.go、　images→ go/images
 
 	//convert to absolut path
 	imageDirPath, err := filepath.Abs(relPath)
@@ -106,6 +109,39 @@ func StoreImage(fileName string, image []byte) error {
 	return nil
 }
 
+func (i *itemRepository) AddItem(ctx context.Context, item *Item) (*Item, error) {
+	query := "INSERT INTO items (name,category,image) VALUES (?,?,?)"
+	result, err := i.db.ExecContext(ctx, query, item.Name, item.Category, item.Image)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert item: %w", err)
+	}
+
+	//get the inserted item id
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get last inserted ID: %w", err)
+	}
+	item.ID = int(id)
+	return item, nil
+
+}
+
+func (i *itemRepository) GetItemByID(ctx context.Context, id int) (*Item, error) {
+	query := "SELECT id, name, category, image FROM items WHERE id = ?"
+	row := i.db.QueryRowContext(ctx, query, id)
+
+	var item Item
+	err := row.Scan(&item.ID, &item.Name, &item.Category, &item.Image)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil //when item not found, return nil
+		}
+		return nil, fmt.Errorf("failed to fetch item: %w", err)
+	}
+	return &item, nil
+
+}
+
 func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
 	//receive data from database
 	rows, err := i.db.QueryContext(ctx, "SELECT id, name, category, image FROM items")
@@ -122,6 +158,29 @@ func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 		items = append(items, item)
+	}
+	return items, nil
+}
+
+func (i *itemRepository) Getkeyword(ctx context.Context, keyword string) ([]Item, error) {
+	query := "SELECT id, name, category, image FROM items WHERE name LIKE ? OR category LIKE ?"
+
+	rows, err := i.db.QueryContext(ctx, query, "%"+keyword+"%", "%"+keyword+"%")
+	if err != nil {
+		return nil, fmt.Errorf("database query error: %w", err)
+	}
+	defer rows.Close()
+
+	var items []Item
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image); err != nil {
+			return nil, fmt.Errorf("failed to parse database result: %w", err)
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("database error: %w", err)
 	}
 	return items, nil
 }

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex" //Hexadecimal
@@ -8,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -39,15 +41,21 @@ func (s Server) Run() int {
 	}
 
 	// STEP 5-1: set up the database connection
-	db, err := sql.Open("sqlite3", "../../db/items.db")
+	db, err := sql.Open("sqlite3", "./db/items.db")
 	if err != nil {
 		slog.Error("failed to open database: ", "error", err)
 		return 1
 	}
 	s.DB = db
 
+	repo, err := NewItemRepository()
+	if err != nil {
+		slog.Error("failed to create item repository: ", "error", err)
+		return 1
+	}
+
 	// set up handlers
-	h := &Handlers{imgDirPath: s.ImageDirPath, db: db}
+	h := &Handlers{imgDirPath: s.ImageDirPath, db: db, repo: repo}
 
 	// set up routes
 	mux := http.NewServeMux()
@@ -55,6 +63,7 @@ func (s Server) Run() int {
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 	mux.HandleFunc("GET /items/{id}", h.GetItem)
 	mux.HandleFunc("GET /items", h.GetAllItems)
+	mux.HandleFunc("GET /search", h.Getkeyword)
 
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{frontURL},
@@ -76,6 +85,7 @@ func (s Server) Run() int {
 type Handlers struct {
 	imgDirPath string  // imgDirPath is the path to the directory storing images.
 	db         *sql.DB //define struct of db
+	repo       ItemRepository
 }
 
 type AddItemRequest struct {
@@ -130,6 +140,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//save image
 	var fileName string
 	if req.Image != nil {
 		storedFileName, err := s.storeImage(req.Image)
@@ -149,27 +160,44 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		Image:    fileName,
 	}
 
-	result, err := s.db.Exec("INSERT INTO items (name,category, image) VALUES (?,?,?)", item.Name, item.Category, item.Image)
+	insertedItem, err := s.repo.AddItem(r.Context(), item)
 	if err != nil {
-		slog.Error("failed to insert item: ", "error", err)
 		http.Error(w, "Database error", http.StatusInternalServerError)
+		log.Println("Database error: ", err)
 		return
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		slog.Error("failed to get last inserted ID: ", "error", err)
-		http.Error(w, "Database error", http.StatusInternalServerError)
-		return
-	}
-	item.ID = int(id)
+	log.Printf("insertedItem: %+v\n", insertedItem)
 
 	// return response
-	response := map[string]string{
-		"message": fmt.Sprintf("item received: %s (category: %s, image: %s)", item.Name, item.Category, item.Image),
+	response := map[string]interface{}{
+		"id":       insertedItem.ID,
+		"name":     insertedItem.Name,
+		"category": insertedItem.Category,
+		"image":    insertedItem.Image,
 	}
+
+	// return JSON response
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+		log.Println("failed to encode JSON: ", err)
+		return
+	}
+	log.Printf("response: %+v\n", response)
+
+	// デバッグ用: JSON エンコード前の response をファイルに書き出す
+	file, err := os.Create("response.json")
+	if err != nil {
+		log.Printf("failed to create response.json: %v\n", err)
+	} else {
+		defer file.Close()
+		encoder := json.NewEncoder(file)
+		encoder.SetIndent("", "  ") // JSON を整形して書き出す
+		if err := encoder.Encode(response); err != nil {
+			log.Printf("failed to write response.json: %v\n", err)
+		}
+	}
 }
 
 func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
@@ -180,51 +208,71 @@ func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var item Item
-	err = s.db.QueryRow("SELECT id, name, category, image FROM items WHERE id = ?", id).Scan(&item.ID, &item.Name, &item.Category, &item.Image)
+	// call GetItemByID on infra.go
+	item, err := s.repo.GetItemByID(context.Background(), id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			http.Error(w, "Item not found", http.StatusNotFound)
-		} else {
-			http.Error(w, "Database error", http.StatusInternalServerError)
-		}
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		log.Println("Database error:", err)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(item)
+	// if there are no matching items
+	if item == nil {
+		http.Error(w, "Item not found", http.StatusNotFound)
+		return
+	}
+
+	//  return JSON response
+	if err := json.NewEncoder(w).Encode(item); err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+		log.Println("failed to encode JSON: ", err)
+		return
+	}
 
 }
 
 func (s *Handlers) GetAllItems(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.db.Query("SELECT id, name, category, image FROM items")
+	// call getAll function on infra.go
+	items, err := s.repo.GetAll(r.Context())
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
+		log.Println("Database error:", err)
 		return
 	}
-	defer rows.Close()
 
-	var items []Item
-	for rows.Next() {
-		var item Item
-		if err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image); err != nil {
-			http.Error(w, "Failed to scan item", http.StatusInternalServerError)
-			return
-		}
-		items = append(items, item)
+	// return JSON response
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(items); err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+		log.Println("Failed to encode JSON:", err)
+		return
 	}
+}
 
-	if err = rows.Err(); err != nil {
+func (s *Handlers) Getkeyword(w http.ResponseWriter, r *http.Request) {
+	//get keyword from query parameter
+	keyword := r.URL.Query().Get("keyword")
+	if keyword == "" {
+		http.Error(w, "keyword parameter is required", http.StatusBadRequest)
+		return
+	}
+	//call Getkeyword func from infra.go
+	items, err := s.repo.Getkeyword(context.Background(), keyword)
+	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
+		log.Println("Database error", err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(items)
-	if err != nil {
-		http.Error(w, "Failed to encode items", http.StatusInternalServerError)
+	if err := json.NewEncoder(w).Encode(items); err != nil {
+		http.Error(w, "Failed to encode JSON", http.StatusInternalServerError)
+		log.Println("Failed to encode JSON:", err)
 		return
 	}
+
 }
+
+// no change in step5 from now on
 
 // storeImage stores an image and returns the file path and an error if any.
 // this method calculates the hash sum of the image as a file name to avoid the duplication of a same file
@@ -241,7 +289,7 @@ func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
 		return "", fmt.Errorf("failed to check image file existence: %w", err)
 	}
 
-	if err := os.MkdirAll(s.imgDirPath, os.ModePerm); err != nil {
+	if err := os.MkdirAll(s.imgDirPath, 0755); err != nil {
 		return "", fmt.Errorf("failed to create image directory: %w", err)
 	}
 
