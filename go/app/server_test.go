@@ -32,7 +32,7 @@ func TestParseAddItemRequest(t *testing.T) {
 			wants: wants{
 				req: &AddItemRequest{
 					Name: "", // fill here
-					// Category: "", // fill here
+					Category: "", // fill here
 				},
 				err: false,
 			},

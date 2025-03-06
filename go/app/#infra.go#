@@ -1,0 +1,85 @@
+package app
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"io/ioutil"
+	"log"
+	"os"
+	// STEP 5-1: uncomment this line
+	// _ "github.com/mattn/go-sqlite3"
+)
+
+var errImageNotFound = errors.New("image not found")
+
+type Item struct {
+	ID   int    `db:"id" json:"-"`
+	Name string `db:"name" json:"name"`
+	Category string `db:"category" json:"category"`
+}
+
+// Please run `go generate ./...` to generate the mock implementation
+// ItemRepository is an interface to manage items.
+//
+//go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
+type ItemRepository interface {
+	Insert(ctx context.Context, item *Item) error
+}
+
+// itemRepository is an implementation of ItemRepository
+type itemRepository struct {
+	// fileName is the path to the JSON file storing items.
+	fileName string
+}
+
+// NewItemRepository creates a new itemRepository.
+func NewItemRepository() ItemRepository {
+	return &itemRepository{fileName: "items.json"}
+}
+
+// Insert inserts an item into the repository.
+func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
+	// STEP 4-1: add an implementation to store an item
+	var data struct {
+		Items []Item `json:"items"`
+	}
+
+	if _, err := os.Stat(i.fileName); err == nil {
+		file, err := (i.fileName)
+		if err != nil {
+			log.Println("ファイル読み込みエラー:", err)
+			return err
+		}
+		json.Unmarshal(file, &data)
+	}
+
+	return data.Items,nill
+
+}
+
+
+// StoreImage stores an image and returns an error if any.
+// This package doesn't have a related interface for simplicity.
+func (s *Handlers) storeImage(image []byte) (string, error) {
+	hash := sha256.Sum256(image)
+	fileName := hex.EncodeToString(hash[:]) + ".jpg"
+	filePath := filepath.Join(s.imgDirPath, fileName)
+
+	if _, err := os.Stat(filePath); err == nil {
+		return fileName, nil
+	}
+
+	out, err := os.Create(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer out.Close()
+
+	_, err = out.Write(image)
+	if err != nil {
+		return "", err
+	}
+
+	return fileName, nil
+}

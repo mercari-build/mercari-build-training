@@ -1,13 +1,18 @@
 package app
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -42,8 +47,10 @@ func (s Server) Run() int {
 	// set up routes
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", h.Hello)
+	mux.HandleFunc("GET /items", h.GetItems)
 	mux.HandleFunc("POST /items", h.AddItem)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
+	mux.HandleFunc("GET /items/", h.GetID)
 
 	// start the server
 	slog.Info("http server started on", "port", s.Port)
@@ -76,10 +83,32 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	items, err := s.itemRepo.GetItems(ctx)
+	if err != nil {
+		slog.Error("failed to retrieve items: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := struct {
+		Items []Item `json:"items"`
+	}{
+		Items: items,
+	}
+
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 type AddItemRequest struct {
-	Name string `form:"name"`
-	// Category string `form:"category"` // STEP 4-2: add a category field
-	Image []byte `form:"image"` // STEP 4-4: add an image field
+	Name     string `form:"name"`
+	Category string `form:"category"` // STEP 4-2: add a category field
+	Image    []byte `form:"image"`    // STEP 4-4: add an image field
 }
 
 type AddItemResponse struct {
@@ -88,8 +117,21 @@ type AddItemResponse struct {
 
 // parseAddItemRequest parses and validates the request to add an item.
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
+	file, _, err := r.FormFile("image")
+	if err != nil {
+		return nil, errors.New("image is required")
+	}
+	defer file.Close()
+
+	imageData, err := io.ReadAll(file)
+	if err != nil {
+		return nil, errors.New("failed to read image data")
+	}
+
 	req := &AddItemRequest{
-		Name: r.FormValue("name"),
+		Name:     r.FormValue("name"),
+		Category: r.FormValue("category"),
+		Image:    imageData,
 		// STEP 4-2: add a category field
 	}
 
@@ -98,6 +140,14 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	// validate the request
 	if req.Name == "" {
 		return nil, errors.New("name is required")
+	}
+
+	if req.Category == "" {
+		return nil, errors.New("category is required")
+	}
+
+	if len(req.Image) == 0 {
+		return nil, errors.New("image is required")
 	}
 
 	// STEP 4-2: validate the category field
@@ -123,12 +173,25 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
+	fileName, err := s.storeImage(req.Image)
+	if err != nil {
+		slog.Error("failed to store image: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	item := &Item{
-		Name: req.Name,
-		// STEP 4-2: add a category field
+		Name:     req.Name,
+		Category: req.Category, // STEP 4-2: add a category field
+		Image:    fileName,
 		// STEP 4-4: add an image field
 	}
+
 	message := fmt.Sprintf("item received: %s", item.Name)
+	slog.Info(message)
+	message = fmt.Sprintf("item received: %s", item.Category)
+	slog.Info(message)
+	message = fmt.Sprintf("item received: %s", item.Image)
 	slog.Info(message)
 
 	// STEP 4-2: add an implementation to store an image
@@ -159,7 +222,34 @@ func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
 	// - store image
 	// - return the image file path
 
-	return
+	hash := sha256.New()
+	file := bytes.NewReader(image)
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
+	}
+
+	hex.EncodeToString(hash.Sum(nil))
+	fileName := fmt.Sprintf("%x.jpg", hash.Sum(nil))
+	filePath = filepath.Join(s.imgDirPath, fileName)
+
+	if _, err := os.Stat(filePath); err == nil {
+		return filePath, nil
+	}
+
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return "", err
+	}
+
+	out, err := os.Create(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer out.Close()
+
+	if _, err = io.Copy(out, file); err != nil {
+		return "", err
+	}
+	return filePath, nil
 }
 
 type GetImageRequest struct {
@@ -229,4 +319,46 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 	}
 
 	return imgPath, nil
+}
+
+func (s *Handlers) GetID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/items/"), "/")
+	if len(parts) == 0 || parts[0] == "" {
+		http.Error(w, "invalid item_id", http.StatusBadRequest)
+		return
+	}
+
+	itemID, err := strconv.Atoi(parts[0])
+	if err != nil || itemID < 1 {
+		http.Error(w, "invalid item_id", http.StatusBadRequest)
+		return
+	}
+
+	item, err := s.itemRepo.GetItemID(ctx, itemID)
+	if err != nil {
+		if errors.Is(err, errImageNotFound) {
+			http.Error(w, "item not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	resp := struct {
+		Name      string `json:"name"`
+		Category  string `json:"category"`
+		ImageName string `json:"image_name"`
+	}{
+		Name:      item.Name,
+		Category:  item.Category,
+		ImageName: item.Image,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
