@@ -22,7 +22,7 @@
    $ git version
    ```
 
-   * Macを使っている場合: [brew](https://brew.sh/index_ja) をインストールしてから `brew install git`を実行
+   * Macを使っている場合: [brew](https://brew.sh/ja/) をインストールしてから `brew install git`を実行
    * For Windows user: Download [installer](https://gitforwindows.org/)
 
 2. git configに自分の名前とemailアドレスを設定します。以下のコマンドを実行して最後にあなたのemailアドレスが表示されればOKです。
@@ -34,12 +34,17 @@
    ```
    
 ## Gitの基本コマンドを使う
+0. SSH-keyのセットアップ
+GitHubの公式ドキュメントに従ってSSH-keyをセットアップします。
+- [新しいSSHキーを生成する](https://docs.github.com/ja/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
+- [新しいSSHキーを追加する](https://docs.github.com/ja/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
 
 1. `https://github.com/<your github id>/mercari-build-training` を **clone**
-   します。 cloneすると、github上のリポジトリを自分のローカルにDownloadできます。
+   します。 cloneすると、github上のリポジトリを自分のローカルにDownloadできます。以下の画像に従ってsshのurlを取得できます。
+   ![clone-ssh.png](./assets/clone-ssh.png)
    ```shell
    $ cd <your working space>
-   $ git clone https://github.com/<your github id>/mercari-build-training
+   $ git clone git@github.com:<your github id>/mercari-build-training.git
    ```
 
 **:bangbang: 注意**
@@ -57,7 +62,7 @@ $ git config --local core.hooksPath .githooks/
    $ git branch first-pull-request
    $ git switch first-pull-request
    ```
-3. README.md の中にある`@<your github id>` の部分をあなたのgithub idに書き換えてください
+3. README.md の中にある`@your_github_id` の部分をあなたのgithub idに書き換えてください
 4. 書き換えた内容を **commit**します
    ```shell
    $ git status # Check your change
