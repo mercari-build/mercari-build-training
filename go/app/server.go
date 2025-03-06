@@ -224,15 +224,6 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	itemJson, err := json.Marshal(item)
-	if err != nil {
-		slog.Error("failed to marshal item", "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	message := string(itemJson)
-	slog.Info(message)
-
 	resp := ItemResponse{
 		Name:      item.Name,
 		Category:  item.Category,
