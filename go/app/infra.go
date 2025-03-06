@@ -91,5 +91,19 @@ func (i *itemRepository) GetFileName() string {
 func StoreImage(fileName string, image []byte) error {
 	// STEP 4-4: add an implementation to store an image
 
+	// store image
+	file, err := os.Create(fileName)
+	if err != nil {
+		slog.Error("failed to create image file: ", "error", err)
+		// return
+	}
+	defer file.Close()
+	
+	_, err = file.Write(image)
+	if err != nil {
+		slog.Error("failed to write image: ", "error", err)
+		// return
+	}
+
 	return nil
 }

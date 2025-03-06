@@ -228,37 +228,30 @@ func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
 	h := sha256.New()
 	h.Write(image)
 	hashSum := h.Sum(nil)
-	hashString := fmt.Sprintf("%x", hashSum)
+	fileName := fmt.Sprintf("%x.jpg", hashSum)
 
 	// build image file path
-	filePath, buildImagePathError := s.buildImagePath(hashString + ".jpg")
+	filePath, buildImagePathError := s.buildImagePath(fileName)
 	fmt.Println("buildImagePathError: ", buildImagePathError)
 
 	// check if the image already exists
 	_, err = os.Stat(filePath) // if exsits, then err is nil
 	if err == nil {
 		slog.Warn("image already exsits: ", "path", filePath)
-		return hashString + "jpg", nil
+		return fileName, nil
 	} else if !os.IsNotExist(err) { // Errors other than "file not found"
 		slog.Error("failed to check image existence: ", "error", err)
 		return
 	}
 		
 	// store image
-	file, err := os.Create(filePath)
+	err = StoreImage(filePath, image)
 	if err != nil {
-		slog.Error("failed to create image file: ", "error", err)
-		return
-	}
-	defer file.Close()
-
-	_, err = file.Write(image)
-	if err != nil {
-		slog.Error("failed to write image: ", "error", err)
+		slog.Error("failed to store image: ", "error", err)
 		return
 	}
 
-	return hashString + ".jpg", nil
+	return fileName, nil
 }
 
 type GetImageRequest struct {
