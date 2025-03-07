@@ -1,6 +1,6 @@
-# STEP10: docker-composeを利用して複数のサービスを動かす
+# STEP10: Docker Composeを利用して複数のサービスを動かす
 
-このステップでは docker-compose の使い方を学びます。
+このステップでは Docker Compose の使い方を学びます。
 
 **:book: Reference**
 
@@ -22,7 +22,7 @@
 を実行し、ブラウザから[http://localhost:3000/](http://localhost:3000/)が正しく開ければ成功です。
 
 ## 2. Docker Compose をインストールする
-**Docker Composeをインストールし、`docker-compose -v` が実行できることを確認しましょう**
+**Docker Composeをインストールし、`docker compose -v` が実行できることを確認しましょう**
 
 **:book: Reference**
 
@@ -37,9 +37,9 @@
 
 以下の質問に答えられるか確認しましょう。
 
-* チュートリアルのdocker-composeファイルにはいくつのサービスが定義されていますか？それらはどのようなサービスですか？
-* webサービスとredisサービスは異なる方法で image を取得しています。`docker-compose up`を実行した際に、各imageはどこから取得されているか確認しましょう。
-* docker-composeでは、サービスから他のサービスのコンテナに接続することができます。webサービスは、redisサービスとどのように名前解決をし、接続していますか？
+* チュートリアルのdocker composeファイルにはいくつのサービスが定義されていますか？それらはどのようなサービスですか？
+* webサービスとredisサービスは異なる方法で image を取得しています。`docker compose up`を実行した際に、各imageはどこから取得されているか確認しましょう。
+* docker composeでは、サービスから他のサービスのコンテナに接続することができます。webサービスは、redisサービスとどのように名前解決をし、接続していますか？
 
 ## 4. Docker ComposeでAPIとフロントエンドを動かす
 **チュートリアルを参考にしながら、今回作成したサービスのフロントエンドとバックエンドのAPIをDocker Composeで動かせるようにしましょう**
@@ -59,7 +59,7 @@
     * APIはフロントエンドにリクエストは送りませんが[CORS](https://developer.mozilla.org/ja/docs/Web/HTTP/CORS)という仕組みのために、どこからリクエストが来るのか知っておく必要があります
     `FRONT_URL`という環境変数でフロントエンドのURLを指定しています
 
-`docker-compose up` でサービスを起動して以下のことができれば成功です。
+`docker compose up` でサービスを起動して以下のことができれば成功です。
 - [http://localhost:3000/](http://localhost:3000/)でページが正しく表示される
 - 新しい商品の登録 (Listing)
 - 商品の一覧の閲覧 (ItemList)

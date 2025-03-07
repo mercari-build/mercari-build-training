@@ -1,4 +1,4 @@
-# STEP10: Run frontend and API using docker-compose
+# STEP10: Run frontend and API using Docker Compose
 In this step, we will learn how to use docker-compose.
 
 **:book: Reference**
@@ -23,7 +23,7 @@ Run the following and check if you can successfully open [http://localhost:3000/
 
 
 ## 2. Installing Docker Compose
-**Install Docker Compose and check you can run `docker-compose -v`**
+**Install Docker Compose and check you can run `docker compose -v`**
 
 **:book: Reference**
 
@@ -38,9 +38,9 @@ Run the following and check if you can successfully open [http://localhost:3000/
 
 Let's check if you can answer the following questions.
 
-* How many services are defined in the docker-compose file in the tutorial? What exactly do these services do?
-* web service and redis services get docker images with different methods. When running `docker-compose up`, check how where each image id downloaded.
-* In docker-compose, you can connect to different services from a service. How does the web service resolve the name for the redis service and connect to it?
+* How many services are defined in the `docker-compose.yaml` file in the tutorial? What exactly do these services do?
+* web service and redis services get docker images with different methods. When running `docker compose up`, check how where each image id downloaded.
+* In Docker Compose, you can connect to different services from a service. How does the web service resolve the name for the redis service and connect to it?
 
 ## 4. Run frontend and API using Docker Compose
 **Referring to the tutorial material, run the frontend and API using Docker Compose**
@@ -62,7 +62,7 @@ Make a new file `docker-compose.yml` considering the following points.
     * Set an environment variable `FRONT_URL` for frontend URL
 
 
-Run `docker-compose up` and check if the following operates properly
+Run `docker compose up` and check if the following operates properly
 - [http://localhost:3000/](http://localhost:3000/) displays the frontend page
-- You can add an new item (Listing)
+- You can add a new item (Listing)
 - You can view the list of all items (ItemList)
