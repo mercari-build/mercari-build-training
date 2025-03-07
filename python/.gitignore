@@ -1,2 +1,5 @@
 .venv/
 __pycache__/
+
+# Ignore SQLite database file
+mercari.sqlite3
