@@ -42,7 +42,7 @@ def setup_database():
     conn = sqlite3.connect(db)
     try:
         # UNIQUEによって同じカテゴリ名を重複して挿入できなくなる
-        conn.excute("""
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS categories (
                 id INTEGER PRIMARY KEY,
                 name TEXT UNIQUE  
@@ -143,7 +143,17 @@ def add_item(
 #  GET /search　商品検索エンドポイント
 @app.get("/search")
 def get_searched_item(keyword: str, db: sqlite3.Connection = Depends(get_db)):
-    query = "SELECT name, category, image_name FROM items WHERE name LIKE ?"
+    query = """
+        SELECT 
+            items.id AS id,
+            items.name AS name,
+            categories.name AS category,
+            items.image_name AS image_name
+        FROM items
+        JOIN categories
+        ON items.category_id = categories.id
+        WHERE items.name LIKE ?
+    """
     # "% %" で囲むことで、keywordという文字列を含むデータを検索する
     pattern = f"%{keyword}%"
     # sqlクエリを実行した結果返されるオプジェクトがcursorに入る。クエリ実行には,クエリとパラメータ(あれば)を渡す。
@@ -175,7 +185,18 @@ def get_items(db: sqlite3.Connection = Depends(get_db)):
 
 @app.get("/items/{item_id}", response_model=Item)
 def get_item(item_id: int, db: sqlite3.Connection = Depends(get_db)):
-    cursor = db.execute("SELECT id, name, category, image_name FROM items WHERE id = ?", (item_id))
+    cursor = db.execute("""
+                        SELECT 
+                            items.id AS id, 
+                            items.name AS name, 
+                            categories.name AS category, 
+                            items.image_name AS image_name 
+                        FROM items 
+                        JOIN categories
+                        ON items.category_id = categories.id
+                        WHERE items.id = ?
+                    """, (item_id,))
+    # 1行だけ取得するので fetch"one"になる
     row = cursor.fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -212,7 +233,7 @@ def insert_item(item: Item, db: sqlite3.Connection):
 # categories tableからカテゴリー名のidを返す関数 
 def get_category(category_name: str, db: sqlite3.Connection) -> int:
     cursor = db.execute("SELECT id FROM categories WHERE name = ?", (category_name,))
-    row = cursor.fetchall()
+    row = cursor.fetchone()
     # カテゴリー名が存在する場合はidを返す
     if row is not None:
         return row["id"]
