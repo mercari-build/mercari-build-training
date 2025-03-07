@@ -119,7 +119,7 @@ def get_item_by_id(item_id: int):
     if not isinstance(alldata, list):
         return {"error":"Invalid data format in items.json"}
 
-    item= alldata["items"][item_id -1]
+    item= alldata["items"][item_id -1] 
     return alldata
 
 # get_image is a handler to return an image for GET /images/{filename} .
