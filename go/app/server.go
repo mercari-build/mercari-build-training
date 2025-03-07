@@ -42,6 +42,7 @@ func (s Server) Run() int {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", h.Hello)                 // ルートパスで Hello メッセージを返す
 	mux.HandleFunc("POST /items", h.AddItem)        // 新しいアイテムを追加
+	mux.HandleFunc("GET /items", h.GetItems)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage) // 画像を取得
 
 	// サーバーの起動___Start the server
@@ -183,4 +184,25 @@ func (s *Handlers) GetImage(w http.ResponseWriter, r *http.Request) {
 
 	slog.Info("returned image", "path", imgPath)
 	http.ServeFile(w, r, imgPath)
+}
+
+func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// 1. `items.json` からすべてのアイテムを取得
+	items, err := s.itemRepo.GetAllItems(ctx)
+	if err != nil {
+		slog.Error("failed to retrieve items: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// 2. レスポンスをJSONに変換
+	response := map[string][]Item{"items": items}
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
