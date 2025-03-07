@@ -175,7 +175,7 @@ def get_items(db: sqlite3.Connection = Depends(get_db)):
     items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
     
     
-    return {"items": items}
+    return {"items": items_list}
     
     
 @app.get("/search")
