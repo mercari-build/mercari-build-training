@@ -2,12 +2,10 @@ package app
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
-
-	// "io/ioutil"
-	// "io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -26,8 +24,6 @@ type Server struct {
 // This method returns 0 if the server started successfully, and 1 otherwise.
 func (s Server) Run() int {
 	// set up logger
-	// STEP 4-6: set the log level to DEBUG
-	// levelInfo から levelDebugに変更??? できない
 	opts := slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	}
@@ -41,9 +37,19 @@ func (s Server) Run() int {
 	}
 
 	// STEP 5-1: set up the database connection
+	db, err := sql.Open("sqlite3", "db/mercari.sqlite3")
+	if err != nil {
+		slog.Error("failed to open database: ", "error", err)
+		return 1
+	}
+	defer db.Close()
 
 	// set up handlers
-	itemRepo := NewItemRepository()
+	itemRepo, err := NewItemRepository(db)
+	if err != nil {
+		slog.Error("failed to create item repository: ", "error", err)
+		return 1
+	}
 	h := &Handlers{imgDirPath: s.ImageDirPath, itemRepo: itemRepo}
 
 	// set up routes
@@ -53,10 +59,11 @@ func (s Server) Run() int {
 	mux.HandleFunc("GET /items", h.GetItems)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 	mux.HandleFunc("GET /items/{item_id}", h.GetItemById)
+	mux.HandleFunc("GET /search", h.SearchItemsByKeyword)
 
 	// start the server
 	slog.Info("http server started on", "port", s.Port)
-	err := http.ListenAndServe(":"+s.Port, simpleCORSMiddleware(simpleLoggerMiddleware(mux), frontURL, []string{"GET", "HEAD", "POST", "OPTIONS"}))
+	err = http.ListenAndServe(":"+s.Port, simpleCORSMiddleware(simpleLoggerMiddleware(mux), frontURL, []string{"GET", "HEAD", "POST", "OPTIONS"}))
 	if err != nil {
 		slog.Error("failed to start server: ", "error", err)
 		return 1
@@ -94,11 +101,24 @@ func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// itemsをラップ
 	response := struct {
-		Items []Item `json:"items"`
-	}{
-		Items: items,
+		Items []struct {
+			Name     string `json:"name"`
+			Category string `json:"category"`
+			Image    string `json:"image"`
+		} `json:"items"`
+	}{}
+
+	for _, item := range items {
+		response.Items = append(response.Items, struct {
+			Name     string `json:"name"`
+			Category string `json:"category"`
+			Image    string `json:"image"`
+		}{
+			Name:     item.Name,
+			Category: item.Category,
+			Image:    item.Image,
+		})
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -110,8 +130,8 @@ func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
 
 type AddItemRequest struct {
 	Name     string `form:"name"`
-	Category string `form:"category"` // STEP 4-2: add a category field -- done
-	Image    []byte `form:"image"`    // STEP 4-4: add an image field -- done
+	Category string `form:"category"`
+	Image    []byte `form:"image"`
 }
 
 type AddItemResponse struct {
@@ -121,23 +141,20 @@ type AddItemResponse struct {
 // parseAddItemRequest parses and validates the request to add an item.
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	req := &AddItemRequest{
-		Name: r.FormValue("name"),
-		// STEP 4-2: add a category field -- done
+		Name:     r.FormValue("name"),
 		Category: r.FormValue("category"),
-		// STEP 4-4: add an image field
-		Image: []byte(r.FormValue("image")),
+		Image:    []byte(r.FormValue("image")),
 	}
 
-	// validate the request
+	// validation
 	if req.Name == "" {
 		return nil, errors.New("name is required")
 	}
 
-	// STEP 4-2: validate the category field -- done
 	if req.Category == "" {
 		return nil, errors.New("category is required")
 	}
-	// STEP 4-4: validate the image field -- done
+
 	if string(req.Image) == "" {
 		return nil, errors.New("image is required")
 	}
@@ -162,7 +179,6 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// STEP 4-4: uncomment on adding an implementation to store an image -- done
 	fileName, err := s.storeImage(req.Image)
 	if err != nil {
 		slog.Error("failed to store image: ", "error", err)
@@ -171,39 +187,27 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item := &Item{
-		Name: req.Name,
-		// STEP 4-2: add a category field -- done
+		Name:     req.Name,
 		Category: req.Category,
-		// STEP 4-4: add an image field -- done
-		// 先頭のimages/を削除 もっといい方法ありそう
-		Image: strings.TrimPrefix(string(fileName), "images/"),
+		Image:    strings.TrimPrefix(string(fileName), "images/"),
 	}
-	message := fmt.Sprintf("item received: %s", item.Name)
-	slog.Info(message)
-
-	// STEP 4-2: add an implementation to store an item -- done?
 
 	err = s.itemRepo.Insert(ctx, item)
+
 	if err != nil {
 		slog.Error("failed to store item: ", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	resp := AddItemResponse{Message: message}
-	err = json.NewEncoder(w).Encode(resp)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	message := fmt.Sprintf("item received: %s", item.Name)
+	fmt.Fprint(w, message)
 }
 
 // storeImage stores an image and returns the file path and an error if any.
 // this method calculates the hash sum of the image as a file name to avoid the duplication of a same file
 // and stores it in the image directory.
 func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
-	// STEP 4-4: add an implementation to store an image
-	// TODO:
 	// - calc hash sum
 	hash := sha256.Sum256(image)
 	// - build image file path
@@ -293,7 +297,7 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 	return imgPath, nil
 }
 
-// GetItemById
+/* GetItemById */
 type GetItemByIdRequest struct {
 	Id string
 }
@@ -339,17 +343,54 @@ func (s *Handlers) GetItemById(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonData)
 }
 
-/*
-	そもそもハンドラーとは
-	-> HTTPリクエストを受け取り、適切なレスポンスを返す関数
+/* SearchItemsByKeyword */
+type GetItemByKeywordRequest struct {
+	Keyword string
+}
 
-	step4-4
-	# ローカルから.jpgをポストする
-	$ curl \
-	-X POST \
-	--url 'http://localhost:9000/items' \
-	-F 'name=jacket' \
-	-F 'category=fashion' \
-	-F 'image=@images/local_image.jpg' <-ローカルのuploadしたいiamgeのパス "image=go/images/default.jpg"とか
+func parseGetItemByKeywordRequest(r *http.Request) (*GetItemByKeywordRequest, error) {
+	req := &GetItemByKeywordRequest{
+		// クエリパラメータを取得
+		Keyword: r.URL.Query().Get("keyword"),
+	}
 
-*/
+	// validation
+	if req.Keyword == "" {
+		return nil, errors.New("id is required")
+	}
+
+	return req, nil
+}
+
+func (s *Handlers) SearchItemsByKeyword(w http.ResponseWriter, r *http.Request) {
+	req, err := parseGetItemByKeywordRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	items, err := s.itemRepo.SearchItemsByKeyword(r.Context(), req.Keyword)
+
+	if err != nil {
+		if errors.Is(err, errItemNotFound) {
+			slog.Warn("item not exist: ", "error", err)
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
+	if items == nil {
+		items = []Item{}
+	}
+
+	// jsonに変換
+	jsonData, err := json.Marshal(items)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonData)
+}

@@ -2,13 +2,14 @@ package app
 
 import (
 	"context"
-	"encoding/json"
+
+	"database/sql"
 	"errors"
+	"log/slog"
 	"os"
 	"path/filepath"
-	"strconv"
-	// STEP 5-1: uncomment this line
-	// _ "github.com/mattn/go-sqlite3"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var errImageNotFound = errors.New("image not found")
@@ -17,88 +18,82 @@ var errItemNotFound = errors.New("item not found")
 type Item struct {
 	ID       int    `db:"id" json:"-"`
 	Name     string `db:"name" json:"name"`
-	Category string `db:"category" json:"category"`
-	Image    string `db:"image" json:"image"`
+	Category string `json:"category"`
+	Image    string `db:"image_name" json:"image"`
 }
 
-// Please run `go generate ./...` to generate the mock implementation
-// ItemRepository is an interface to manage items.
-//
-//go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 	GetAll(ctx context.Context) ([]Item, error)
 	GetItemById(ctx context.Context, item_id string) (Item, error)
+	SearchItemsByKeyword(ctx context.Context, keyword string) ([]Item, error)
 }
 
-// itemRepository is an implementation of ItemRepository
 type itemRepository struct {
-	// fileName is the path to the JSON file storing items.
-	fileName string
+	db *sql.DB
 }
 
-// NewItemRepository creates a new itemRepository.
-// main.goを実行するディレクトリによってfileNameを変更する
-func NewItemRepository() ItemRepository {
-	return &itemRepository{fileName: "cmd/api/items.json"}
-}
-
-// Insert inserts an item into the repository.
-func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	// STEP 4-2: add an implementation to store an item
-	// /api内で go run main.go(パスを"items.json"でやるなら)
-
-	// jsonファイルを読み込み
-	// ここでエラーだったらjsonFileには空のバイト列が格納される
-	jsonFile, err := os.ReadFile(i.fileName)
-	// error処理
+// 返り値を増やした
+// -> server.goのRun()でNewItemRepositoryのerrを検知できずに
+// nilのitemRepoを使用したことによるnil参照panicを防ぐ
+func NewItemRepository(db *sql.DB) (ItemRepository, error) {
+	// items tableがなかったら作成
+	query := `
+                CREATE TABLE IF NOT EXISTS items (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL,
+                        category_id INTEGER,
+                        image_name TEXT NOT NULL,
+                        FOREIGN KEY (category_id) REFERENCES categories(id)
+                );
+        `
+	_, err := db.Exec(query)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			// ファイルが存在しなかったら作成
-			file, err := os.Create(i.fileName)
+		slog.Error("failed to create items table", "error", err)
+		return nil, err
+	}
+
+	// categories tableが無かったら作成
+	query = `
+                CREATE TABLE IF NOT EXISTS categories (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL UNIQUE
+                );
+        `
+	_, err = db.Exec(query)
+	if err != nil {
+		slog.Error("failed to create categories table: ", "error", err)
+		return nil, err
+	}
+	return &itemRepository{db: db}, nil
+}
+
+func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
+	var categoryID int
+
+	// categories tableから(categories tableの)name = item.Categoryのidを取得
+	err := i.db.QueryRow("SELECT id FROM categories WHERE name = ?", item.Category).Scan(&categoryID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// 該当する行がなかったら = 新しいカテゴリーだったら
+			// categories tableのnameにitem.Categoryの値をinsert
+			res, err := i.db.Exec("INSERT INTO categories (name) VALUES (?)", item.Category)
 			if err != nil {
 				return err
 			}
-			defer file.Close()
-			defaultJson := []byte(`{"items":[]}`)
-			_, err = file.Write(defaultJson)
+			// 最後に挿入された自動採番(AUTOINCREMENT)のidを取得
+			id, err := res.LastInsertId()
 			if err != nil {
 				return err
 			}
+			categoryID = int(id)
 		} else {
-			// その他のエラーだったら中断、エラーを返す
-			println("Error:", err)
 			return err
 		}
 	}
-	// os.ErrNotExistでデフォルトデータが書き込まれたらスキップされる
-	if len(jsonFile) == 0 {
-		jsonFile = []byte(`{"items":[]}`)
-	}
-
-	// jsonから構造体に変換
-	// jsonのitems配列の各要素がItem構造体として格納される
-	var data struct {
-		Items []Item `json:"items"`
-	}
-	if err = json.Unmarshal(jsonFile, &data); err != nil {
-		return err
-	}
-
-	// itemsにitemを追加
-	data.Items = append(data.Items, *item)
-
-	// 構造体からjsonに変換
-	itemsJson, err := json.MarshalIndent(data, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	// jsonファイルに書き込み
-	// 0644 ファイルのパーミッション
-	// os.ErrNotExistで作成されたファイルと既に存在していたファイルは
-	// どちらにせよここで同じパスに書き込まれる(i.fileNameで指定しているから)
-	err = os.WriteFile(i.fileName, itemsJson, 0644)
+	// insert
+	query := "INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)"
+	_, err = i.db.Exec(query, item.Name, categoryID, item.Image)
 	if err != nil {
 		return err
 	}
@@ -106,91 +101,106 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	return nil
 }
 
-// GetAll()
 func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
-	// jsonファイルを読み込み
-	jsonFile, err := os.ReadFile(i.fileName)
+	// itemsとcategoriesをいったんinner join
+	query := `
+                SELECT
+                        items.id,
+                        items.name,
+                        categories.name AS category,
+                        items.image_name
+                FROM
+                        items
+                INNER JOIN
+                        categories ON items.category_id = categories.id;
+        `
+	rows, err := i.db.Query(query)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			// ファイルが存在しなかったら空のスライスとnilを返す
-			println("file does not exist.")
-			return []Item{}, nil
-		} else {
-			// その他のエラーだったら中断、空のスライスとエラーを返す
-			println("Error:", err)
-			return []Item{}, err
-		}
-	}
-
-	// jsonから構造体に変換
-	var data struct {
-		Items []Item `json:"items"`
-	}
-	if err = json.Unmarshal(jsonFile, &data); err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	return data.Items, nil
+	var items []Item
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+
+	return items, nil
 }
 
-// StoreImage stores an image and returns an error if any.
-// This package doesn't have a related interface for simplicity.
 func StoreImage(fileName string, image []byte) error {
-	// STEP 4-4: add an implementation to store an image
-
-	// 保存先
 	savePath := filepath.Join("images", fileName)
-
-	// バックスラッシュをスラッシュに
 	savePath = filepath.ToSlash(savePath)
-	// ファイルを保存
 	err := os.WriteFile(savePath, image, 0644)
 	if err != nil {
 		return err
 	}
-
 	return nil
 
 }
 
-// GetItemById()
 func (i *itemRepository) GetItemById(ctx context.Context, item_id string) (Item, error) {
-	// jsonファイルを読み込み
-	jsonFile, err := os.ReadFile(i.fileName)
+	query := "SELECT id, name, category_id, image_name FROM items WHERE id = ?"
+	row := i.db.QueryRow(query, item_id)
+	var item Item
+	var categoryID int
+	err := row.Scan(&item.ID, &item.Name, &categoryID, &item.Image)
 	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			println("file does not exist.")
-			return Item{}, nil
+		if err == sql.ErrNoRows {
+			return Item{}, errItemNotFound
 		} else {
-			println("Error:", err)
 			return Item{}, err
 		}
-
 	}
-	// jsonから構造体に変換
-	var data struct {
-		Items []Item `json:"items"`
-	}
-	if err = json.Unmarshal(jsonFile, &data); err != nil {
+	//categoryIDからcategoryNameを取得
+	err = i.db.QueryRow("SELECT name from categories where id = ?", categoryID).Scan(&item.Category)
+	if err != nil {
 		return Item{}, err
 	}
 
-	itemIdInt, err := strconv.Atoi(item_id)
-	if err != nil {
-		return Item{}, errors.New("invalid item id")
-	}
-
-	// 範囲外参照を確認
-	idx := itemIdInt - 1
-	if idx < 0 || idx >= len(data.Items) {
-		return Item{}, errors.New("item not found: index out of range")
-	}
-
-	item := data.Items[idx]
-	if item == (Item{}) {
-		return Item{}, errItemNotFound
-	}
 	return item, nil
+}
+
+func (i *itemRepository) SearchItemsByKeyword(ctx context.Context, keyword string) ([]Item, error) {
+	// itemsとcategoriesをいったんinner join
+	query := `
+                SELECT
+                        items.id,
+                        items.name,
+                        categories.name AS category,
+                        items.image_name
+                FROM
+                        items
+                INNER JOIN
+                        categories ON items.category_id = categories.id
+                WHERE
+                        items.name LIKE ?
+        `
+
+	// queryの?部分がkeywordで置き換えられる
+	// % はワイルドカード文字: 0文字以上の任意の文字列
+	rows, err := i.db.Query(query, "%"+keyword+"%")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []Item
+	for rows.Next() {
+		var item Item
+		err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+
+	return items, nil
 }
 
 /*

@@ -6,6 +6,7 @@ tool go.uber.org/mock/mockgen
 
 require (
 	github.com/google/go-cmp v0.7.0
+	github.com/mattn/go-sqlite3 v1.14.24
 	go.uber.org/mock v0.5.0
 )
 
