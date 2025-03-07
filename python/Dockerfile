@@ -1,6 +1,13 @@
-FROM alpine
+FROM python:3.11.7
 
-RUN addgroup -S mercari && adduser -S trainee -G mercari
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+RUN groupadd -r mercari && useradd -r -g mercari trainee
 # RUN chown -R trainee:mercari /path/to/db
 
 USER trainee

@@ -92,7 +92,7 @@ class AddItemResponse(BaseModel):
     message: str
 
 class Item(BaseModel):
-    id: int | None = None #一応
+    id: int
     name: str
     category: str
     image_name: str
@@ -169,11 +169,9 @@ def get_items(db: sqlite3.Connection = Depends(get_db)):
            FROM items
            JOIN categories ON items.category_id = categories.id"""
     )
-
-    items = [
-        {"id": row["id"], "name": row["name"], "category": row["category"], "image_name": row["image_name"]}
-        for row in cursor.fetchall()
-    ]
+    rows = cursor.fetchall()
+    items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
+    
     
     return {"items": items}
     
