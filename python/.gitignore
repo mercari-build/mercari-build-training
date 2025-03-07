@@ -1,6 +1,8 @@
 .venv/
 __pycache__/
+
 db/mercari.sqlite3
+
 
 
 .DS_Store

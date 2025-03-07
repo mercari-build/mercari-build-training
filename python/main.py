@@ -125,6 +125,7 @@ def add_item(
     with open(image_path, "wb") as buffer:
         buffer.write(image_bytes)
 
+
     cursor =db.cursor() 
     
     # categories テーブルにカテゴリが存在するか確認
@@ -155,6 +156,7 @@ def add_item(
     db.commit()
 
     return AddItemResponse(**{"message": f"item received: {name},{category}, {hashed_filename}"})
+
 
 
 
@@ -238,4 +240,6 @@ async def get_image(image_name: str):
         logger.debug(f"Image not found: {image}")
         image = images / "default.jpg"
 
+
     return FileResponse(image)
+
