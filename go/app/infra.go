@@ -16,7 +16,7 @@ type Item struct {
 	ID           int    `db:"id" json:"-"`
 	Name         string `db:"name" json:"name"`
 	CategoryID   int    `db:"category_id" json:"category_id"`
-	CategoryName string `db:"category" json:"category_name"`
+	CategoryName string `db:"category_name" json:"category_name"`
 	ImageName    string `db:"image_name" json:"image_name"`
 }
 
@@ -70,7 +70,9 @@ func (r *itemRepository) Insert(ctx context.Context, item *Item) error {
 	return nil
 }
 
-When we use error handling with fmt.Errorf -> It always append failed to as a prefix so it becomes redundant to write : failed to insert item, It will render on screen as: failed to; failed to insert item.
+// When we use error handling with fmt.Errorf ->
+//  It always append failed to as a prefix so it becomes redundant to write :
+//  failed to insert item, It will render on screen as: failed to; failed to insert item.
 
 // InsertCategory inserts a new category into the repository.
 func (r *itemRepository) InsertCategory(ctx context.Context, name string) (*Category, error) {
@@ -78,13 +80,13 @@ func (r *itemRepository) InsertCategory(ctx context.Context, name string) (*Cate
 	query := `INSERT INTO categories (name) VALUES (?) RETURNING id`
 	result, err := r.db.ExecContext(ctx, query, name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to insert category: %w", err)
+		return nil, fmt.Errorf("insert category failed: %w", err)
 	}
 
 	// 挿入したカテゴリのIDを取得
 	id, err := result.LastInsertId()
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve last insert ID: %w", err)
+		return nil, fmt.Errorf("retrieve last insert ID failed: %w", err)
 	}
 
 	return &Category{ID: int(id), Name: name}, nil
@@ -100,7 +102,7 @@ func (r *itemRepository) FindAll(ctx context.Context) ([]Item, error) {
 	`
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve items: %w", err)
+		return nil, fmt.Errorf("retrieve items failed: %w", err)
 	}
 	defer rows.Close()
 
@@ -108,7 +110,7 @@ func (r *itemRepository) FindAll(ctx context.Context) ([]Item, error) {
 	for rows.Next() {
 		var item Item
 		if err := rows.Scan(&item.ID, &item.Name, &item.CategoryID, &item.CategoryName, &item.ImageName); err != nil {
-			return nil, fmt.Errorf("failed to scan item: %w", err)
+			return nil, fmt.Errorf("scan item failed: %w", err)
 		}
 		items = append(items, item)
 	}
@@ -130,7 +132,7 @@ func (r *itemRepository) FindByID(ctx context.Context, id int) (*Item, error) {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("item with id %d not found", id)
 		}
-		return nil, fmt.Errorf("failed to retrieve item: %w", err)
+		return nil, fmt.Errorf("retrieve item failed: %w", err)
 	}
 	return &item, nil
 }
@@ -146,7 +148,7 @@ func (r *itemRepository) Search(ctx context.Context, keyword string) ([]Item, er
 	likeKeyword := "%" + keyword + "%"
 	rows, err := r.db.QueryContext(ctx, query, likeKeyword, likeKeyword)
 	if err != nil {
-		return nil, fmt.Errorf("failed to search items: %w", err)
+		return nil, fmt.Errorf("search items failed: %w", err)
 	}
 	defer rows.Close()
 
@@ -154,7 +156,7 @@ func (r *itemRepository) Search(ctx context.Context, keyword string) ([]Item, er
 	for rows.Next() {
 		var item Item
 		if err := rows.Scan(&item.ID, &item.Name, &item.CategoryID, &item.CategoryName, &item.ImageName); err != nil {
-			return nil, fmt.Errorf("failed to scan item: %w", err)
+			return nil, fmt.Errorf("scan item failed: %w", err)
 		}
 		items = append(items, item)
 	}
@@ -166,7 +168,7 @@ func (r *itemRepository) GetCategories(ctx context.Context) ([]Category, error) 
 	query := `SELECT id, name FROM categories`
 	rows, err := r.db.QueryContext(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve categories: %w", err)
+		return nil, fmt.Errorf("retrieve categories failed: %w", err)
 	}
 	defer rows.Close()
 
@@ -174,7 +176,7 @@ func (r *itemRepository) GetCategories(ctx context.Context) ([]Category, error) 
 	for rows.Next() {
 		var category Category
 		if err := rows.Scan(&category.ID, &category.Name); err != nil {
-			return nil, fmt.Errorf("failed to scan category: %w", err)
+			return nil, fmt.Errorf("scan category failed: %w", err)
 		}
 		categories = append(categories, category)
 	}
@@ -191,7 +193,7 @@ func (r *itemRepository) GetCategoryByName(ctx context.Context, name string) (*C
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("category with name %s not found", name)
 		}
-		return nil, fmt.Errorf("failed to retrieve category: %w", err)
+		return nil, fmt.Errorf("retrieve category failed: %w", err)
 	}
 	return &category, nil
 }
@@ -201,7 +203,7 @@ func (r *itemRepository) GetCategoryByName(ctx context.Context, name string) (*C
 func StoreImage(fileName string, image_name []byte) error {
 	err := os.WriteFile(fileName, image_name, 0644)
 	if err != nil {
-		return fmt.Errorf("failed to write image file: %w", err)
+		return fmt.Errorf("write image file failed: %w", err)
 	}
 	return nil
 }
