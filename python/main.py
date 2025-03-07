@@ -134,8 +134,8 @@ def add_item(
     category_id = get_category(category, db)
     
     # 新しいアイテムを作成
-    new_item = Item(name=name, category_id=category_id, image_name=image_name)
-    insert_item(new_item, db)
+    # ※PydanticモデルItemは入力検証用なので、ここでは直接DB挿入用の関数を利用する
+    insert_item(name, category_id, image_name, db)
     
     return AddItemResponse(**{"message": f"item received: {name} / category received: {category} / category_id: {category_id} / image received: {image_name}"})
 
@@ -156,11 +156,11 @@ def get_searched_item(keyword: str, db: sqlite3.Connection = Depends(get_db)):
     """
     # "% %" で囲むことで、keywordという文字列を含むデータを検索する
     pattern = f"%{keyword}%"
-    # sqlクエリを実行した結果返されるオプジェクトがcursorに入る。クエリ実行には,クエリとパラメータ(あれば)を渡す。
+    # sqlクエリを実行した結果返されるオブジェクトがcursorに入る。クエリ実行には,クエリとパラメータ(あれば)を渡す。
     cursor = db.execute(query, (pattern,))
     # 全ての実行結果を取得
     rows = cursor.fetchall()
-    # rowsのオフジェクトを、要素が辞書型の配列に変換し、itemsに代入
+    # rowsのオブジェクトを、要素が辞書型の配列に変換し、itemsに代入
     items = [dict(row) for row in rows]
     return {"items": items}
     
@@ -220,12 +220,11 @@ async def get_image(image_name: str):
 
 
 
-
 # app.post("/items" ... のハンドラ内で用いられる。items.jsonファイルへ新しい要素の追加を行う。
-def insert_item(item: Item, db: sqlite3.Connection):
+def insert_item(name: str, category_id: int, image_name: str, db: sqlite3.Connection):
     db.execute(
         "INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
-        (item.name, item.category_id, item.image_name)
+        (name, category_id, image_name)
     )
     db.commit()
     
