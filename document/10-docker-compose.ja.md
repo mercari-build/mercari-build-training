@@ -15,9 +15,9 @@
 
 `typescript/simple-mercari-web`以下にフロントエンド用の `Dockerfile` がすでに用意されています。これを変更しフロントエンドが docker 上で立ち上がるようにしましょう。
 
-* 名前（リポジトリ名）は `build2024/web`, タグは`latest` とします。
+* 名前（リポジトリ名）は `mercari-build-training/web`, タグは`latest` とします。
 
-`$ docker run -d -p 3000:3000 build2024/web:latest`
+`$ docker run -d -p 3000:3000 mercari-build-training/web:latest`
 
 を実行し、ブラウザから[http://localhost:3000/](http://localhost:3000/)が正しく開ければ成功です。
 
@@ -49,7 +49,7 @@
 以下の点を参考にしながら `docker-compose.yml` を作成しましょう。
 
 * 使用する docker image
-    * (Option 1: 難易度 ☆) STEP7 と STEP10-1 でそれぞれ build した `build2024/app:latest` と `build2024/web:latest` を使う
+    * (Option 1: 難易度 ☆) STEP7 と STEP10-1 でそれぞれ build した `mercari-build-training/app:latest` と `mercari-build-training/web:latest` を使う
     * (Option 2: 難易度 ☆☆☆) `{go|python}/Dockerfile` と `typescript/simple-mercari-web/Dockerfile` から build するようにする
 * 使用する port
     * API : 9000
