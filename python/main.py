@@ -91,19 +91,9 @@ async def add_item(
         raise HTTPException(status_code=400, detail="name is required")
     if not category:
         raise HTTPException(status_code=400, detail="category is required")
-
-    #load image
-    image_contents = await image.read() 
-
-    # Hashing images with SHA-256
-    sha256 = hashlib.sha256(image_contents).hexdigest()
-    image_name = f"{sha256}.jpg"  
-
-    # Save images to images directory
-    image_path = images / image_name
-    with open(image_path, "wb") as f:
-        f.write(image_contents)
     
+    image_name = await upload_image(image)
+
     # insert items to items.json
     insert_item(Item(name=name, category=category, image_name=image_name))
     
@@ -137,7 +127,7 @@ def get_item(item_id: int):
         data = json.load(f)
 
     # check if item_id exists
-    if item_id > len(data["items"]) and item_id > 0:
+    if item_id > len(data["items"]) or item_id <= 0:
         raise HTTPException(status_code=404, detail="Item not found")
 
     # get item with item_id 
@@ -183,3 +173,17 @@ def insert_item(item: Item):
     # write to items.json
     with open(ITEMS_FILE_PATH, "w") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
+
+async def upload_image(image):
+    #load image
+    image_contents = await image.read() 
+
+    # Hashing images with SHA-256
+    sha256 = hashlib.sha256(image_contents).hexdigest()
+    image_name = f"{sha256}.jpg"  
+
+    # Save images to images directory
+    image_path = images / image_name
+    with open(image_path, "wb") as f:
+        f.write(image_contents)
+    return image_name
