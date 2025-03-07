@@ -112,6 +112,10 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 
 // parseAddItemRequest parses and validates the request to add an item.
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		return nil, errors.New("failed to parse multipart form")
+	}
+
 	req := &AddItemRequest{
 		Name:     r.FormValue("name"),
 		Category: r.FormValue("category"),
@@ -123,7 +127,8 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 		if errors.Is(err, http.ErrMissingFile) {
 			req.Image = nil
 		} else {
-			return nil, errors.New("failed to get image file")
+			log.Printf("Error parsing image file: %v", err) // Debug log
+			return nil, fmt.Errorf("failed to get image file: %w", err)
 		}
 	} else {
 		defer imageFile.Close()
@@ -146,6 +151,12 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 
 // AddItem is a handler to add a new item for POST /items .
 func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		http.Error(w, "faled to parse multipart form", http.StatusBadRequest)
+		return
+	}
+
 	req, err := parseAddItemRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -291,10 +302,15 @@ func (s *Handlers) Getkeyword(w http.ResponseWriter, r *http.Request) {
 // this method calculates the hash sum of the image as a file name to avoid the duplication of a same file
 // and stores it in the image directory.
 func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
+	if image == nil || len(image) == 0 {
+		return "default.jpg", nil
+	}
 	hash := sha256.Sum256(image)
 	hashStr := hex.EncodeToString(hash[:])
 	fileName := hashStr + ".jpg"                     // - calc hash sum
 	filePath = filepath.Join(s.imgDirPath, fileName) // - build image file path
+
+	log.Printf("storing image: hash = %s,path = %s", hashStr, filePath)
 
 	if _, err := os.Stat(filePath); err == nil {
 		return fileName, nil //if the file already exists, just return file
@@ -306,11 +322,10 @@ func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
 		return "", fmt.Errorf("failed to create image directory: %w", err)
 	}
 
-	err = os.WriteFile(filePath, image, 0644)
-	if err != nil {
+	if err = os.WriteFile(filePath, image, 0644); err != nil {
 		return "", fmt.Errorf("failed to save image: %w", err)
 	}
-
+	log.Println("Image successfully stored")
 	return fileName, nil // - return the image file path
 }
 
