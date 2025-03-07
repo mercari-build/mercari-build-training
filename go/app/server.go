@@ -43,6 +43,7 @@ func (s Server) Run() int {
 	// set up routes
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", h.Hello)  // GET /が呼ばれたらHelloを呼び出す
+	mux.HandleFunc("GET /items", h.GetItems)  // 一覧を返すエンドポイント
 	mux.HandleFunc("POST /items", h.AddItem)  // POST /itemsが呼ばれたらAddItemを呼び出す
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
@@ -72,6 +73,28 @@ type HelloResponse struct {
 func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 	resp := HelloResponse{Message: "Hello, world!"}
 	err := json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+type GetItemsResponse struct{
+	Items []*Item `json:"items"`
+}
+
+func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	items, err := s.itemRepo.List(ctx)  //リポジトリを見て商品をすべて取得する
+	if err != nil {
+		slog.Error("failed to get items: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := GetItemsResponse{Items:items}  //リポジトリからかえってきたレスポンスを形式の沿って帰す
+	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
