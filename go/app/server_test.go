@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -136,6 +137,11 @@ func TestAddItem(t *testing.T) {
 			injector: func(m *MockItemRepository) {
 				// STEP 6-3: define mock expectation
 				// succeeded to insert
+				item := &Item{
+					Name:     "used iPhone 16e",
+					Category: "phone",
+				}
+				m.EXPECT().Insert(gomock.Any(), item).Return(nil)
 			},
 			wants: wants{
 				code: http.StatusOK,
@@ -149,6 +155,11 @@ func TestAddItem(t *testing.T) {
 			injector: func(m *MockItemRepository) {
 				// STEP 6-3: define mock expectation
 				// failed to insert
+				item := &Item{
+					Name:     "used iPhone 16e",
+					Category: "phone",
+				}
+				m.EXPECT().Insert(gomock.Any(), item).Return(fmt.Errorf("insert failed"))
 			},
 			wants: wants{
 				code: http.StatusInternalServerError,
