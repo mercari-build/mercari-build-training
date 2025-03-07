@@ -2,14 +2,15 @@ package app
 
 import (
 	"context"
-	"encoding/json"
+	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
-	"sync"
+
 	// STEP 5-1: uncomment this line
-	//"github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var errImageNotFound = errors.New("image not found")
@@ -18,11 +19,7 @@ type Item struct {
 	ID       int    `db:"id" json:"-"`
 	Name     string `db:"name" json:"name"`
 	Category string `db:"category" json:"category"`
-	Image    string `db:"image" json:"image"`
-}
-
-type jsonData struct {
-	Items []Item `json:"items"`
+	Image    string `db:"image_name" json:"image"`
 }
 
 // Please run `go generate ./...` to generate the mock implementation
@@ -32,120 +29,185 @@ type jsonData struct {
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 	GetAll(ctx context.Context) ([]Item, error)
-	GetByID(ctx context.Context, id int) (*Item, error)
+	GetItemByID(ctx context.Context, id int) (*Item, error)
+	GetKeyword(ctx context.Context, keyword string) ([]Item, error)
+	AddItem(ctx context.Context, item *Item) (*Item, error)
 }
 
 // itemRepository is an implementation of ItemRepository
 type itemRepository struct {
-	// fileName is the path to the JSON file storing items.
-	fileName string
-	mu       sync.Mutex
+	db *sql.DB
 }
 
 // NewItemRepository creates a new itemRepository.
-func NewItemRepository() ItemRepository {
-	relPath := "../../items.json"
+func NewItemRepository() (*itemRepository, error) {
+	dbPath := "../../db/items.db"
 
-	dir, err := os.Getwd()
+	logger := log.New(os.Stdout, "ItemRepository: ", log.LstdFlags)
+	logger.Println("Opening database at:", dbPath)
+
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("database file does not exist at path: %s", dbPath)
+	}
+	//conntect to database
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		panic(fmt.Errorf("failed to get working directory: %w", err))
+		return nil, fmt.Errorf("failed to open database: %w", err)
+	}
+	if err := db.Ping(); err != nil { //confirm if database runs correctly (test connection)
+		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	filePath := filepath.Join(dir, relPath)
+	return &itemRepository{db: db}, nil
 
-	return &itemRepository{fileName: filePath}
-
-}
-func (i *itemRepository) GetByID(ctx context.Context, id int) (*Item, error) {
-	items, err := i.GetAll(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if id < 0 || id >= len(items) {
-		return nil, fmt.Errorf("item not found")
-	}
-	return &items[id], nil
 }
 
 // Insert inserts an item into the repository.
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	// STEP 4-2: add an implementation to store an item
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
-	items, err := i.GetAll(ctx)
+	//insert item struct to database
+	query := "INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)"
+	result, err := i.db.ExecContext(ctx, query, item.Name, item.Category, item.Image)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to insert item: %w", err)
 	}
-	item.ID = len(items)
-
-	data, err := os.ReadFile(i.fileName)
+	//get the automated ID(main key)
+	id, err := result.LastInsertId()
 	if err != nil {
-		if os.IsNotExist(err) {
-			data = []byte(`{"items": []}`)
-		} else {
-			return fmt.Errorf("failed to read file: %w", err)
-		}
+		return fmt.Errorf("failed to get last insert id: %w", err)
 	}
-
-	var jsonData jsonData
-	if err := json.Unmarshal(data, &jsonData); err != nil {
-		return fmt.Errorf("failed to parse JSON: %w", err)
-	}
-
-	//add ID
-	jsonData.Items = append(jsonData.Items, *item)
-
-	//parse JSON to struct
-	newData, err := json.MarshalIndent(jsonData, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to encode JSON: %w", err)
-	}
-
-	//save to JSON files
-	if err := os.WriteFile(i.fileName, newData, 0644); err != nil {
-		return fmt.Errorf("failed to write file: %w", err)
-	}
+	item.ID = int(id)
 
 	return nil
-
 }
 
 // StoreImage stores an image and returns an error if any.
 // This package doesn't have a related interface for simplicity.
 func StoreImage(fileName string, image []byte) error {
-	// STEP 4-4: add an implementation to store an image
-	relPath := "images"
+	relPath := "../../images" //main.go → go/cmd/api/main.go、　images→ go/images
 
-	dir, err := os.Getwd()
-	if err != nil {
-		panic(fmt.Errorf("failed to get working directory: %w", err))
+	if err := os.MkdirAll(relPath, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create image directory: %w", err)
 	}
 
-	imageDirPath := filepath.Join(dir, relPath)
-
-	filePath := filepath.Join(imageDirPath, fileName)
+	filePath := filepath.Join(relPath, fileName)
 
 	//save file to the filepath
-	err = os.WriteFile(filePath, image, 0644)
+	err := os.WriteFile(filePath, image, 0644) //permit writing
 	if err != nil {
 		return fmt.Errorf("failed to save image: %w", err)
 	}
 	return nil
 }
 
-func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
-	//read content from file as data(string)
-	data, err := os.ReadFile(i.fileName)
+func (i *itemRepository) AddItem(ctx context.Context, item *Item) (*Item, error) {
+	//get category_id from category name
+	var categoryID int
+	err := i.db.QueryRowContext(ctx, "SELECT id FROM categories WHERE name = ?", item.Category).Scan(&categoryID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %w", err)
+		if err == sql.ErrNoRows {
+			result, err := i.db.ExecContext(ctx, "INSERT INTO categories (name) VALUES (?)", item.Category)
+			if err != nil {
+				return nil, fmt.Errorf("failed to insert category: %w", err)
+			}
+			lastID, err := result.LastInsertId()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get last inserted category ID: %w", err)
+			}
+			categoryID = int(lastID)
+		} else {
+			return nil, fmt.Errorf("failed to fetch category ID : %w", err)
+		}
+	}
 
+	//insert items to item's table
+	query := "INSERT INTO items (name,category_id,image_name) VALUES (?,?,?)"
+	result, err := i.db.ExecContext(ctx, query, item.Name, categoryID, item.Image)
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert item: %w", err)
 	}
-	var jsonData jsonData
-	//parse JSON to struct(change data to jsonData(struct))
-	if err := json.Unmarshal(data, &jsonData); err != nil {
-		return nil, fmt.Errorf("failed to parse JSON: %w", err)
+
+	//get the inserted item id
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get last inserted ID: %w", err)
 	}
-	//parsed Item list is in jsonData.Items
-	return jsonData.Items, nil
+	item.ID = int(id)
+
+	item.Category = item.Category
+	return item, nil
+
+}
+
+func (i *itemRepository) GetItemByID(ctx context.Context, id int) (*Item, error) {
+	query := `
+	SELECT items.id, items.name, COALESCE(categories.name, '') AS category,items.image_name
+	FROM items
+	LEFT JOIN categories ON items.category_id = categories.id
+	WHERE items.id = ?
+	`
+	row := i.db.QueryRowContext(ctx, query, id)
+
+	var item Item
+	err := row.Scan(&item.ID, &item.Name, &item.Category, &item.Image)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil //when item not found, return nil
+		}
+		return nil, fmt.Errorf("failed to fetch item: %w", err)
+	}
+	return &item, nil
+
+}
+
+func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
+	query := `
+        SELECT items.id, items.name, COALESCE(categories.name, '') AS category, items.image_name
+        FROM items
+        LEFT JOIN categories ON items.category_id = categories.id
+    `
+	//receive data from database
+	rows, err := i.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch items: %w", err)
+	}
+	defer rows.Close()
+
+	//get the each row's data
+	var items []Item
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		items = append(items, item)
+	}
+	return items, nil
+}
+
+func (i *itemRepository) GetKeyword(ctx context.Context, keyword string) ([]Item, error) {
+	query := `
+        SELECT items.id, items.name, COALESCE(categories.name, '') AS category, items.image_name
+        FROM items
+        LEFT JOIN categories ON items.category_id = categories.id
+        WHERE items.name LIKE ? OR categories.name LIKE ?
+    `
+
+	rows, err := i.db.QueryContext(ctx, query, "%"+keyword+"%", "%"+keyword+"%")
+	if err != nil {
+		return nil, fmt.Errorf("database query error: %w", err)
+	}
+	defer rows.Close()
+
+	var items []Item
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.Image); err != nil {
+			return nil, fmt.Errorf("failed to parse database result: %w", err)
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("database error: %w", err)
+	}
+	return items, nil
 }
