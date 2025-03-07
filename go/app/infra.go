@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -29,7 +30,7 @@ type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 	GetAll(ctx context.Context) ([]Item, error)
 	GetItemByID(ctx context.Context, id int) (*Item, error)
-	Getkeyword(ctx context.Context, keyword string) ([]Item, error)
+	GetKeyword(ctx context.Context, keyword string) ([]Item, error)
 	AddItem(ctx context.Context, item *Item) (*Item, error)
 }
 
@@ -42,26 +43,20 @@ type itemRepository struct {
 func NewItemRepository() (*itemRepository, error) {
 	dbPath := "../../db/items.db"
 
-	absPath, err := filepath.Abs(dbPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get absolute database path: %w", err)
-	}
+	logger := log.New(os.Stdout, "ItemRepository: ", log.LstdFlags)
+	logger.Println("Opening database at:", dbPath)
 
-	fmt.Println("Opening database at:", absPath)
-	if _, err := os.Stat(absPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("database file does not exist at path: %s", absPath)
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("database file does not exist at path: %s", dbPath)
 	}
 	//conntect to database
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
-	err = db.Ping() //confirm if database runs correctly (test connection)
-	if err != nil {
+	if err := db.Ping(); err != nil { //confirm if database runs correctly (test connection)
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
-
-	fmt.Println("Successfully connected to the database")
 
 	return &itemRepository{db: db}, nil
 
@@ -90,20 +85,14 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 func StoreImage(fileName string, image []byte) error {
 	relPath := "../../images" //main.go → go/cmd/api/main.go、　images→ go/images
 
-	//convert to absolut path
-	imageDirPath, err := filepath.Abs(relPath)
-	if err != nil {
-		return fmt.Errorf("failed to get working directory: %w", err)
-	}
-	//make a directory to avoid error with no directory
-	if err := os.MkdirAll(imageDirPath, os.ModePerm); err != nil {
+	if err := os.MkdirAll(relPath, os.ModePerm); err != nil {
 		return fmt.Errorf("failed to create image directory: %w", err)
 	}
 
-	filePath := filepath.Join(imageDirPath, fileName)
+	filePath := filepath.Join(relPath, fileName)
 
 	//save file to the filepath
-	err = os.WriteFile(filePath, image, 0644) //permit writing
+	err := os.WriteFile(filePath, image, 0644) //permit writing
 	if err != nil {
 		return fmt.Errorf("failed to save image: %w", err)
 	}
@@ -195,7 +184,7 @@ func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
 	return items, nil
 }
 
-func (i *itemRepository) Getkeyword(ctx context.Context, keyword string) ([]Item, error) {
+func (i *itemRepository) GetKeyword(ctx context.Context, keyword string) ([]Item, error) {
 	query := `
         SELECT items.id, items.name, COALESCE(categories.name, '') AS category, items.image_name
         FROM items

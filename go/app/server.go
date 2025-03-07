@@ -87,6 +87,9 @@ type Handlers struct {
 	db         *sql.DB //define struct of db
 	repo       ItemRepository
 }
+type HelloResponse struct {
+	Message string `json:"message"`
+}
 
 type AddItemRequest struct {
 	Name     string `form:"name"`
@@ -96,6 +99,15 @@ type AddItemRequest struct {
 
 type AddItemResponse struct {
 	Message string `json:"message"`
+}
+
+func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
+	resp := HelloResponse{Message: "Hello, world!"}
+	err := json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 // parseAddItemRequest parses and validates the request to add an item.
@@ -186,14 +198,14 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("response: %+v\n", response)
 
-	// デバッグ用: JSON エンコード前の response をファイルに書き出す
+	// debug
 	file, err := os.Create("response.json")
 	if err != nil {
 		log.Printf("failed to create response.json: %v\n", err)
 	} else {
 		defer file.Close()
 		encoder := json.NewEncoder(file)
-		encoder.SetIndent("", "  ") // JSON を整形して書き出す
+		encoder.SetIndent("", "  ")
 		if err := encoder.Encode(response); err != nil {
 			log.Printf("failed to write response.json: %v\n", err)
 		}
@@ -256,7 +268,7 @@ func (s *Handlers) Getkeyword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//call Getkeyword func from infra.go
-	items, err := s.repo.Getkeyword(context.Background(), keyword)
+	items, err := s.repo.GetKeyword(context.Background(), keyword)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		log.Println("Database error", err)
