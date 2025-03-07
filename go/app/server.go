@@ -20,6 +20,7 @@ type Server struct {
 
 // Run is a method to start the server.
 // This method returns 0 if the server started successfully, and 1 otherwise.
+// サーバーを立ち上げる：Run関数で指定
 func (s Server) Run() int {
 	// set up logger
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
@@ -41,11 +42,12 @@ func (s Server) Run() int {
 
 	// set up routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", h.Hello)
-	mux.HandleFunc("POST /items", h.AddItem)
+	mux.HandleFunc("GET /", h.Hello)  // GET /が呼ばれたらHelloを呼び出す
+	mux.HandleFunc("POST /items", h.AddItem)  // POST /itemsが呼ばれたらAddItemを呼び出す
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
 	// start the server
+	// サーバーを立てる
 	slog.Info("http server started on", "port", s.Port)
 	err := http.ListenAndServe(":"+s.Port, simpleCORSMiddleware(simpleLoggerMiddleware(mux), frontURL, []string{"GET", "HEAD", "POST", "OPTIONS"}))
 	if err != nil {
@@ -76,10 +78,11 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// この段階ではAddItemRequestはNameとImageを受け取れる
 type AddItemRequest struct {
-	Name string `form:"name"`
-	// Category string `form:"category"` // STEP 4-2: add a category field
-	Image []byte `form:"image"` // STEP 4-4: add an image field
+	Name 	 string `form:"name"`
+	Category string `form:"category"` // STEP 4-2: add a category field
+	Image 	 []byte `form:"image"` // STEP 4-4: add an image field
 }
 
 type AddItemResponse struct {
@@ -91,16 +94,20 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	req := &AddItemRequest{
 		Name: r.FormValue("name"),
 		// STEP 4-2: add a category field
+		Category: r.FormValue("category"),
 	}
 
 	// STEP 4-4: add an image field
 
 	// validate the request
 	if req.Name == "" {
-		return nil, errors.New("name is required")
+		return nil, errors.New("name is required") //Nameの中身が空だったらエラーを返す
 	}
 
 	// STEP 4-2: validate the category field
+	if req.Category == "" {
+		return nil, errors.New("category is required") //categoryの中身が空だったらエラーを返す
+	}
 	// STEP 4-4: validate the image field
 	return req, nil
 }
@@ -109,14 +116,14 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	req, err := parseAddItemRequest(r)
+	req, err := parseAddItemRequest(r)  // リクエストが来た時にAddItemRequestにリクエストの中身を入れて返す
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest) 
 		return
 	}
 
 	// STEP 4-4: uncomment on adding an implementation to store an image
-	// fileName, err := s.storeImage(req.Image)
+	// fileName, err := s.storeImage(req.Image) //画像を保存する処理
 	// if err != nil {
 	// 	slog.Error("failed to store image: ", "error", err)
 	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -126,12 +133,14 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	item := &Item{
 		Name: req.Name,
 		// STEP 4-2: add a category field
+		Category: req.Category,
 		// STEP 4-4: add an image field
 	}
 	message := fmt.Sprintf("item received: %s", item.Name)
 	slog.Info(message)
 
 	// STEP 4-2: add an implementation to store an image
+	// 受け取ったリクエストをサーバーのリポジトリ(何かを保管する場所)に保存する
 	err = s.itemRepo.Insert(ctx, item)
 	if err != nil {
 		slog.Error("failed to store item: ", "error", err)
@@ -139,6 +148,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// AddItemResponseにメッセージを入れて返す
 	resp := AddItemResponse{Message: message}
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {
