@@ -1,0 +1,2 @@
+{"time":"2025-03-07T17:48:37.172291015+09:00","level":"INFO","msg":"http server started on","port":"9000"}
+signal: interrupt
