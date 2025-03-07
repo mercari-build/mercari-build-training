@@ -2,11 +2,13 @@ package app
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 
@@ -270,6 +272,124 @@ func TestAddItemHandler(t *testing.T) {
 			// レスポンスボディの検証
 			if tt.wants.body != "" && !bytes.Contains(rr.Body.Bytes(), []byte(tt.wants.body)) {
 				t.Errorf("expected response body to contain %q, got %q", tt.wants.body, rr.Body.String())
+			}
+		})
+	}
+}
+func setupTestDB(t *testing.T) (*sql.DB, func()) {
+	t.Helper()
+
+	// 一時的な SQLite ファイルを作成
+	tempFile, err := os.CreateTemp("", "testdb-*.sqlite3")
+	if err != nil {
+		t.Fatalf("failed to create temp db file: %v", err)
+	}
+	dbPath := tempFile.Name()
+	tempFile.Close()
+
+	// データベース接続
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		t.Fatalf("failed to open test database: %v", err)
+	}
+
+	// テーブル作成
+	createTableSQL := `
+	CREATE TABLE categories (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE
+	);
+	CREATE TABLE items (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL,
+		category_id INTEGER NOT NULL,
+		image_name TEXT NOT NULL,
+		FOREIGN KEY (category_id) REFERENCES categories(id)
+	);
+	INSERT INTO categories (name) VALUES ('Electronics'), ('Furniture');
+	`
+	_, err = db.Exec(createTableSQL)
+	if err != nil {
+		t.Fatalf("failed to create tables: %v", err)
+	}
+
+	// クリーンアップ処理（テスト終了後にDBを削除）
+	cleanup := func() {
+		db.Close()
+		os.Remove(dbPath)
+	}
+
+	return db, cleanup
+}
+
+func TestAddItemE2E(t *testing.T) {
+	t.Parallel()
+
+	// テスト用DBセットアップ
+	db, cleanup := setupTestDB(t)
+	defer cleanup()
+
+	// 実データベースを使用するリポジトリを作成
+	repo := &itemRepository{db: db}
+	h := &Handlers{itemRepo: repo}
+
+	cases := map[string]struct {
+		requestBody  map[string]string
+		expectedCode int
+	}{
+		"ok: correctly inserted": {
+			requestBody: map[string]string{
+				"name":     "Test Laptop",
+				"category": "Electronics",
+			},
+			expectedCode: http.StatusCreated,
+		},
+		"ng: missing name": {
+			requestBody: map[string]string{
+				"category": "Electronics",
+			},
+			expectedCode: http.StatusBadRequest,
+		},
+		"ng: missing category": {
+			requestBody: map[string]string{
+				"name": "Test Laptop",
+			},
+			expectedCode: http.StatusBadRequest,
+		},
+		"ng: invalid category": {
+			requestBody: map[string]string{
+				"name":     "Test Chair",
+				"category": "Unknown",
+			},
+			expectedCode: http.StatusInternalServerError,
+		},
+	}
+
+	for name, tt := range cases {
+		t.Run(name, func(t *testing.T) {
+			// リクエスト作成
+			reqBody, _ := json.Marshal(tt.requestBody)
+			req := httptest.NewRequest("POST", "/items", bytes.NewBuffer(reqBody))
+			req.Header.Set("Content-Type", "application/json")
+
+			rr := httptest.NewRecorder()
+			h.AddItem(rr, req)
+
+			// ステータスコードを検証
+			if rr.Code != tt.expectedCode {
+				t.Errorf("expected status %d, got %d", tt.expectedCode, rr.Code)
+			}
+
+			// 成功ケースではデータベースを確認
+			if tt.expectedCode == http.StatusCreated {
+				var count int
+				err := db.QueryRow("SELECT COUNT(*) FROM items WHERE name = ?", tt.requestBody["name"]).Scan(&count)
+				if err != nil {
+					t.Fatalf("failed to query database: %v", err)
+				}
+				if count != 1 {
+					t.Errorf("expected 1 item to be inserted, got %d", count)
+				}
 			}
 		})
 	}
