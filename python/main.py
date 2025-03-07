@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
+from typing import List
 
 FILENAME = pathlib.Path(__file__).parent.resolve() / "items.json"
 
@@ -19,10 +20,7 @@ db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
 images.mkdir(exist_ok=True)
 
 def get_db():
-    if not db.exists():
-        yield
-
-    conn = sqlite3.connect(db)
+   conn = sqlite3.connect(db)
     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
     try:
         yield conn
@@ -32,7 +30,18 @@ def get_db():
 
 # STEP 5-1: set up the database connection
 def setup_database():
-    pass
+    conn = sqlite3.connect(db)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL COLLATE NOCASE,
+            category TEXT NOT NULL,
+            image_name TEXT NOT NULL
+        )
+    """)
+    conn.commit()
+    conn.close()
 
 
 @asynccontextmanager
@@ -44,8 +53,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 logger = logging.getLogger("uvicorn")
-logger.level = logging.INFO
-images = pathlib.Path(__file__).parent.resolve() / "images"
+logger.level = logging.DEBUG
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
     CORSMiddleware,
@@ -89,11 +97,25 @@ async def add_item(
     
     with open(image_path, "wb") as f:
         f.write(image_bytes) # save the image
+
+    cursor = db.cursor()
+    cursor.execute("SELECT id FROM categories WHERE name = ?", (category,))
+    category_id = cursor.fetchone()
+
+    if category_id is None:
+        cursor.execute("INSERT INTO categories (name) VALUES (?)", (category,))
+        category_id = cursor.lastrowid
+    else:
+        category_id = category_id[0]
         
     new_item = Item(name=name, category=category, image_name=hashed_filename)
-    insert_item(new_item)
+    insert_item(new_item, db)
+    logger.debug("Inserting item: %s", new_item)
     
-    return AddItemResponse(message=f"item received: {name}", items=[{"name": name, "category": category, "image_name": hashed_filename}])
+    return AddItemResponse(
+        message=f"item received: {name}",
+        items=[{"name": name, "category": category, "image_name": hashed_filename}]
+        )
 
 
 # get_image is a handler to return an image for GET /images/{filename} .
@@ -118,40 +140,67 @@ class Item(BaseModel):
     image_name: str
 
 def insert_item(item: Item):
-    # STEP 4-2: add an implementation to store an item
-    if os.path.exists(FILENAME):  
-        with open(FILENAME, "r", encoding="utf-8") as file:
-            try: 
-                data = json.load(file)
-            except json.JSONDecodeError:
-                data = {"items": []}          
-    else: 
-        data = {"items": []}
-        
-    data["items"].append(item.dict())
-    
-    with open(FILENAME, "w", encoding = "utf-8") as file:
-        json.dump(data, file, indent = 2, ensure_ascii = False)
+    cursor = db.cursor()
+   cursor.execute(
+        "INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
+        (item.name, item.category, item.image_name)
+    )
+   db.commit()
 
 def read_items():
-    if not FILENAME.exists():
-        return []
-    with open(FILENAME, "r", encoding="utf-8") as file:
-        try:
-            data = json.load(file)
-            return data.get("items", [])
-        except json.JSONDecodeError:
-            return []
+    cursor = db.cursor()
+    cursor.execute("""
+    SELECT items.name, categories.name AS category, items.image_name
+    FROM items
+    JOIN categories ON items.category_id = categories.id
+""")
+    rows = cursor.fetchall()
+    items = [{"name": row[0], "category": row[1], "image_name": row[2]} for row in rows]
+    return items
 
 @app.get("/items/{item_id}", response_model=Item)
-def get_items(item_id: int):
-    items = read_items()
+def get_items(item_id: int, db: sqlite3.Connection = Depends(det_db)):
+    cursor = db.cursor()
+    cursor.execute("""
+        SELECT items.name, categories.name AS category, items.image_name
+        FROM items
+        JOIN categories ON items.category_id = categories.id
+        WHERE items.id = ?
+    """, (item_id,))
+    row = cursor.fetchone()
 
-    if item_id < 0 or item_id >= len(items):
+    if row is None:
         raise HTTPException(status_code=404, detail="Item not found")
-    
-    return items[item_id]
-    else:
-        data = {"items": []}
 
-    return data
+    return Item(name=row[0], category=row[1], image_name=row[2])
+
+@app.get("/search")
+def search_items(keyword: str, db: sqlite3.Connection = Depends(get_db)):
+    keyword = keyword.strip()
+    
+    cursor = db.cursor()
+    cursor.execute("""
+        SELECT items.name, categories.name AS category, items.image_name
+        FROM items
+        JOIN categories ON items.category_id = categories.id
+        WHERE items.name LIKE ?
+    """, (f"%{keyword}%",))
+    
+    rows = cursor.fetchall()
+    
+    if not rows:
+        logger.debug("No items found matching the search criteria.")
+        
+    items = [{"name": row[0], "category": row[1], "image_name": row[2]} for row in rows]
+    
+    return {"items": items}
+
+@app.on_event("startup")
+def startup_db():
+    print("Attempting to connect to the database:", db)
+    try:
+        conn = sqlite3.connect(db)
+        print("Database connection successful!")
+        conn.close()
+    except sqlite3.Error as e:
+        print(f"Error connecting to the database: {e}")
