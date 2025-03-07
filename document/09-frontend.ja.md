@@ -131,4 +131,4 @@ export const ItemList = (props: Prop) => {
 
 ## Next
 
-[STEP10: docker-compose で API とフロントエンドを動かす](./10-docker-compose.ja.md)
+[STEP10: Docker Compose で API とフロントエンドを動かす](./10-docker-compose.ja.md)
