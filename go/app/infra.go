@@ -16,7 +16,7 @@ type Item struct {
 	ID           int    `db:"id" json:"-"`
 	Name         string `db:"name" json:"name"`
 	CategoryID   int    `db:"category_id" json:"category_id"`
-	CategoryName string `db:"category" json:"category"`
+	CategoryName string `db:"category" json:"category_name"`
 	ImageName    string `db:"image_name" json:"image_name"`
 }
 
