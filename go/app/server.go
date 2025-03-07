@@ -173,6 +173,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	insertedItem, err := s.repo.AddItem(r.Context(), item)
+
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		log.Println("Database error: ", err)

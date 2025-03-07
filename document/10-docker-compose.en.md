@@ -15,11 +15,11 @@ In this step, we will learn how to use docker-compose.
 
 You have a sample `Dockerfile` In `typescript/simple-mercari-web`. Modify this file to run frontend on Docker.
 
-* Set the name of the repository as `build2024/web` and tag as `latest`.
+* Set the name of the repository as `mercari-build-training/web` and tag as `latest`.
 
 Run the following and check if you can successfully open [http://localhost:3000/](http://localhost:3000/) on your browser.
 
-`$ docker run -d -p 3000:3000 build2024/web:latest`
+`$ docker run -d -p 3000:3000 mercari-build-training/web:latest`
 
 
 ## 2. Installing Docker Compose
@@ -51,7 +51,7 @@ Set up `docker-compose.yml` under `mercari-build-training/`
 Make a new file `docker-compose.yml` considering the following points.
 
 * Docker image to use
-    * (Option 1: Difficulty ☆) Use `build2024/app:latest` and `build2024/web:latest` made in STEP7 and STEP10-1
+    * (Option 1: Difficulty ☆) Use `mercari-build-training/app:latest` and `mercari-build-training/web:latest` made in STEP7 and STEP10-1
     * (Option 2: Difficulty ☆☆☆) Build from `{go|python}/Dockerfile` and `typescript/simple-mercari-web/Dockerfile`
 * Port numbers
     * API : 9000

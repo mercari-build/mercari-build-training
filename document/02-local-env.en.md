@@ -37,7 +37,7 @@ $ python3 -m venv .venv　
 
 # Activate virtual environment
 $ source .venv/bin/activate # for Mac or Unix user
-$ ./venv/Scripts/activate # for Windows user
+$ .venv/Scripts/activate # for Windows user
 
 # Install required library
 $ pip install --upgrade pip setuptools wheel
@@ -66,8 +66,8 @@ If successful, you can access the local host `http://127.0.0.1:9000` on our brow
 
 ## Building Go environment
 ### 1. Install Go
-* If your local version is below Go1.20, install Go1.21.
-* If you have Go1.20 or above, you can skip the installation step.
+* If your local version is below Go1.24, install Go1.24.
+* If you have Go1.24 or above, you can skip the installation step.
 
 Download it from [this link](https://go.dev/dl/)!  
 ※ If you are using a Mac and are unsure whether to download the `x86-64` or `ARM64` version, click on the Apple logo at the top left corner > select "About This Mac". If the chip is listed as "Apple" choose `ARM64`; if it's "Intel" select `x86-64`.
@@ -113,6 +113,7 @@ $ go run cmd/api/main.go
 ```
 
 If successful, you can access the local host `http://127.0.0.1:9000` on our browser and you will see`{"message": "Hello, world!"}`.
+To stop the server, press Ctrl+C.
 
 ---
 **:beginner: Points**

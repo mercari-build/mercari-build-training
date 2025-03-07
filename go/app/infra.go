@@ -64,6 +64,7 @@ func NewItemRepository() (*itemRepository, error) {
 
 // Insert inserts an item into the repository.
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
+
 	//insert item struct to database
 	query := "INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)"
 	result, err := i.db.ExecContext(ctx, query, item.Name, item.Category, item.Image)

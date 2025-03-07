@@ -30,12 +30,17 @@ $ curl --version
 ### GETリクエストの送信
 
 cURLを用いて、前節で立ち上げたAPIサーバに対してGETリクエストを送ってみましょう。
+サーバーを起動していない場合は、以下のコマンドを実行してください。
+
+| Python                                                                                       | Go                                                                            |
+|----------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| Move to python folder before running the command <br>`uvicorn main:app --reload --port 9000` | Move to python folder before running the command <br>`go run cmd/api/main.go` |
 
 cURLでリクエストを送る前に、HTTPブラウザで `http://127.0.0.1:9000` にアクセスしたときに、 `{"message": "Hello, world!"}` が表示されることを確認してください。仮に表示されない場合は、STEP2-4: アプリにアクセスするを参照してください([Python](./02-local-env.ja.md#4-アプリにアクセスする), [Go](./02-local-env.ja.md#4-アプリにアクセスする-1))。
 
 さて、実際にcURLコマンドを用いてリクエストを送ってみましょう。ここではGETリクエストとPOSTリクエストを送信します。
 
-新しいターミナルを開き、以下のコマンドを実行してください。
+**サーバーをたてたターミナルはそのままで、 新しいターミナルを開いて**以下のコマンドを実行してください。
 
 ```shell
 $ curl -X GET 'http://127.0.0.1:9000'
@@ -52,9 +57,9 @@ $ curl -X POST 'http://127.0.0.1:9000/items'
 ```
 
 このエンドポイントは、コールに成功すると`{"message": "item received: <name>"}`
-というレスポンスが返ってくることが期待されています。しかし、ここでは異なるレスポンスが返ってくるはずです。
+というレスポンスが返ってくることが期待されています。しかし、ここでは異なるレスポンスが返ってきます。
 
-コマンドを以下のように修正することで、`{"message": "item received: jacket"}`が返ってきますが、なぜそのような結果になるのか調べてみましょう。
+コマンドを以下のように修正することで、`{"message": "item received: jacket"}`が返ってきますが、なぜそのような結果になるのか、`python/main.py`もしくは`go/app/server.go`のファイルを開いて調べてみましょう。
 
 ```shell
 $ curl \
@@ -132,7 +137,7 @@ type itemRepository struct {
 }
 
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	// STEP 4-1: add an implementation to store an item
+	// STEP 4-2: add an implementation to store an item
 
 	return nil
 }
