@@ -54,18 +54,23 @@ func NewItemRepository(db *sql.DB) ItemRepository {
 // 新しい商品を登録する
 // Insert inserts an item into the repository.
 func (r *itemRepository) Insert(ctx context.Context, item *Item) error {
-	query := `INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)`
+	const query = `INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)`
+
 	result, err := r.db.ExecContext(ctx, query, item.Name, item.CategoryID, item.ImageName)
 	if err != nil {
-		return fmt.Errorf("failed to insert item: %w", err)
+		return fmt.Errorf("insert item failed: %w", err)
 	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("failed to retrieve last insert ID: %w", err)
+
+	if id, err := result.LastInsertId(); err != nil {
+		return fmt.Errorf("retrieving last insert ID failed: %w", err)
+	} else {
+		item.ID = int(id)
 	}
-	item.ID = int(id)
+
 	return nil
 }
+
+When we use error handling with fmt.Errorf -> It always append failed to as a prefix so it becomes redundant to write : failed to insert item, It will render on screen as: failed to; failed to insert item.
 
 // InsertCategory inserts a new category into the repository.
 func (r *itemRepository) InsertCategory(ctx context.Context, name string) (*Category, error) {
