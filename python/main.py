@@ -9,12 +9,17 @@ from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
+import json
 
 
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
 db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
+<<<<<<< HEAD
 items_json_path = pathlib.Path(__file__).parent.resolve() / "items.json"  # items.json のパス追記
+=======
+items_json_path = pathlib.Path(__file__).parent.resolve() / "items.json"  # items.json のパスを追記
+>>>>>>> origin/main
 
 
 def get_db():
@@ -83,10 +88,16 @@ class AddItemResponse(BaseModel):
 
 class Item(BaseModel):
     name: str
+<<<<<<< HEAD
     category: str  # カテゴリー追加
     image_name: str #　画像のファイル名追加
 
 # items.jsonのデータ読み込み
+=======
+    category: str  # カテゴリーも受け取れるように追加
+
+# items.jsonの初期データ読み込み（items.jsonが存在しない場合の対応を）
+>>>>>>> origin/main
 def load_items():
     if items_json_path.exists():
         with open(items_json_path, "r", encoding="utf-8") as file:
@@ -94,10 +105,18 @@ def load_items():
             return data.get("items", [])
     return []
 
+<<<<<<< HEAD
 #item.jsonに商品を追加して保存する関数
 def save_item(item: Item):
     items = load_items()
     items.append({"name": item.name, "category": item.category, "image_name": item.image_name}) #商品を追加する
+=======
+
+#item.jsonに商品を追加して保存する関数
+def save_item(item: Item):
+    items = load_items()
+    items.append({"name": item.name, "category": item.category}) #商品を追加する
+>>>>>>> origin/main
 
     with open(items_json_path, "w", encoding="utf-8") as file:
         json.dump({"items": items}, file, indent=2, ensure_ascii=False)  # JSONを保存
@@ -106,6 +125,7 @@ def save_item(item: Item):
 def get_items():
     return {"items": load_items()}
 
+<<<<<<< HEAD
 @app.get("/items/{item_id}")
 def get_item(item_id: int):
     items = load_items()
@@ -114,11 +134,14 @@ def get_item(item_id: int):
         raise HTTPException(status_code=404, detail=f"Item ID {item_id} is not found")
 
     return items[item_id]  # 指定されたIDの商品を返す
+=======
+>>>>>>> origin/main
 
 # add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
 def add_item(
     name: str = Form(...),
+<<<<<<< HEAD
     category: str = Form(...), #カテゴリーを受け取る
     image: UploadFile = File(...), # 画像を受け取る
     db: sqlite3.Connection = Depends(get_db),
@@ -131,6 +154,18 @@ def add_item(
     save_item(new_item)  # JSONファイルに保存
     insert_item(new_item)
     return AddItemResponse(**{"message": f"item received: {name}, {category}, {image_name}"})
+=======
+    category: str = Form(...), #カテゴリーも受け取れるように追記
+    db: sqlite3.Connection = Depends(get_db),
+):
+    if not name:
+        raise HTTPException(status_code=400, detail="name is required")
+
+    new_item = Item(name=name, category=category)
+    save_item(new_item)  # JSONファイルに保存できるようにする
+    insert_item(new_item)
+    return AddItemResponse(**{"message": f"item received: {name}"})
+>>>>>>> origin/main
 
 
 # get_image is a handler to return an image for GET /images/{filename} .
