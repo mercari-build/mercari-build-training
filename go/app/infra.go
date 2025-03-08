@@ -2,12 +2,13 @@ package app
 
 import (
 	"context"
-	"encoding/json"
+	"database/sql"
 	"errors"
 	"log/slog"
 	"os"
+
 	// STEP 5-1: uncomment this line
-	// _ "github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var errImageNotFound = errors.New("image not found")
@@ -28,6 +29,7 @@ type JsonFormat struct {
 //
 //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
 type ItemRepository interface {
+	GetItems(ctx context.Context) ([]Item, error)
 	Insert(ctx context.Context, item *Item) error
 	GetFileName() string
 }
@@ -43,34 +45,65 @@ func NewItemRepository() ItemRepository {
 	return &itemRepository{fileName: "items.json"}
 }
 
+// GetItems returns all items in the repository.
+func (i *itemRepository) GetItems(ctx context.Context) ([]Item, error) {
+	// open db
+	db, err := sql.Open("sqlite3", "./db/mercari.sqlite3")
+	if err != nil {
+		slog.Error("failed to open database: ", "error", err)
+		return nil, err
+	}
+	defer db.Close()
+
+	// read items from db
+	rows, err := db.Query("SELECT * FROM items")
+	if err != nil {
+		slog.Error("failed to prepare statement: ", "error", err)
+		return nil, err
+	}
+	defer rows.Close()
+	
+	var items []Item
+	for rows.Next() {
+		var id int
+		var name string
+		var category string
+		var imageName string
+		err = rows.Scan(&id, &name, &category, &imageName)
+		if err != nil {
+			slog.Error("failed to scan rows: ", "error", err)
+			return nil, err
+		}
+		items = append(items, Item{ID: id, Name: name, Category: category, ImageName: imageName})
+	}
+	err = rows.Err()
+	if err != nil {
+		slog.Error("failed to scan rows: ", "error", err)
+		return nil, err
+	}
+
+	return items, nil
+}
+
 // Insert inserts an item into the repository.
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	// STEP 4-2: add an implementation to store an item
-	items, err := decodeItemsFromFile(i.fileName)
+
+	// open db
+	db, err := sql.Open("sqlite3", "./db/mercari.sqlite3")
 	if err != nil {
-		slog.Error("failed to decode items from file: ", "error", err)
+		slog.Error("failed to open database: ", "error", err)
+		return err
+	}
+	defer db.Close()
+
+	// insert item
+	_, err = db.Exec("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)", item.Name, item.Category, item.ImageName)
+	if err != nil {
+		slog.Error("failed to insert item: ", "error", err)
 		return err
 	}
 
-	// append new item
-	items = append(items, *item)
-
-	// create json file to write
-	newJsonFile, err := os.Create(i.fileName)
-	if err != nil {
-		slog.Error("failed to create jsonFile: ", "error", err)
-		return err
-	}
-	defer newJsonFile.Close()
-
-	// encode and wrute to json file
-	encoder := json.NewEncoder(newJsonFile)
-	encoder.SetIndent("", "  ")
-
-	decodeData := make(map[string][]Item)
-	decodeData["items"] = items
-
-	return encoder.Encode(decodeData)
+	return nil
 }
 
 func (i *itemRepository) GetFileName() string {

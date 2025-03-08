@@ -87,9 +87,8 @@ type GetItemsResponse struct {
 
 func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
 
-	// open json file and decode
-	fileName := s.itemRepo.GetFileName()
-	items, err := decodeItemsFromFile(fileName)
+	// get items from db
+	items, err := s.itemRepo.GetItems(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
