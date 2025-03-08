@@ -27,7 +27,7 @@ The following icons indicate pointers for
 - [x] **STEP2** Setup environment ([JA](document/02-local-env.ja.md)
   /[EN](document/02-local-env.en.md))
 - [ ] **STEP3** Algorithms and Data Structures([JA](document/03-algorithm-and-data-structure.ja.md)/[EN](document/03-algorithm-and-data-structure.en.md))
-- [ ] **STEP4** Develop API ([JA](document/04-api.ja.md)
+- [x] **STEP4** Develop API ([JA](document/04-api.ja.md)
   /[EN](document/04-api.en.md))
 - [ ] **STEP5** Database ([JA](document/05-database.ja.md)/[EN](document/05-database.en.md))
 - [ ] **STEP6** Writing Tests ([JA](document/06-testing.ja.md)/[EN](document/06-testing.en.md))
