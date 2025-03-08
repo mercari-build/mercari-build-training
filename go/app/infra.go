@@ -57,7 +57,7 @@ func (i *itemRepository) GetItems(ctx context.Context) ([]Item, error) {
 	defer db.Close()
 
 	// read items from db
-	rows, err := db.Query("SELECT * FROM items")
+	rows, err := db.Query("SELECT * FROM items inner join categories on items.category_id = categories.id")
 	if err != nil {
 		slog.Error("failed to prepare statement: ", "error", err)
 		return nil, err
@@ -66,16 +66,18 @@ func (i *itemRepository) GetItems(ctx context.Context) ([]Item, error) {
 	
 	var items []Item
 	for rows.Next() {
-		var id int
+		var items_table_id int
 		var name string
-		var category string
+		var category_id int
 		var imageName string
-		err = rows.Scan(&id, &name, &category, &imageName)
+		var categories_table_id int
+		var categories_name string
+		err = rows.Scan(&items_table_id, &name, &category_id, &imageName, &categories_table_id, &categories_name)
 		if err != nil {
 			slog.Error("failed to scan rows: ", "error", err)
 			return nil, err
 		}
-		items = append(items, Item{ID: id, Name: name, Category: category, ImageName: imageName})
+		items = append(items, Item{ID: items_table_id, Name: name, Category: categories_name, ImageName: imageName})
 	}
 	err = rows.Err()
 	if err != nil {
