@@ -12,12 +12,51 @@ In STEP3, after learning about basic algorithms and data structures, you will pr
 
 **:beginner: Point**
 * First, look up the following terms and be able to explain what they are.
-    * Time complexity and space complexity
-    * Big O notation
-    * Associative arrays
+    * Time complexity and space complexity:
+        Time complexity: measured in the number of operations it take to complete a task.
+
+        Space complexity: measured in the amount of memory space a code takes up.
+
+    * Big O notation: a way of comparing two sets of code to determine which is more efficient.
+        Big O (from most to least efficient):
+            O(1) = constant time
+            O(log n) = divide and conquer
+            O(n) = proportional
+            O(n^2) = a loop within a loop
+
+    * Associative arrays: a data structure that stores key-value pairs, known as a dictionary (JS = Object)
+
+
 * Study the following basic algorithms on Udemy or other platforms and be able to explain them.
     * What is binary search? Explain why the time complexity of binary search is $O(\log n)$.
+    A binary search is an efficient way to find a target within an assorted array. In this algorithm, the array is split in half. The half containing the target will be split again. This will repeat until the target is found.
+
     * Explain the difference between LinkedList and Array.
+    LinkedList:
+Stored dynamically (no index)
+
+Append O(1)
+Pop O(n)
+Prepend O(1) = more efficient than an Array
+Pop First O(1) = more efficient than an Array
+Insert O(n)
+Remove O(n)
+Lookup by Index O(n)
+Lookup by Value O(n)
+        
+
+    Array(List):
+Fixed positioned (index can be used)
+
+Append O(1)
+Pop O(1) = more efficient than a LinkedList
+Prepend O(n)
+Pop First O(n)
+Insert O(n)
+Remove O(n)
+Lookup by Index O(1) = more efficient than a LinkedList
+Lookup by Value O(n)
+
     * Explain the hash table and estimate the time complexity.
     * Explain graph search algorithms and explain the difference between BFS (Breadth First Search) and DFS (Depth First Search).
 
