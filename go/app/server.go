@@ -264,29 +264,6 @@ type GetItemByIdResponse struct {
 	ImageName string `json:"image_name"`
 }
 
-func decodeItemsFromFile(fileName string) ([]Item, error) {
-	// open json file
-	jsonFile, err := os.Open(fileName)
-	if err != nil {
-		slog.Error("failed to open jsonFile: ", "error", err)
-		return nil, err
-	}
-	defer jsonFile.Close()
-	
-	// read json file as bytes
-	bytes, _ := io.ReadAll(jsonFile)
-	
-	// decode bytes to map
-	var decodeData map[string][]Item
-	json.Unmarshal(bytes, &decodeData)
-
-	var items []Item
-	for _, v := range decodeData {
-		items = append(items, v...)
-	}
-	return items, nil
-}
-
 func (s *Handlers) GetItemById(w http.ResponseWriter, r *http.Request) {
 	// get itemId from URL
 	itemIdStr := r.PathValue("id")
