@@ -90,7 +90,7 @@ type AddItemResponse struct {
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	req := &AddItemRequest{
 		Name: r.FormValue("name"),
-		Category: r.FormValue("category")// STEP 4-2: add a category field
+		Category: r.FormValue("category") // STEP 4-2: add a category field
 	}
 
 	// STEP 4-4: add an image field
@@ -101,7 +101,7 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	}
          // STEP 4-2: validate the category field
 	if req.Category == "" {
-		return nil, erroes.New("category is requried")
+		return nil, errors.New("category is requried")
 	} 
 	// STEP 4-4: validate the image field
 	return req, nil
@@ -135,6 +135,9 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	slog.Info(message)
 
 	// STEP 4-2: add an implementation to store an item
+	message = fmt.Sprintf("item received: %s", item.Category)
+	slog.Info(message)
+	
 	err = s.itemRepo.Insert(ctx, item)
 	if err != nil {
 		slog.Error("failed to store item: ", "error", err)
