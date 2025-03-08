@@ -32,6 +32,7 @@ type ItemRepository interface {
 	GetItems(ctx context.Context) ([]Item, error)
 	Insert(ctx context.Context, item *Item) error
 	GetFileName() string
+	GetItemByKeyword(keyword string) ([]Item, error)
 }
 
 // itemRepository is an implementation of ItemRepository
@@ -130,4 +131,42 @@ func StoreImage(fileName string, image []byte) error {
 	}
 
 	return nil
+}
+
+func (i *itemRepository) GetItemByKeyword(keyword string) ([]Item, error) {
+	// open db
+	db, err := sql.Open("sqlite3", "./db/mercari.sqlite3")
+	if err != nil {
+		slog.Error("failed to open database: ", "error", err)
+		return nil, err
+	}
+	defer db.Close()
+
+	// read items from db
+	rows, err := db.Query("SELECT * FROM items WHERE name = ?", keyword)
+	if err != nil {
+		slog.Error("failed to prepare statement: ", "error", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []Item
+	for rows.Next() {
+		var id int
+		var name string
+		var category string
+		var imageName string
+		err = rows.Scan(&id, &name, &category, &imageName)
+		if err != nil {
+			slog.Error("failed to scan rows: ", "error", err)
+			return nil, err
+		}
+		items = append(items, Item{ID: id, Name: name, Category: category, ImageName: imageName})
+	}
+	err = rows.Err()
+	if err != nil {
+		slog.Error("failed to scan rows: ", "error", err)
+		return nil, err
+	}
+	return items, nil
 }

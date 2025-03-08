@@ -49,6 +49,7 @@ func (s Server) Run() int {
 	mux.HandleFunc("POST /items", h.AddItem)
 	mux.HandleFunc("GET /items/{id}", h.GetItemById)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
+	mux.HandleFunc("GET /search", h.SearchItemByName)
 
 	// start the server
 	slog.Info("http server started on", "port", s.Port)
@@ -371,4 +372,22 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 	}
 
 	return imgPath, nil
+}
+
+func (s *Handlers) SearchItemByName(w http.ResponseWriter, r *http.Request) {
+	// get query parameter
+	keyword := r.FormValue("keyword")
+	items, err := s.itemRepo.GetItemByKeyword(keyword)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// make response
+	resp := GetItemsResponse{Items: items}
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
