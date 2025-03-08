@@ -296,25 +296,18 @@ func (s *Handlers) GetItemById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// open json file and decode
-	fileName := s.itemRepo.GetFileName()
-	items, err := decodeItemsFromFile(fileName)
+	// get item from db
+	item, err := s.itemRepo.GetItemById(itemId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// check itemId is valid
-	if len(items) < itemId {
-		http.Error(w, "invalid request", http.StatusBadRequest)
-		return
-	}
-	
-	// find item by itemId
+	// make response
 	resp := GetItemByIdResponse{
-		Name: items[itemId - 1].Name,
-		Category: items[itemId - 1].Category,
-		ImageName: items[itemId - 1].ImageName,
+		Name: item.Name,
+		Category: item.Category,
+		ImageName: item.ImageName,
 	}
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {

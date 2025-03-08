@@ -33,6 +33,7 @@ type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 	GetFileName() string
 	GetItemByKeyword(keyword string) ([]Item, error)
+	GetItemById(id int) (Item, error)
 }
 
 // itemRepository is an implementation of ItemRepository
@@ -99,8 +100,32 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	}
 	defer db.Close()
 
+	// search category and if not found, insert category
+	// to obtain category_id
+	row := db.QueryRow("SELECT id FROM categories WHERE name = ?", item.Category)
+	var category_id int
+	err = row.Scan(&category_id)
+	if err == sql.ErrNoRows { // category not found
+		_, execErr := db.Exec("INSERT INTO categories (name) VALUES (?)", item.Category)
+		if execErr != nil {
+			slog.Error("failed to insert category: ", "error", execErr)
+			return execErr
+		}
+
+		row = db.QueryRow("SELECT id FROM categories WHERE name = ?", item.Category)
+		err = row.Scan(&category_id)
+		if err != nil {
+			slog.Error("failed to scan row: ", "error", err)
+			return err
+		}
+
+	} else if err != nil { // other error
+		slog.Error("failed to scan row: ", "error", err)
+		return err
+	}
+
 	// insert item
-	_, err = db.Exec("INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)", item.Name, item.Category, item.ImageName)
+	_, err = db.Exec("INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)", item.Name, category_id, item.ImageName)
 	if err != nil {
 		slog.Error("failed to insert item: ", "error", err)
 		return err
@@ -171,4 +196,26 @@ func (i *itemRepository) GetItemByKeyword(keyword string) ([]Item, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+func (i *itemRepository) GetItemById(id int) (Item, error) {
+	// open db
+	db, err := sql.Open("sqlite3", "./db/mercari.sqlite3")
+	if err != nil {
+		slog.Error("failed to open database: ", "error", err)
+		return Item{}, err
+	}
+	defer db.Close()
+
+	// read items from db
+	row := db.QueryRow("SELECT * FROM items inner join categories on items.category_id = categories.id  WHERE items.id = ?", id)
+	var item Item
+	var category_id int
+	var category_table_id int
+	err = row.Scan(&item.ID, &item.Name, &category_id, &item.ImageName, &category_table_id, &item.Category)
+	if err != nil {
+		slog.Error("failed to scan row: ", "error", err)
+		return Item{}, err
+	}
+	return item, nil
 }
