@@ -1,7 +1,7 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException, Depends, File, UploadFile
+from fastapi import FastAPI, Form, HTTPException, Depends, File, UploadFile, File, Query
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
@@ -9,6 +9,8 @@ from pydantic import BaseModel
 from contextlib import asynccontextmanager
 import json
 import hashlib
+import sqlite3
+from typing import Dict, List
 
 
 # Define the path to the images & sqlite3 database
@@ -20,17 +22,27 @@ def get_db():
     if not db.exists():
         yield
 
-    conn = sqlite3.connect(db)
+    conn = sqlite3.connect(db, check_same_thread=False)
     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
     try:
-        yield conn
+        yield conn  
     finally:
         conn.close()
 
 
 # STEP 5-1: set up the database connection
 def setup_database():
-    pass
+    #pass
+    conn = sqlite3.connect(db)
+    cursor = conn.cursor() 
+    #drop table if it exist
+    cursor.execute("DROP TABLE IF EXISTS items")
+    sql_file = pathlib.Path(__file__).parent.resolve() / "db" / "items.sql"
+    print(f"Trying to open SQL file: {sql_file}")
+    with open(sql_file, "r") as f:
+        cursor.executescript(f.read())
+    conn.commit()
+    conn.close()
 
 
 @asynccontextmanager
@@ -42,7 +54,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 logger = logging.getLogger("uvicorn")
-logger.level = logging.INFO
+logger.level = logging.DEBUG #step 4-6
 images = pathlib.Path(__file__).parent.resolve() / "images"
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
@@ -56,12 +68,6 @@ app.add_middleware(
 
 class HelloResponse(BaseModel):
     message: str
-
-
-@app.get("/", response_model=HelloResponse)
-def hello():
-    return HelloResponse(**{"message": "Hello, world!"})
-
 
 class AddItemResponse(BaseModel):
     message: str
@@ -77,50 +83,69 @@ async def add_item(
 ):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
-
-   # insert_item(Item(name=name))
-   # return AddItemResponse(**{"message": f"item received: {name}"})
-
     if not category:
         raise HTTPException(status_code=400, detail="category is required")
     if not image:
         raise HTTPException(status_code=400, detail="category is required")
     content = await image.read()
     hashedimg = hashlib.sha256(content).hexdigest()
-    image_path = images/ f"{hashedimg}.png"
+    image_path = images/ f"{hashedimg}.jpg"
     with open(image_path, "wb") as a:
         a.write(content)
 
-    insert_item(Item(name=name, category=category, image=hashedimg + ".jpg"))
-    return AddItemResponse(**{"message": f"item received: {name}"}) 
+    insert_item_db(Item(name=name, category=category, image=hashedimg), db)
+    return AddItemResponse(**{"message": f"item received: {name}"})
 
 
 # STEP 4-3: return items for GET /items .
 @app.get("/items")
-def get_items():
-    if not os.path.exists("items.json"):
-        return []
+def get_items(db: sqlite3.Connection = Depends(get_db)):
+    return get_items_from_database(db) ##
 
-    with open("items.json", "r") as f:
-        items = json.load(f)
 
-    return items
+#step 5:1 GET /items
+def get_items_from_database(db: sqlite3.Connection)-> Dict[str, List[Dict[str, str]]]:
+    cursor = db.cursor()  ##
+    # Query the Items table
+    query = """
+    SELECT items.name, items.category, items.image_name 
+    FROM items
+"""
+
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
+    result = {"items": items_list}
+    cursor.close()
+
+    return result
+
+def get_items_from_database_by_id(id: int, db: sqlite3.Connection) -> Dict[str, List[Dict[str,str]]]:
+    cursor = db.cursor()
+    # Query the Items table
+    query = """" 
+    "    SELECT items.name, items.name, image_name 
+    FROM items
+    WHERE items.id = ?
+    """
+    cursor.execute(query, (id,))
+    rows = cursor.fetchall()
+    items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
+    result = {"items": items_list}
+    cursor.close()
+
+    return result
 
 # STEP 4-5 #new
 @app.get("/items/{item_id}")
-def get_item_by_id(item_id: int):
-    #item_idint = int(item_id)
-    if not os.path.exists("items.json"):
-        return []
+def get_item_by_id(item_id: int, db: sqlite3.Connection = Depends(get_db)):
+    all_items = get_items_from_database(db)["items"]  # Get all items
+    
+    if item_id <= 0 or item_id > len(all_items):  # Check if ID is valid
+        raise HTTPException(status_code=404, detail="Item not found")
 
-    with open("items.json", "r") as f:
-        alldata = json.load(f)
-    ###added
-    if not isinstance(alldata, list):
-        return {"error":"Invalid data format in items.json"}
+    return all_items[item_id - 1]  # ✅ Adjust ID to zero-based index
 
-    item= alldata["items"][item_id -1] 
-    return alldata
 
 # get_image is a handler to return an image for GET /images/{filename} .
 @app.get("/image/{image_name}")
@@ -145,21 +170,12 @@ class Item(BaseModel):
     image: str
 
 
-def insert_item(item: Item):
-    # STEP 4-2: add an implementation to store an item
-   # pass
-    item_dict = {"name": item.name, "category": item.category, "image": item.image}
-
-    if os.path.exists("items.json"):
-        with open("items.json", "r") as f:
-            try:
-                items = json.load(f)
-            except json.JSONDecodeError:
-                items = []
-    else:
-        items = []
-
-    items.append(item_dict)
-
-    with open("items.json", "w") as f:
-        json.dump(items, f, indent=2)
+def insert_item_db(item: Item, db: sqlite3.Connection) -> int:
+    cursor = db.cursor()
+    query = """
+        INSERT INTO items (name, category, image_name) VALUES (?, ?, ?);
+        """
+    cursor.execute(query, (item.name, item.category, item.image))
+    db.commit()
+    cursor.close()
+    return cursor.lastrowid
