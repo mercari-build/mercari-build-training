@@ -162,6 +162,23 @@ async def get_image(image_name: str):
 
     return FileResponse(image)
 
+@app.get("/search")
+def search_keyword(keyword: str = Query(...), db: sqlite3.Connection = Depends(get_db)):
+    cursor = db.cursor()
+    query = """
+    SELECT name, category, image_name 
+    FROM items 
+    WHERE name LIKE ?
+    """
+    #specifying what the query will do upon searching
+
+    pattern = f"%{keyword}%" #search keyword in any part of the item name
+    cursor.execute(query, (pattern,))
+    rows = cursor.fetchall()
+    items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
+    result = {"items": items_list}
+    cursor.close()
+    return result
 
 class Item(BaseModel):
     name: str
@@ -174,8 +191,10 @@ def insert_item_db(item: Item, db: sqlite3.Connection) -> int:
     cursor = db.cursor()
     query = """
         INSERT INTO items (name, category, image_name) VALUES (?, ?, ?);
-        """
+    """
+    print(f"Inserting into DB: {item.name}, {item.category}, {item.image}")  # Debugging
     cursor.execute(query, (item.name, item.category, item.image))
     db.commit()
+    last_id = cursor.lastrowid
     cursor.close()
-    return cursor.lastrowid
+    return last_id
