@@ -43,6 +43,8 @@ func (s Server) Run() int {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", h.Hello)
 	mux.HandleFunc("POST /items", h.AddItem)
+	mux.HandleFunc("GET /items", h.GetItems)  // 4-3 new route
+	mux.HandleFunc("GET /items/{id}", h.GetItem)  // 4-5 new route
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
 	// start the server
@@ -91,6 +93,7 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	req := &AddItemRequest{
 		Name: r.FormValue("name"),
 		Category: r.FormValue("category") // STEP 4-2: add a category field
+		Image: []byte(r.FromValue("image")),
 	}
 
 	// STEP 4-4: add an image field
