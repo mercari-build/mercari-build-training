@@ -35,27 +35,27 @@ In STEP3, after learning about basic algorithms and data structures, you will pr
     LinkedList:
 Stored dynamically (no index)
 
-Append O(1)
-Pop O(n)
-Prepend O(1) = more efficient than an Array
-Pop First O(1) = more efficient than an Array
-Insert O(n)
-Remove O(n)
-Lookup by Index O(n)
-Lookup by Value O(n)
+- Append O(1)
+- Pop O(n)
+- Prepend O(1) = more efficient than an Array
+- Pop First O(1) = more efficient than an Array
+- Insert O(n)
+- Remove O(n)
+- Lookup by Index O(n)
+- Lookup by Value O(n)
         
 
     Array(List):
 Fixed positioned (index can be used)
 
 Append O(1)
-Pop O(1) = more efficient than a LinkedList
-Prepend O(n)
-Pop First O(n)
+- Pop O(1) = more efficient than a LinkedList
+- Prepend O(n)
+- Pop First O(n)
 Insert O(n)
-Remove O(n)
-Lookup by Index O(1) = more efficient than a LinkedList
-Lookup by Value O(n)
+- Remove O(n)
+- Lookup by Index O(1) = more efficient than a LinkedList
+- Lookup by Value O(n)
 
     * Explain the hash table and estimate the time complexity.
     * Explain graph search algorithms and explain the difference between BFS (Breadth First Search) and DFS (Depth First Search).
@@ -64,6 +64,39 @@ Lookup by Value O(n)
 ## Exercises
 ### [Word Pattern](https://leetcode.com/problems/word-pattern/description/)
 Given a pattern `p` consisting of lowercase English letters and a string `s` separated by spaces, determine if `s` follows the pattern `p`. For example, if `p = "abba"` and `s = "dog cat cat dog"`, then `s` follows the pattern `p`, but if `p="abba"` and `s="dog cat cat fish"`, then `s` does not follow `p`.
+sudo_code:
+##split s
+##create dictionary {}
+##if p is new key=p.value, value=s.value, else compare
+##if s.value != {p.value:value}, return false
+##return true
+
+code:
+class Solution(object):
+    def wordPattern(self, pattern, s):
+        word = s.split(" ")
+
+##added the length check after failing submission
+         if len(pattern) != len(words):
+            return False
+
+        pattern_dictionary = {}
+        word_dictionary = {}
+
+        for i in range(len(pattern)):
+            char = pattern[i]
+
+            if char in pattern_dictionary:
+                if pattern_dictionary[char]!=word[i]:
+                    return False
+            else:
+                if word[i] in word_dictionary:
+                    return False
+                else:
+                    pattern_dictionary[char] = word[i]
+                    word_dictionary[word[i]] = char
+        
+        return True
 
 **:beginner: Checkpoint**
 #### Step1: Think about how to split the string `s` by spaces.
@@ -87,6 +120,28 @@ Given a pattern `p` consisting of lowercase English letters and a string `s` sep
 
 ### [Find All Numbers Disappeared in an Array](https://leetcode.com/problems/find-all-numbers-disappeared-in-an-array/description/)
 Given an array of n integers where each value is in the range [1, n], return all integers in the range [1, n] that do not appear in the array.
+sudo_code:
+##determine length
+##create empty list []
+##iterate through range of the sorted list to find missing num
+##push missing num to []
+##return list
+
+class Solution(object):
+    def findDisappearedNumbers(self, nums):
+        results = [] 
+
+##added abs(i) - 1 to make nums negative (method to keep track of marked nums) 
+        for i in nums:
+            pos = abs(i) - 1
+            if nums[pos] > 0:
+                nums[pos] *= -1
+
+        for i in range(len(nums)):
+            if nums[i] > 0:
+                results.append(i + 1)
+
+        return results
 
 **:beginner: Checkpoint**
 
