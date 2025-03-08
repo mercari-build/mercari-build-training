@@ -40,7 +40,7 @@ STEP4 で名前とカテゴリのみで出品をする API を作った人は、
 
 ## (Optional) 課題 2. 各アイテムの画像を表示する
 
-この画面では、商品の画像が Build@Mercari のロゴになっています。`http://localhost:9000/image/<item_id>.jpg`を画像として指定し、一覧画面でそれぞれの画像を表示してみましょう。
+この画面では、商品の画像が Build@Mercari のロゴになっています。`http://localhost:9000/images/<item_id>.jpg`を画像として指定し、一覧画面でそれぞれの画像を表示してみましょう。
 
 ## (Optional) 課題 3. HTML と CSS を使ってスタイルを変更する
 
