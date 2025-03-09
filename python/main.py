@@ -1,51 +1,36 @@
 import os
 import logging
 import pathlib
-import hashlib
 from fastapi import FastAPI, Form, HTTPException, Depends, File, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-import sqlite3
-from pydantic import BaseModel
 from contextlib import asynccontextmanager
-import json
-from pathlib import Path
-from typing import List
+from sqlalchemy.orm import Session
 
-
-# Define the path to the images & sqlite3 database
-images = pathlib.Path(__file__).parent.resolve() / "images"
-db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
+from python import crud, models, schemas
+from python.database import SessionLocal, engine
 
 
 def get_db():
-    if not db.exists():
-        yield
-
-    conn = sqlite3.connect(db)
-    conn.row_factory = sqlite3.Row  # Return rows as dictionaries
+    db = SessionLocal()
     try:
-        yield conn
+        yield db
     finally:
-        conn.close()
+        db.close()
 
 
 # STEP 5-1: set up the database connection
-def setup_database():
-    pass
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    setup_database()
     yield
-
 
 app = FastAPI(lifespan=lifespan)
 
+models.Base.metadata.create_all(bind=engine)
+
 logger = logging.getLogger("uvicorn")
 logger.level = logging.DEBUG
-images = pathlib.Path(__file__).parent.resolve() / "images"
+
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
     CORSMiddleware,
@@ -55,135 +40,64 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class Item(BaseModel):
-    name: str
-    category: str
-    image_name: str
 
 
-class HelloResponse(BaseModel):
-    message: str
+#Read
+@app.get("/", response_model=schemas.HelloResponse)
+async def hello():
+    return schemas.HelloResponse(**{"message": "Hello, world!"})
 
-class AddItemResponse(BaseModel):
-    message: str
+@app.get("/items", response_model=schemas.GetItemsResponse)
+async def get_items(db: Session = Depends(get_db)):
+    items = crud.read_items(db)
+    return schemas.GetItemsResponse(items=items)
 
-class GetItemsResponse(BaseModel):
-    items: List[Item]
+# Return product details
+@app.get("/items/{item_id}", response_model=schemas.GetItemResponse)
+def get_item(item_id: int, db: Session = Depends(get_db)):
+    item = crud.read_item(db, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return schemas.GetItemResponse(item=item)
 
-class GetItemResponse(BaseModel):
-    item: Item
+# return an image (GET /images/{filename})
+@app.get("/image/{image_name}")
+def get_image(image_name: str):
+    # Create image path
+    images = pathlib.Path(__file__).parent.resolve() / "images"
+    image_path = images / image_name
+
+    if not image_name.endswith(".jpg"):
+        raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
+
+    if not image_path.exists():
+        logger.debug(f"Image not found: {image_path}")
+        image_path = images / "default.jpg"
+
+    return FileResponse(image_path)
 
 
-@app.get("/", response_model=HelloResponse)
-def hello():
-    return HelloResponse(**{"message": "Hello, world!"})
 
-
-# add_item is a handler to add a new item for POST /items .
-@app.post("/items", response_model=AddItemResponse)
+#Create
+# add new item to database(POST /items)
+@app.post("/items", response_model=schemas.AddItemResponse)
 async def add_item(
     name: str = Form(...),
     category: str = Form(...),
     image: UploadFile = File(...),
-    db: sqlite3.Connection = Depends(get_db),
+    db: Session = Depends(get_db),
 ):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
     if not category:
         raise HTTPException(status_code=400, detail="category is required")
     
-    image_name = await upload_image(image)
-
-    # insert items to items.json
-    insert_item(Item(name=name, category=category, image_name=image_name))
+    try:
+        image_name = await crud.upload_image(image)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")
     
-    return AddItemResponse(**{"message": f"item received: {name}"})
+    item = schemas.Item(name=name, category=category, image_name=image_name)
+    created_item = crud.create_item(db=db, item=item)
 
-
-# STEP 4-3: Retrieve product list
-@app.get("/items", response_model=GetItemsResponse)
-def get_items():
-    # if no json data
-    if not ITEMS_FILE_PATH.exists():
-        return GetItemsResponse(items=[])
-    
-    with open(ITEMS_FILE_PATH, "r") as f:
-        data = json.load(f)
-    
-    items = []
-    for item in data["items"]:
-        items.append(item)
-    
-    return GetItemsResponse(items=items)
-
-#STEP 4-5: Return product details
-@app.get("/items/{item_id}", response_model=GetItemResponse)
-def get_item(item_id: int):
-    # if no json data
-    if not ITEMS_FILE_PATH.exists():
-        raise HTTPException(status_code=404, detail="item is not found")
-    
-    with open(ITEMS_FILE_PATH, "r") as f:
-        data = json.load(f)
-
-    # check if item_id exists
-    if item_id > len(data["items"]) or item_id <= 0:
-        raise HTTPException(status_code=404, detail="Item not found")
-
-    # get item with item_id 
-    item = data["items"][item_id - 1]
-    
-    return GetItemResponse(item=item)
-    
-
-# get_image is a handler to return an image for GET /images/{filename} .
-@app.get("/image/{image_name}")
-async def get_image(image_name):
-    # Create image path
-    image = images / image_name
-
-    if not image_name.endswith(".jpg"):
-        raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
-
-    if not image.exists():
-        logger.debug(f"Image not found: {image}")
-        image = images / "default.jpg"
-
-    return FileResponse(image)
-
-
-# items.json's pash
-ITEMS_FILE_PATH = Path("items.json")
-
-def insert_item(item: Item):
-    # STEP 4-2: add an implementation to store an item
-    # if no json data
-    if not ITEMS_FILE_PATH.exists():
-        with open(ITEMS_FILE_PATH, "w") as f:
-            json.dump({"items": []}, f)
-
-    # open items.json
-    with open(ITEMS_FILE_PATH, "r", encoding="utf-8") as f:
-        data = json.load(f)  
-
-    # add new item
-    new_item = item.model_dump()
-    data["items"].append(new_item)
-
-    # write to items.json
-    with open(ITEMS_FILE_PATH, "w") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
-async def upload_image(image):
-    #load image
-    image_contents = await image.read() 
-
-    # Hashing images with SHA-256
-    sha256 = hashlib.sha256(image_contents).hexdigest()
-    image_name = f"{sha256}.jpg"  
-
-    # Save images to images directory
-    image_path = images / image_name
-    with open(image_path, "wb") as f:
-        f.write(image_contents)
-    return image_name
+    return schemas.AddItemResponse(**{"message": f"item received: {created_item.name}"})
