@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -110,6 +111,16 @@ func TestHelloHandler(t *testing.T) {
 	}
 
 	// STEP 6-2: confirm response body
+	expectedRes := HelloResponse{Message: want.body["message"]}
+
+	var response HelloResponse
+	if err := json.NewDecoder(res.Body).Decode(&response); err != nil {
+		t.Errorf("failed to decode response: %v", err)
+	}
+
+	if diff := cmp.Diff(expectedRes, response); diff != "" {
+		t.Errorf("unexpected response (-want +got):\n%s", diff)
+	}
 }
 
 func TestAddItem(t *testing.T) {
