@@ -27,7 +27,7 @@ type Item struct {
 //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
-	Get(ctx context.Context)([]Item, error)
+	FindAll(ctx context.Context)([]Item, error)
 	FindID(ctx context.Context, id int)(*Item, error)
 }
 
@@ -71,7 +71,7 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	return nil
 }
 
-func (i *itemRepository) Get(ctx context.Context) ([]Item, error) {
+func (i *itemRepository) FindAll(ctx context.Context) ([]Item, error) {
 	data, err := os.ReadFile(i.fileName)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -123,7 +123,7 @@ func StoreImage(fileName string, image []byte) error {
 
 // step 4-5 to findid
 func (i *itemRepository) FindID(ctx context.Context, id int)(*Item, error) {
-	items, err := i.Get(ctx)
+	items, err := i.FindAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("Error retriving items: %w", err)
 	}
@@ -133,6 +133,6 @@ func (i *itemRepository) FindID(ctx context.Context, id int)(*Item, error) {
 		return nil, fmt.Errorf("Item ID does not exist: %w", err)
 	}
 
-	id--
+	//id--
 	return &items[id], nil
 }
