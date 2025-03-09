@@ -15,6 +15,10 @@ def read_item(db: Session, item_id: int):
     item = db.query(models.Items.name, models.Items.category, models.Items.image_name).filter(models.Items.id == item_id).first()
     return schemas.Item(name=item[0], category=item[1], image_name=item[2])
 
+def search_item(db: Session, keyword: str):
+    items = db.query(models.Items.name, models.Items.category).filter(models.Items.name.ilike(f"%{keyword}%")).all()
+    return [schemas.SearchItem(name=item[0], category=item[1]) for item in items]
+
 def create_item(db: Session, item: schemas.Item):
     db_item = models.Items(
         name=item.name,\

@@ -60,6 +60,14 @@ def get_item(item_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Item not found")
     return schemas.GetItemResponse(item=item)
 
+# Search product
+@app.get("/search", response_model=schemas.SearchItemsResponse)
+def search_item(keyword: str, db: Session = Depends(get_db)):
+    items = crud.search_item(db, keyword)
+    if not items:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return schemas.SearchItemsResponse(items=items)
+
 # return an image (GET /images/{filename})
 @app.get("/image/{image_name}")
 def get_image(image_name: str):

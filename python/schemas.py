@@ -22,3 +22,12 @@ class GetItemsResponse(BaseModel):
 
 class GetItemResponse(BaseModel):
     item: Item
+    
+
+# Search result model
+class SearchItem(BaseModel):
+    name: str
+    category: str
+
+class SearchItemsResponse(BaseModel):
+    items: List[SearchItem]
