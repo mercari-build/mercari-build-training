@@ -13,9 +13,10 @@ import (
 var errImageNotFound = errors.New("image not found")
 
 type Item struct {
-	ID   	 int    `db:"id" json:"-"`
-	Name 	 string `db:"name" json:"name"`
-	Category string `db:"category" json:"category"`
+	ID   	  int    `db:"id" json:"-"`
+	Name 	  string `db:"name" json:"name"`
+	Category  string `db:"category" json:"category"`
+	ImageName string `db:"image_name" json:"image_name"`
 }
 
 // Please run `go generate ./...` to generate the mock implementation
@@ -91,8 +92,11 @@ func (i *itemRepository) List(ctx context.Context) ([]*Item, error) {
 
 // StoreImage stores an image and returns an error if any.
 // This package doesn't have a related interface for simplicity.
+// 画像を保存する処理
 func StoreImage(fileName string, image []byte) error {
 	// STEP 4-4: add an implementation to store an image
-
+	if err := os.WriteFile(fileName, image, 0644); err != nil {
+		return fmt.Errorf("failed to write image file: %w", err)
+	}
 	return nil
 }
