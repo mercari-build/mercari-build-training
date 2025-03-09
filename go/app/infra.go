@@ -10,8 +10,10 @@ import (
 	// _ "github.com/mattn/go-sqlite3"
 )
 
-var errImageNotFound = errors.New("image not found")
-
+var (
+	errImageNotFound = errors.New("image not found")
+	errItemNotFound = errors.New("item not found")
+)
 type Item struct {
 	ID   	  int    `db:"id" json:"-"`
 	Name 	  string `db:"name" json:"name"`
@@ -26,6 +28,7 @@ type Item struct {
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 	List(ctx context.Context) ([]*Item, error)
+	Select(ctx context.Context, id int) (*Item,error)  // リポジトリのinterfaceにselectを追加
 }
 
 // itemRepository is an implementation of ItemRepository
@@ -88,6 +91,27 @@ func (i *itemRepository) List(ctx context.Context) ([]*Item, error) {
 	}
 
 	return data.Items, nil
+}
+
+// selectの実装
+func (i *itemRepository) Select(ctx context.Context, id int) (*Item, error) {
+	// idが1以上の値以外になる場合はidをNotFoundにする
+	if id <= 0 {
+		return nil, errItemNotFound
+	}
+
+	items, err := i.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// idがデータの量よりも大きかったらエラーを返す
+	if len(items) < id {
+		return nil, errItemNotFound
+	}
+
+	// 全部データを取った後、id-1番目を返す
+	return items[id-1], nil
 }
 
 // StoreImage stores an image and returns an error if any.

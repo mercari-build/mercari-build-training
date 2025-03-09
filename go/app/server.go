@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -48,6 +49,7 @@ func (s Server) Run() int {
 	mux.HandleFunc("GET /", h.Hello)  // GET /が呼ばれたらHelloを呼び出す
 	mux.HandleFunc("GET /items", h.GetItems)  // 一覧を返すエンドポイント
 	mux.HandleFunc("POST /items", h.AddItem)  // POST /itemsが呼ばれたらAddItemを呼び出す
+	mux.HandleFunc("GET /items/{id}", h.GetItem)  // 商品を取得する(パスに含まれるデータを取得するにはこの形がいい)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
 	// start the server
@@ -98,6 +100,44 @@ func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
 
 	resp := GetItemsResponse{Items:items}  //リポジトリからかえってきたレスポンスを形式の沿って帰す
 	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// 
+func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// パスパラメーターからIDを引っ張ってくる
+	sid := r.PathValue("id")
+	if sid == "" {
+		http.Error(w,"id is required", http.StatusBadRequest)
+		return
+	}
+	// 文字列を数値に変換する
+	id, err := strconv.Atoi(sid)
+	if err != nil {
+		http.Error(w, "id must be an integer", http.StatusBadRequest)
+		return
+	}
+
+	// リポジトリからIdを使って商品をselectする
+	// Listに対してselectを作る
+	item, err := s.itemRepo.Select(ctx, id)
+	if err != nil {
+		if errors.Is(err, errItemNotFound) {
+			http.Error(w, "Item not found", http.StatusNotFound)
+			return
+		}
+		slog.Error("failed to get item: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// selectした商品を返す
+	err = json.NewEncoder(w).Encode(item)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
