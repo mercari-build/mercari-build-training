@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
-	"go.uber.org/mock/gomock"
 )
 
 func TestParseAddItemRequest(t *testing.T) {
@@ -32,7 +32,7 @@ func TestParseAddItemRequest(t *testing.T) {
 			wants: wants{
 				req: &AddItemRequest{
 					Name: "", // fill here
-					// Category: "", // fill here
+				        Category: "", // fill here
 				},
 				err: false,
 			},
