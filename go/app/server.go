@@ -43,11 +43,11 @@ func (s Server) Run() int {
 
 	// set up routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", h.Hello)
-	mux.HandleFunc("/items", h.AddItem)  //POST /items
-	mux.HandleFunc("/items", h.GetItems)  // 4-3 new route GET /itmes
-	mux.HandleFunc("/items/{id}", h.GetItemID)  // 4-5 new route GET/items{id}
-	mux.HandleFunc("/images/{filename}", h.GetImage)  // GET/images/{filename}
+	
+	mux.HandleFunc("POST /items", h.AddItem)  //POST /items
+	mux.HandleFunc("GET /items", h.GetItems)  // 4-3 new route GET /itmes
+	mux.HandleFunc("GET /items/{id}", h.GetItemID)  // 4-5 new route GET/items{id}
+	mux.HandleFunc("GET /images/{filename}", h.GetImage)  // GET/images/{filename}
 
 	// start the server
 	slog.Info("http server started on", "port", s.Port)
@@ -94,18 +94,18 @@ type AddItemResponse struct {
 func parseAddItemRequest(r *http.Request) (*AddItemRequest,[]byte, error) {
 	req := &AddItemRequest{
 		Name: r.FormValue("name"),
-		Category: r.FormValue("category") // STEP 4-2: add a category field
+		Category: r.FormValue("category"),  // STEP 4-2: add a category field
 
 	}
 
 	// STEP 4-4: add an image field
 	 err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Error parsing form data: %w", err)
+		return nil, fmt.Errorf("Error parsing form data: %w", err)
 	}
 	file, _, err := r.FormFile("image")
 	if err != nil {
-  		return nil, nil, fmt.Errorf("Could not form image file: %w", err)
+  		return nil, fmt.Errorf("Could not form image file: %w", err)
 	}
 	var data []byte
 	if file != nil {
@@ -127,7 +127,7 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest,[]byte, error) {
 	} 
 	// STEP 4-4: validate the image field
 	if len(req.Image) == 0 {
-		return nil, nil, errors.New("image is required")
+		return nil, errors.New("image is required")
 	}
 	return req, nil
 }
@@ -138,6 +138,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 
 	req, err := parseAddItemRequest(r)
 	if err != nil {
+		slog.Error("Request parsing error", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -178,10 +179,10 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
+func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	items, err := s.itemRepo.Get(ctx)
+	items, err := s.itemRepo.FindAll(ctx)
 	
 	if err != nil {
 		slog.Error("Error retrieving items", "error", err)
@@ -232,7 +233,7 @@ func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
 
 	// - return the image file path
 
-	return filename. nil
+	return filename, nil
 }
 
 type GetImageRequest struct {
@@ -303,7 +304,7 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 
 	return imgPath, nil
 }
-
+// STEP4-5
 func (s *Handlers) GetItemID(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
@@ -317,17 +318,22 @@ func (s *Handlers) GetItemID(w http.ResponseWriter, r *http.Request) {
 	var idNum int
 	_, err := fmt.Sscanf(id, "%i", &idNum)
 	if err != nil {
+		slog.Error("Invaild ID Format", "error", err)
 		http.Error(w, "ID provided is in incorrect format", http.StatusBadRequest)
 		return
 	}
 
 	_, err = s.itemRepo.FindID(ctx, idNum)
 	if err != nil {
-		fmt.Errorf("Error retrieving item by id: %w", w)
+		slog.Error("Failed to retrieve item","id", idNum, "error", err) 
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(item)
 	if err != nil {
+		slog.Error("Could not encode response", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
