@@ -16,7 +16,8 @@ from typing import Dict, List
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
 db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
-
+#when executing in cmd, go to path until python folder 
+#
 
 def get_db():
     if not db.exists():
@@ -32,11 +33,8 @@ def get_db():
 
 # STEP 5-1: set up the database connection
 def setup_database():
-    #pass
     conn = sqlite3.connect(db)
     cursor = conn.cursor() 
-    #drop table if it exist
-    cursor.execute("DROP TABLE IF EXISTS items")
     sql_file = pathlib.Path(__file__).parent.resolve() / "db" / "items.sql"
     print(f"Trying to open SQL file: {sql_file}")
     with open(sql_file, "r") as f:
@@ -100,18 +98,21 @@ async def add_item(
 # STEP 4-3: return items for GET /items .
 @app.get("/items")
 def get_items(db: sqlite3.Connection = Depends(get_db)):
-    return get_items_from_database(db) ##
+    return get_items_from_database(db) 
 
 
 #step 5:1 GET /items
 def get_items_from_database(db: sqlite3.Connection)-> Dict[str, List[Dict[str, str]]]:
-    cursor = db.cursor()  ##
+    cursor = db.cursor() 
     # Query the Items table
+    # STEP 5-8 change to get category from category table not just id
     query = """
-    SELECT items.name, items.category, items.image_name 
+    SELECT items.name, category.name AS category, items.image_name
     FROM items
+    JOIN category
+    ON category_id = category.id 
 """
-
+##view get items or insert items!!
     cursor.execute(query)
     rows = cursor.fetchall()
     items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
@@ -122,12 +123,15 @@ def get_items_from_database(db: sqlite3.Connection)-> Dict[str, List[Dict[str, s
 
 def get_items_from_database_by_id(id: int, db: sqlite3.Connection) -> Dict[str, List[Dict[str,str]]]:
     cursor = db.cursor()
-    # Query the Items table
+    # Query the Items table, modify for STEP5-8
     query = """" 
-    "    SELECT items.name, items.name, image_name 
+    "    SELECT items.name, category.name AS category, image_name 
     FROM items
+    JOIN category
+    ON category_id = category.id
     WHERE items.id = ?
     """
+
     cursor.execute(query, (id,))
     rows = cursor.fetchall()
     items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
@@ -144,7 +148,7 @@ def get_item_by_id(item_id: int, db: sqlite3.Connection = Depends(get_db)):
     if item_id <= 0 or item_id > len(all_items):  # Check if ID is valid
         raise HTTPException(status_code=404, detail="Item not found")
 
-    return all_items[item_id - 1]  # ✅ Adjust ID to zero-based index
+    return all_items[item_id - 1]  # Adjust to zero-based index
 
 
 # get_image is a handler to return an image for GET /images/{filename} .
@@ -166,11 +170,14 @@ async def get_image(image_name: str):
 def search_keyword(keyword: str = Query(...), db: sqlite3.Connection = Depends(get_db)):
     cursor = db.cursor()
     query = """
-    SELECT name, category, image_name 
+    SELECT items.name AS name, category.name AS category, image_name 
     FROM items 
-    WHERE name LIKE ?
+    JOIN category
+    ON category_id = category.id
+    WHERE items.name LIKE ?
     """
-    #specifying what the query will do upon searching
+
+    #specifying what the query will do upon searching, with LIKE
 
     pattern = f"%{keyword}%" #search keyword in any part of the item name
     cursor.execute(query, (pattern,))
@@ -190,11 +197,21 @@ class Item(BaseModel):
 def insert_item_db(item: Item, db: sqlite3.Connection) -> int:
     cursor = db.cursor()
     query = """
-        INSERT INTO items (name, category, image_name) VALUES (?, ?, ?);
+        INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?);
     """
+    #query into category table
+    query_category = "SELECT id FROM category WHERE name = ?"
+    cursor.execute(query_category, (item.category,))
+    rows = cursor.fetchone()
+
+    if rows is None:
+        insert_query_category = "INSERT INTO category (name) VALUES (?)" 
+        cursor.execute(insert_query_category, (item.category,))
+        category_id = cursor.lastrowid
+    else:
+        category_id = rows[0]
+                                             
     print(f"Inserting into DB: {item.name}, {item.category}, {item.image}")  # Debugging
-    cursor.execute(query, (item.name, item.category, item.image))
+    cursor.execute(query, (item.name, category_id, item.image))  # Use category_id here
     db.commit()
-    last_id = cursor.lastrowid
-    cursor.close()
-    return last_id
+   
