@@ -71,7 +71,29 @@ sudo_code:
 ##if s.value != {p.value:value}, return false
 ##return true
 
-code:
+**:beginner: Checkpoint**
+#### Step1: Think about how to split the string `s` by spaces.
+<details>
+<summary>Hint</summary>
+
+* In each language, there should be standard libraries or functions provided for string manipulation.
+* Use web search or ChatGPT, searching for "split string by spaces" or similar queries.
+</details>
+
+class Solution(object):
+    def wordPattern(self, pattern, s):
+        word = s.split(" ")
+
+#### Step2: Consider how to manage which part of `s` corresponds to each character of the pattern `p`.
+<details>
+<summary>Hint</summary>
+
+* For example, in Example 1, the words in `s` corresponding to each character of `p` are `a => dog`, `b => cat`.
+* To manage such correspondences, using a dictionary or hash table would be beneficial.
+* For instance, in Python, you can manage the words in `s` that correspond to each character of `p` using a `dict`.
+* Also use web search or ChatGPT, looking up "Python dictionary" or similar queries.
+</details>
+
 class Solution(object):
     def wordPattern(self, pattern, s):
         word = s.split(" ")
@@ -98,25 +120,6 @@ class Solution(object):
         
         return True
 
-**:beginner: Checkpoint**
-#### Step1: Think about how to split the string `s` by spaces.
-<details>
-<summary>Hint</summary>
-
-* In each language, there should be standard libraries or functions provided for string manipulation.
-* Use web search or ChatGPT, searching for "split string by spaces" or similar queries.
-</details>
-
-#### Step2: Consider how to manage which part of `s` corresponds to each character of the pattern `p`.
-<details>
-<summary>Hint</summary>
-
-* For example, in Example 1, the words in `s` corresponding to each character of `p` are `a => dog`, `b => cat`.
-* To manage such correspondences, using a dictionary or hash table would be beneficial.
-* For instance, in Python, you can manage the words in `s` that correspond to each character of `p` using a `dict`.
-* Also use web search or ChatGPT, looking up "Python dictionary" or similar queries.
-</details>
-
 
 ### [Find All Numbers Disappeared in an Array](https://leetcode.com/problems/find-all-numbers-disappeared-in-an-array/description/)
 Given an array of n integers where each value is in the range [1, n], return all integers in the range [1, n] that do not appear in the array.
@@ -127,11 +130,36 @@ sudo_code:
 ##push missing num to []
 ##return list
 
+**:beginner: Checkpoint**
+
+#### Step1: Solve with O(n^2)-time and O(1)-space
+<details>
+<summary>Hint</summary>
+* You can solve it using a simple double loop, achieving O(n^2)-time and O(1)-space.
+</details>
+class Solution(object):
+    def findDisappearedNumbers(self, nums):
+        allNums = []
+
+        for i in range(len(nums)):
+            if nums[i] > 0:
+                allNums.append(i + 1)
+         
+        return([num for num in allNums if num not in nums])
+##Test succeeded but time limit exceeded for Case 3
+
+#### Step2: Solve with O(n)-time and O(n)-space
+<details>
+<summary>Hint</summary>
+
+* By preparing an array to record whether an element has appeared in the array nums, you can solve it in O(n)-time and O(n)-space.
+</details>
+
 class Solution(object):
     def findDisappearedNumbers(self, nums):
         results = [] 
 
-##added abs(i) - 1 to make nums negative (method to keep track of marked nums) 
+##added abs(i) - 1 to make nums negative (method to keep track of marked nums without increasing space complexity) 
         for i in nums:
             pos = abs(i) - 1
             if nums[pos] > 0:
@@ -142,22 +170,6 @@ class Solution(object):
                 results.append(i + 1)
 
         return results
-
-**:beginner: Checkpoint**
-
-#### Step1: Solve with O(n^2)-time and O(1)-space
-<details>
-<summary>Hint</summary>
-
-* You can solve it using a simple double loop, achieving O(n^2)-time and O(1)-space.
-</details>
-
-#### Step2: Solve with O(n)-time and O(n)-space
-<details>
-<summary>Hint</summary>
-
-* By preparing an array to record whether an element has appeared in the array nums, you can solve it in O(n)-time and O(n)-space.
-</details>
 
 #### Advanced: Solve with O(n)-time and O(1)-space (bonus)
 Is it possible to solve it in O(1)-space, excluding the input and return?
@@ -171,6 +183,10 @@ Is it possible to solve it in O(1)-space, excluding the input and return?
 
 ### [Intersection of Two Linked Lists](https://leetcode.com/problems/intersection-of-two-linked-lists/description)
 Given two singly linked lists, return the node at which the two lists intersect. If the two linked lists have no intersection at all, return `null`.
+##create a node for list1, list2
+##set pointers at the heads of l1, l2
+##iterate though both lists
+##when l1(head) = l2(head) return node
 
 **:beginner: Checkpoint**
 
@@ -180,6 +196,15 @@ Given two singly linked lists, return the node at which the two lists intersect.
 
 * By using a Hash Table to record nodes, you can solve it in O(n)-time and O(n)-space.
 </details>
+
+class Solution(object):
+    def getIntersectionNode(self, headA, headB):
+       listA = headA
+       listB = headB
+       while listA != listB:
+        listA = listA.next if listA else headB
+        listB = listB.next if listB else headA
+       return listA
 
 #### Step2: Solve with O(n)-time and O(1)-space
 Is it possible to solve it in O(1)-space, excluding the input and return?
