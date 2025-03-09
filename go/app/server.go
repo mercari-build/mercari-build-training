@@ -43,11 +43,11 @@ func (s Server) Run() int {
 
 	// set up routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", h.Hello)
-	mux.HandleFunc("POST /items", h.AddItem)
-	mux.HandleFunc("GET /items", h.GetItems)  // 4-3 new route
-	mux.HandleFunc("GET /items/{id}", h.GetItemID)  // 4-5 new route
-	mux.HandleFunc("GET /images/{filename}", h.GetImage)
+	mux.HandleFunc("/", h.Hello)
+	mux.HandleFunc("/items", h.AddItem)  //POST /items
+	mux.HandleFunc("/items", h.GetItems)  // 4-3 new route GET /itmes
+	mux.HandleFunc("/items/{id}", h.GetItemID)  // 4-5 new route GET/items{id}
+	mux.HandleFunc("/images/{filename}", h.GetImage)  // GET/images/{filename}
 
 	// start the server
 	slog.Info("http server started on", "port", s.Port)
@@ -191,6 +191,7 @@ func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
 	
 	rsp := map[string][]Item{"items": items}
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	err = json.NewEncoder(w).Encode(rsp)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
