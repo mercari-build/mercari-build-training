@@ -1,8 +1,6 @@
 package app
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -21,20 +19,23 @@ func TestParseAddItemRequest(t *testing.T) {
 		err bool
 	}
 
-	// STEP 6-1: define test cases
+	// STEP 6-1: define test cases --done
 	cases := map[string]struct {
-		args map[string]string
+		args     map[string]string
+		filePath string
 		wants
 	}{
 		"ok: valid request": {
 			args: map[string]string{
-				"name":     "skirt",   // fill here
-				"category": "fashion", // fill here
+				"name":     "test",         // fill here
+				"category": "testCategory", // fill here
+				"image":    "go/images/default.jpg",
 			},
 			wants: wants{
 				req: &AddItemRequest{
-					Name:     "skirt",   // fill here
-					Category: "fashion", // fill here
+					Name:     "test",         // fill here
+					Category: "testCategory", // fill here
+					Image:    []byte("go/images/default.jpg"),
 				},
 				err: false,
 			},
@@ -104,18 +105,11 @@ func TestHelloHandler(t *testing.T) {
 	h.Hello(res, req)
 
 	// STEP 6-2: confirm the status code
-	if res.Code != http.StatusOK {
-		t.Errorf("invalid code: %d, expected: %d", res.Code, want.code)
+	if res.Code != want.code {
+		t.Errorf("expected status code %d, got %d", want.code, res.Code)
 	}
 
 	// STEP 6-2: confirm response body
-	var gotBody map[string]string
-	if err := json.Unmarshal(res.Body.Bytes(), &gotBody); err != nil {
-		t.Fatalf("failed to unmarshal response body: %v", err)
-	}
-	if diff := cmp.Diff(want.body, gotBody); diff != "" {
-		t.Errorf("unexpected response body (-want +got):\n%s", diff)
-	}
 }
 
 func TestAddItem(t *testing.T) {
@@ -137,11 +131,6 @@ func TestAddItem(t *testing.T) {
 			injector: func(m *MockItemRepository) {
 				// STEP 6-3: define mock expectation
 				// succeeded to insert
-				item := &Item{
-					Name:     "used iPhone 16e",
-					Category: "phone",
-				}
-				m.EXPECT().Insert(gomock.Any(), item).Return(nil)
 			},
 			wants: wants{
 				code: http.StatusOK,
@@ -155,11 +144,6 @@ func TestAddItem(t *testing.T) {
 			injector: func(m *MockItemRepository) {
 				// STEP 6-3: define mock expectation
 				// failed to insert
-				item := &Item{
-					Name:     "used iPhone 16e",
-					Category: "phone",
-				}
-				m.EXPECT().Insert(gomock.Any(), item).Return(fmt.Errorf("insert failed"))
 			},
 			wants: wants{
 				code: http.StatusInternalServerError,

@@ -200,8 +200,13 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message := fmt.Sprintf("item received: %s", item.Name)
-	fmt.Fprint(w, message)
+	resp := AddItemResponse{Message: fmt.Sprintf("item received: %s", item.Name)}
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 // storeImage stores an image and returns the file path and an error if any.
