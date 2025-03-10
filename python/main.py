@@ -172,7 +172,7 @@ def get_items(db: sqlite3.Connection = Depends(get_db)):
            JOIN categories ON items.category_id = categories.id"""
     )
     rows = cursor.fetchall()
-    items_list = [{"name": name, "category": category, "image_name": image_name} for name, category, image_name in rows]
+    items_list = [{"id": id, "name": name, "category": category, "image_name": image_name} for id, name, category, image_name in rows]
     
     
     return {"items": items_list}
@@ -231,15 +231,14 @@ def get_item(item_id: int, db: sqlite3.Connection = Depends(get_db)):
 @app.get("/image/{image_name}")
 async def get_image(image_name: str):
     # Create image path
-    image = images / image_name
+    image = os.path.join(IMAGES_DIR, image_name)
 
     if not image_name.endswith(".jpg"):
         raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
 
-    if not image.exists():
+    if not os.path.exists(image):
         logger.debug(f"Image not found: {image}")
-        image = images / "default.jpg"
+        image = os.path.join(IMAGES_DIR, "default.jpg")
 
 
     return FileResponse(image)
-
