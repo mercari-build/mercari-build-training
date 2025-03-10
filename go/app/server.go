@@ -123,15 +123,14 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 
 	// STEP 4-4: add an image field
 	f, _, err := r.FormFile("image")
-	if err != nil {
-		return nil, errors.New("Failed to read form file")
+	if err == nil && f != nil {
+		defer f.Close()
+		b, err := io.ReadAll(f)
+		if err != nil {
+			return nil, errors.New("Failed to read image data")
+		}
+		req.Image = b
 	}
-	defer f.Close()
-	b, err := io.ReadAll(f)
-	if err != nil {
-		return nil, errors.New("Failed to read image data")
-	}
-	req.Image = b
 
 	// validate the request
 	if req.Name == "" {
@@ -201,19 +200,20 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	// STEP 4-4: uncomment on adding an implementation to store an image
-	fileName, err := s.storeImage(req.Image)
-	if err != nil {
-		slog.Error("failed to store image: ", "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	item := &Item{
+		Name:     req.Name,
+		Category: req.Category,
 	}
 
-	item := &Item{
-		Name:      req.Name,
-		Category:  req.Category,
-		ImageName: fileName,
+	// STEP 4-4: uncomment on adding an implementation to store an image
+	if req.Image != nil {
+		fileName, err := s.storeImage(req.Image)
+		if err != nil {
+			slog.Error("failed to store image: ", "error", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		item.ImageName = fileName
 	}
 
 	// STEP 4-2: add an implementation to store an item
