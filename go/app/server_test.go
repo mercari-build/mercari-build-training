@@ -137,6 +137,7 @@ func TestAddItem(t *testing.T) {
 				"category": "phone",
 			},
 			injector: func(m *MockItemRepository) {
+				m.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
 				// STEP 6-3: define mock expectation
 				// succeeded to insert
 			},
@@ -152,6 +153,7 @@ func TestAddItem(t *testing.T) {
 			injector: func(m *MockItemRepository) {
 				// STEP 6-3: define mock expectation
 				// failed to insert
+
 			},
 			wants: wants{
 				code: http.StatusInternalServerError,
