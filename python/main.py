@@ -36,7 +36,6 @@ def setup_database():
     conn = sqlite3.connect(db)
     cursor = conn.cursor() 
     sql_file = pathlib.Path(__file__).parent.resolve() / "db" / "items.sql"
-    print(f"Trying to open SQL file: {sql_file}")
     with open(sql_file, "r") as f:
         cursor.executescript(f.read())
     conn.commit()
@@ -66,6 +65,11 @@ app.add_middleware(
 
 class HelloResponse(BaseModel):
     message: str
+
+
+@app.get("/", response_model=HelloResponse)
+def hello():
+    return HelloResponse(**{"message": "Hello, world!"})
 
 class AddItemResponse(BaseModel):
     message: str
