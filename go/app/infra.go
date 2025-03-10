@@ -13,6 +13,9 @@ import (
 )
 
 const (
+	// it's flag to switch between JSON and DB implementation.
+	// please set it to false to use JSON implementation.
+	// trainee don't need to implement this flag.
 	useDB = true
 )
 
@@ -43,15 +46,20 @@ type ItemRepository interface {
 
 // itemRepository is an implementation of ItemRepository
 type itemRepository struct {
-	dbPath string
+	db *sql.DB
 	// fileName is the path to the JSON file storing items.
 	fileName string
 }
 
 // NewItemRepository creates a new itemRepository.
 func NewItemRepository() ItemRepository {
+	db, err := sql.Open("sqlite3", "./db/mercari.sqlite3")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// TODO: How should I close db ...
 	return &itemRepository{
-		dbPath:   "./db/mercari.sqlite3",
+		db:       db,
 		fileName: "items.json",
 	}
 }
@@ -62,13 +70,7 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 		return i.insertToFile(ctx, item)
 	}
 
-	db, err := sql.Open("sqlite3", i.dbPath)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	_, err = db.Exec(
+	_, err := i.db.Exec(
 		"INSERT INTO item (name, category, image_name) VALUES (?, ?, ?)",
 		item.Name, item.Category, item.ImageName,
 	)
@@ -87,14 +89,8 @@ func (i *itemRepository) GetItem(ctx context.Context, id int) (*Item, error) {
 		return items[id], nil
 	}
 
-	db, err := sql.Open("sqlite3", i.dbPath)
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
-
 	var item Item
-	err = db.QueryRow("SELECT id, name, category, image_name FROM item WHERE id = ?", id).Scan(&item.ID, &item.Name, &item.Category, &item.ImageName)
+	err := i.db.QueryRow("SELECT id, name, category, image_name FROM item WHERE id = ?", id).Scan(&item.ID, &item.Name, &item.Category, &item.ImageName)
 	if err != nil {
 		return nil, err
 	}
@@ -110,13 +106,7 @@ func (i *itemRepository) SelectAll(ctx context.Context) ([]*Item, error) {
 		return items, err
 	}
 
-	db, err := sql.Open("sqlite3", i.dbPath)
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
-
-	rows, err := db.Query("SELECT id, name, category, image_name FROM item")
+	rows, err := i.db.Query("SELECT id, name, category, image_name FROM item")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -140,13 +130,8 @@ func (i *itemRepository) SearchFromName(ctx context.Context, name string) ([]*It
 	if !useDB {
 		return nil, errors.New("not implemented")
 	}
-	db, err := sql.Open("sqlite3", i.dbPath)
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
 
-	rows, err := db.Query("SELECT id, name, category, image_name FROM item where name like ?", "%"+name+"%")
+	rows, err := i.db.Query("SELECT id, name, category, image_name FROM item where name like ?", "%"+name+"%")
 	if err != nil {
 		log.Fatal(err)
 	}
