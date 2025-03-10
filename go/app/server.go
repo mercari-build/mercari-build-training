@@ -132,6 +132,7 @@ type AddItemRequest struct {
 	Name     string `form:"name"`
 	Category string `form:"category"`
 	Image    []byte `form:"image"`
+	FileName string `form:"image_file_name"`
 }
 
 type AddItemResponse struct {
@@ -144,6 +145,7 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 		Name:     r.FormValue("name"),
 		Category: r.FormValue("category"),
 		Image:    []byte(r.FormValue("image")),
+		FileName: r.FormValue("image_file_name"),
 	}
 
 	// validation
@@ -155,17 +157,6 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 		return nil, errors.New("category is required")
 	}
 
-	if string(req.Image) == "" {
-		return nil, errors.New("image is required")
-	}
-
-	// 拡張子を取得して、jpgのみ受け付ける
-	fName := r.FormValue("image")
-	ex := filepath.Ext(fName)
-	if ex != ".jpg" {
-		return nil, errors.New("invalid image extension. Only accept: jpg")
-	}
-
 	return req, nil
 }
 
@@ -175,15 +166,32 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 
 	req, err := parseAddItemRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	fileName, err := s.storeImage(req.Image)
-	if err != nil {
-		slog.Error("failed to store image: ", "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	fileName := "default.jpg"
+	if len(req.Image) > 0 {
+		fileName, err = s.storeImage(req.Image)
+		if err != nil {
+			slog.Error("failed to store image: ", "error", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		// デフォルト画像をハッシュ化して保存
+		defaultImage, err := os.ReadFile(filepath.Join(s.imgDirPath, "default.jpg"))
+		if err != nil {
+			slog.Error("failed to read default image: ", "error", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fileName, err = s.storeImage(defaultImage)
+		if err != nil {
+			slog.Error("failed to store default image: ", "error", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	item := &Item{
@@ -240,9 +248,7 @@ type GetImageRequest struct {
 func parseGetImageRequest(r *http.Request) (*GetImageRequest, error) {
 	req := &GetImageRequest{
 		FileName: r.PathValue("filename"), // from path parameter
-	}
-
-	// validate the request
+	} // validate the request
 	if req.FileName == "" {
 		return nil, errors.New("filename is required")
 	}

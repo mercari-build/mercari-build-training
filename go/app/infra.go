@@ -39,14 +39,14 @@ type itemRepository struct {
 func NewItemRepository(db *sql.DB) (ItemRepository, error) {
 	// items tableがなかったら作成
 	query := `
-                CREATE TABLE IF NOT EXISTS items (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT NOT NULL,
-                        category_id INTEGER,
-                        image_name TEXT NOT NULL,
-                        FOREIGN KEY (category_id) REFERENCES categories(id)
-                );
-        `
+                                CREATE TABLE IF NOT EXISTS items (
+                                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                                name TEXT NOT NULL,
+                                                category_id INTEGER,
+                                                image_name TEXT NOT NULL,
+                                                FOREIGN KEY (category_id) REFERENCES categories(id)
+                                );
+                        `
 	_, err := db.Exec(query)
 	if err != nil {
 		slog.Error("failed to create items table", "error", err)
@@ -55,11 +55,11 @@ func NewItemRepository(db *sql.DB) (ItemRepository, error) {
 
 	// categories tableが無かったら作成
 	query = `
-                CREATE TABLE IF NOT EXISTS categories (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT NOT NULL UNIQUE
-                );
-        `
+                                CREATE TABLE IF NOT EXISTS categories (
+                                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                                name TEXT NOT NULL UNIQUE
+                                );
+                        `
 	_, err = db.Exec(query)
 	if err != nil {
 		slog.Error("failed to create categories table: ", "error", err)
@@ -104,16 +104,16 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
 	// itemsとcategoriesをいったんinner join
 	query := `
-                SELECT
-                        items.id,
-                        items.name,
-                        categories.name AS category,
-                        items.image_name
-                FROM
-                        items
-                INNER JOIN
-                        categories ON items.category_id = categories.id;
-        `
+                                SELECT
+                                                items.id,
+                                                items.name,
+                                                categories.name AS category,
+                                                items.image_name
+                                FROM
+                                                items
+                                INNER JOIN
+                                                categories ON items.category_id = categories.id;
+                        `
 	rows, err := i.db.Query(query)
 	if err != nil {
 		return nil, err
@@ -169,18 +169,18 @@ func (i *itemRepository) GetItemById(ctx context.Context, item_id string) (Item,
 func (i *itemRepository) SearchItemsByKeyword(ctx context.Context, keyword string) ([]Item, error) {
 	// itemsとcategoriesをいったんinner join
 	query := `
-                SELECT
-                        items.id,
-                        items.name,
-                        categories.name AS category,
-                        items.image_name
-                FROM
-                        items
-                INNER JOIN
-                        categories ON items.category_id = categories.id
-                WHERE
-                        items.name LIKE ?
-        `
+                                SELECT
+                                                items.id,
+                                                items.name,
+                                                categories.name AS category,
+                                                items.image_name
+                                FROM
+                                                items
+                                INNER JOIN
+                                                categories ON items.category_id = categories.id
+                                WHERE
+                                                items.name LIKE ?
+                        `
 
 	// queryの?部分がkeywordで置き換えられる
 	// % はワイルドカード文字: 0文字以上の任意の文字列
