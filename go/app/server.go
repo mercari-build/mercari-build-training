@@ -146,6 +146,10 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 		Image:    []byte(r.FormValue("image")),
 	}
 
+	if len(req.Image) == 0 {
+		req.Image = nil
+	}
+
 	// validation
 	if req.Name == "" {
 		return nil, errors.New("name is required")
@@ -206,7 +210,10 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := AddItemResponse{Message: fmt.Sprintf("item received: %s", item.Name)}
+	message := fmt.Sprintf("item received: %s", item.Name)
+	slog.Info(message)
+
+	resp := AddItemResponse{Message: message}
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(resp)
 	if err != nil {

@@ -1,7 +1,9 @@
 package app
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -20,23 +22,20 @@ func TestParseAddItemRequest(t *testing.T) {
 		err bool
 	}
 
-	// STEP 6-1: define test cases --done
+	// STEP 6-1: define test cases
 	cases := map[string]struct {
-		args     map[string]string
-		filePath string
+		args map[string]string
 		wants
 	}{
 		"ok: valid request": {
 			args: map[string]string{
 				"name":     "test",         // fill here
 				"category": "testCategory", // fill here
-				"image":    "go/images/default.jpg",
 			},
 			wants: wants{
 				req: &AddItemRequest{
 					Name:     "test",         // fill here
 					Category: "testCategory", // fill here
-					Image:    []byte("go/images/default.jpg"),
 				},
 				err: false,
 			},
@@ -128,6 +127,7 @@ func TestAddItem(t *testing.T) {
 
 	type wants struct {
 		code int
+		body string
 	}
 	cases := map[string]struct {
 		args     map[string]string
@@ -140,24 +140,32 @@ func TestAddItem(t *testing.T) {
 				"category": "phone",
 			},
 			injector: func(m *MockItemRepository) {
-				// STEP 6-3: define mock expectation
-				// succeeded to insert
+				m.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(nil)
 			},
 			wants: wants{
 				code: http.StatusOK,
+				body: `{"message":"item received: used iPhone 16e"}` + "\n",
 			},
 		},
 		"ng: failed to insert": {
 			args: map[string]string{
 				"name":     "used iPhone 16e",
 				"category": "phone",
+				// "image":    "dummy_image_data",
 			},
 			injector: func(m *MockItemRepository) {
 				// STEP 6-3: define mock expectation
 				// failed to insert
+				// item := &Item{
+				// 	Name:     "used iPhone 16e",
+				// 	Category: "phone",
+				// 	Image:    "8ca0ae35a9d8e52bd37d19b602f556ed3c075cd4e2fd6ad9c00bf9666baa5874.jpg",
+				// }
+				m.EXPECT().Insert(gomock.Any(), gomock.Any()).Return(errors.New("failed to insert"))
 			},
 			wants: wants{
 				code: http.StatusInternalServerError,
+				body: "failed to insert\n",
 			},
 		},
 	}
@@ -189,10 +197,10 @@ func TestAddItem(t *testing.T) {
 				return
 			}
 
-			for _, v := range tt.args {
-				if !strings.Contains(rr.Body.String(), v) {
-					t.Errorf("response body does not contain %s, got: %s", v, rr.Body.String())
-				}
+			if !bytes.Equal(rr.Body.Bytes(), []byte(tt.wants.body)) {
+				// fmt.Printf("expected: %x\n", []byte(tt.wants.body))
+				// fmt.Printf("got:      %x\n", rr.Body.Bytes())
+				t.Errorf("expected response body %s, got %s", tt.wants.body, rr.Body.String())
 			}
 		})
 	}
