@@ -120,7 +120,7 @@ def get_item_by_id(item_id: int):
         return {"error":"Invalid data format in items.json"}
 
     item= alldata["items"][item_id -1] 
-    return alldata
+    return item
 
 # get_image is a handler to return an image for GET /images/{filename} .
 @app.get("/image/{image_name}")
