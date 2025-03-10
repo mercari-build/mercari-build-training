@@ -87,7 +87,7 @@ async def add_item(
         raise HTTPException(status_code=400, detail="category is required")
     content = await image.read()
     hashedimg = hashlib.sha256(content).hexdigest()
-    image_path = images/ f"{hashedimg}.png"
+    image_path = images/ f"{hashedimg}.jpg"
     with open(image_path, "wb") as a:
         a.write(content)
 
