@@ -35,10 +35,6 @@ type Item struct {
 //
 //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
 type ItemRepository interface {
-	// This is a flag to switch between using a database and using a JSON file.
-	// Trainee doon't need to implement this method.
-	UseDB() bool
-
 	Insert(ctx context.Context, item *Item) error
 	SelectAll(ctx context.Context) ([]*Item, error)
 	GetItem(ctx context.Context, id int) (*Item, error)
@@ -60,13 +56,9 @@ func NewItemRepository() ItemRepository {
 	}
 }
 
-func (i *itemRepository) UseDB() bool {
-	return useDB
-}
-
 // Insert inserts an item into the repository.
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
-	if !i.UseDB() {
+	if !useDB {
 		return i.insertToFile(ctx, item)
 	}
 
@@ -84,7 +76,7 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 }
 
 func (i *itemRepository) GetItem(ctx context.Context, id int) (*Item, error) {
-	if !i.UseDB() {
+	if !useDB {
 		items, err := i.SelectAll(ctx)
 		if err != nil {
 			return nil, err
@@ -113,7 +105,7 @@ func (i *itemRepository) GetItem(ctx context.Context, id int) (*Item, error) {
 func (i *itemRepository) SelectAll(ctx context.Context) ([]*Item, error) {
 	// Added this to leave the code for the JSON implementation.
 
-	if !i.UseDB() {
+	if !useDB {
 		items, err := i.getItemsFromFile(ctx)
 		return items, err
 	}
@@ -145,6 +137,9 @@ func (i *itemRepository) SelectAll(ctx context.Context) ([]*Item, error) {
 }
 
 func (i *itemRepository) SearchFromName(ctx context.Context, name string) ([]*Item, error) {
+	if !useDB {
+		return nil, errors.New("not implemented")
+	}
 	db, err := sql.Open("sqlite3", i.dbPath)
 	if err != nil {
 		return nil, err
