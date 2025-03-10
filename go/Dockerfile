@@ -14,8 +14,7 @@ RUN go build cmd/api/main.go
 ENV CGO_ENABLED=1
 
 RUN addgroup -S mercari && adduser -S trainee -G mercari
-RUN chown -R trainee:mercari db
-RUN chown -R trainee:mercari images
+RUN chown -R trainee:mercari db images
 
 USER trainee
 
