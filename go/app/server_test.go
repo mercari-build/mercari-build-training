@@ -292,6 +292,8 @@ func TestAddItemE2e(t *testing.T) {
 					`
 			err = DB.QueryRow(query).Scan(&item.ID, &item.Name, &item.Category, &item.Image)
 			if err != nil {
+				// エラー発生時にロールバック
+				DB.Rollback()
 				t.Fatalf("failed to query inserted item: %v", err)
 			}
 			if item.Name != tt.args["name"] || item.Category != tt.args["category"] {
