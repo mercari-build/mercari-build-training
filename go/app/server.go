@@ -87,6 +87,11 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 
 // GetItems handles GET /items requests
 func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("received GET /items request",
+		"method", r.Method,
+		"content-type", r.Header.Get("Content-Type"),
+		"user-agent", r.Header.Get("User-Agent"))
+
 	ctx := r.Context()
 	items, err := s.itemRepo.GetAll(ctx)
 	if err != nil {
@@ -96,7 +101,20 @@ func (s *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(items)
+	var itemsResponse GetItemsResponse
+	err = json.Unmarshal(items, &itemsResponse)
+	if err != nil {
+		slog.Error("failed to unmarshal items: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	slog.Debug("sending response", "items", itemsResponse)
+	err = json.NewEncoder(w).Encode(itemsResponse)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 type AddItemRequest struct {
@@ -153,29 +171,30 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 
 // AddItem handles POST /items requests
 func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
-	req, err := parseAddItemRequest(r)
+	err := r.ParseForm()
 	if err != nil {
-		slog.Error("failed to parse request", "error", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// Store the image
-	imagePath, err := s.storeImage(req.Image)
-	if err != nil {
-		slog.Error("failed to store image", "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	name := r.FormValue("name")
+	if name == "" {
+		http.Error(w, "name is required", http.StatusBadRequest)
 		return
 	}
 
-	// Create a new item
-	item := &Item{
-		Name:     req.Name,
-		Category: req.Category,
-		Image:    filepath.Base(imagePath),
+	category := r.FormValue("category")
+	if category == "" {
+		http.Error(w, "category is required", http.StatusBadRequest)
+		return
 	}
 
-	// Store the item
+	item := &Item{
+		Name:     name,
+		Category: category,
+		Image:    "default.jpg",
+	}
+
 	err = s.itemRepo.Insert(r.Context(), item)
 	if err != nil {
 		slog.Error("failed to insert item", "error", err)
