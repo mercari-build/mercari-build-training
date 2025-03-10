@@ -124,17 +124,23 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 
 	// STEP 4-4: add an image field
 	file, _, err := r.FormFile("image")
-	if err != nil {
-		return nil, errors.New("internal server error")
+	if err == http.ErrMissingFile { // no image file
+		imageData, err := os.ReadFile("images/default.jpg")
+		if err != nil {
+			return nil, errors.New("no image file")
+		}
+		req.Image = imageData
+	} else if err == nil { // image file exists
+		// read the image file
+		imageData, err:= io.ReadAll(file)
+		if err != nil {
+			return nil, errors.New("no image file")
+		}
+		req.Image = imageData
+		defer file.Close()
+	} else { // err != nil
+		return nil, errors.New("internal server error: " + err.Error())
 	}
-	defer file.Close()
-
-	// read the image file
-	imageData, err:= io.ReadAll(file)
-	if err != nil {
-		return nil, errors.New("no image file")
-	}
-	req.Image = imageData
 
 	// validate the request
 	if req.Name == "" {
@@ -144,11 +150,6 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	// STEP 4-2: validate the category field
 	if req.Category == "" {
 		return nil, errors.New("category is required")
-	}
-
-	// STEP 4-4: validate the image field
-	if req.Image == nil {
-		return nil, errors.New("image is required")
 	}
 	
 	return req, nil
