@@ -1,0 +1,14 @@
+{
+  "items": [
+    {
+      "name": "Laptop",
+      "category": "Electronics",
+      "image_path": "images/9a3f1b6c8e.jpg"
+    },
+    {
+      "name": "Shoes",
+      "category": "Fashion",
+      "image_path": "images/2f5e7d9a10.jpg"
+    }
+  ]
+}
