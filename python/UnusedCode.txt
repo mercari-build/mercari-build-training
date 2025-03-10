@@ -1,0 +1,75 @@
+def create_db():
+    if not db.exists():
+        yield
+
+    conn = sqlite3.connect(db)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS categories (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        );
+
+        CREATE TABLE IF NOT EXISTS items (
+        id INTEGER PRIMARY KEY AUTO_INCREMENT,
+        name TEXT NOT NULL,
+        category_id INTEGER,
+        image_name TEXT,
+        FOREIGN KEY (category_id) REFERENCES categories (category_id)
+        );
+
+        """)
+
+        conn.commit()
+    except Exception as e:
+        return {f"An unexpected error occurred: {e}"}
+    finally:
+        conn.close()
+
+def seed_db():
+    conn = sqlite3.connect(db)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+        INSERT INTO items (id, name, category_id, image_name) 
+        VALUES (1, "jacket", 1, "510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg")
+
+        INSERT INTO categories (id, name) 
+        VALUES (1, "fashion")
+        """)
+
+        conn.commit()
+
+    except Exception as e:
+        return {f"An unexpected error occurred: {e}"}
+    
+    finally:
+        conn.close()
+
+def get_items_from_database():
+    conn = sqlite3.connect(db)
+    cursor = conn.cursor()
+    try:
+        query = """
+        SELECT items.name, categories.name AS category, image_name
+        FROM items
+        JOIN categories
+        ON category_id = categories.id
+        """
+        cursor.execute(query)
+        conn.commit()
+
+        rows = cursor.fetchall()
+        items_list = [{"name": name, "category":category, "image_name": image_name} for name, category, image_name in rows]
+        result = {"items": items_list}
+
+        return result
+
+    except Exception as e:
+        return {f"An unexpected error occurred: {e}"}
+    
+    finally:
+        cursor.close()

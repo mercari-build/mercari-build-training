@@ -91,10 +91,11 @@ def hash_image(image_file: UploadFile):
 def setup_database():
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
-    sql_file = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
+    sql_file = pathlib.Path(__file__).parent.resolve() / "db" / "items.sql"
     if sql_file.suffix == ".sql":
         with open(sql_file, "r") as f:
-            cursor.executescript(f.read())
+            sql_script = f.read()
+            cursor.executescript(sql_script)
     else:
         raise ValueError(f"{sql_file} is not a valid .sql file")
     conn.commit()
