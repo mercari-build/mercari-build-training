@@ -18,7 +18,7 @@ We will use a database called **SQLite**.
   * id: int (Identifier unique for each item)
   * name: string (Name of the item)
   * category: string (Category of the item)
-  * image_name: string (Filename of the imeage)
+  * image_name: string (Filename of the image)
 
 Change the endpoints `GET /items` and `POST /items` such that items are saved into the database and can be returned based on GET request. Add `mercari.sqlite3` to your `.gitignore` such that it is not committed. `items.sql` should be committed. 
 

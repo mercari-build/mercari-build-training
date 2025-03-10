@@ -29,7 +29,7 @@ If the version number is shown after executing the command above, cURL is instal
 
 ### Sending a GET Request
 
-Let's send a GET reaquest with cURL to the API server we launched in the previous section.
+Let's send a GET request with cURL to the API server we launched in the previous section.
 If you haven't started the server, run the following command:
 
 | Python                                                                                       | Go                                                                            |
@@ -69,9 +69,21 @@ $ curl -X POST \
 **:beginner: Points**
 
 * Understand the difference between GET and POST requests.
+GET: Fetch previously stored info
+POST: add new info
+
 * Why do we not see `{"message": "item received: <name>"}` on accessing `http://127.0.0.1:9000/items` from your browser?
-  * What is the **HTTP Status Code** when you receive these responses?
+The POST endpoint is expecting an item name in the body
+
+  * What is the **HTTP Status Code** when you receive these responses? 400
+  HTTP response status codes indicate whether a specific HTTP request has been successfully completed. 200
+
   * What do different types of status code mean?
+- Informational responses (100 – 199)
+- Successful responses (200 – 299)
+- Redirection messages (300 – 399)
+- Client error responses (400 – 499)
+- Server error responses (500 – 599)
 
 ## 2. List a new item
 
@@ -207,7 +219,15 @@ curl -X POST \
 **:beginner: Point**
 
 * What is hashing?
+Hashing is a way to manipulate a string so that it is more digestible and/or more secure (i.e. - for passwords
+)
+
 * What other hashing functions are out there except for SHA-256?
+SHA-256: A cryptographic hash function that creates a 256-bit hash value from any length of input data. It's part of the Secure Hash Algorithm 2 (SHA-2) family. SHA-256 is used in cryptography and data integrity verification. 
+
+Universal hashing: A randomized algorithm that chooses a hash function from a family of functions. This reduces the chance of collisions. 
+
+Non-cryptographic hash functions: Used in hash tables and to detect accidental errors. 
 
 
 ## 5. Return Item Details

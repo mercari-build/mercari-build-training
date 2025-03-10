@@ -1,17 +1,20 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, File, UploadFile, HTTPException, Depends
+import sqlite3
+import hashlib
+from fastapi import FastAPI, Form, File, UploadFile, HTTPException, Query, Depends
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-import sqlite3
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Dict, List, Optional
 from contextlib import asynccontextmanager
 
 
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
-db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
+db = pathlib.Path(__file__).parent.resolve() / "db" / "items.json"
+# JSON_DB = pathlib.Path(__file__).parent.resolve() / "db" / "items.json"
 
 
 def get_db():
@@ -25,22 +28,40 @@ def get_db():
     finally:
         conn.close()
 
-import json
-JSON_FILE = 'items.json'
+def get_items_from_database(db: sqlite3.Connection):
+    cursor = db.cursor()
+    query = """"
+    SELECT items.name, categories.name AS category, image_name
+    FROM items
+    JOIN categories
+    ON category_id = categories.id
+    """
 
-def read_json_file():
-    if not os.path.exists(JSON_FILE):
-        with open(JSON_FILE, 'w') as f:
-            json.dump({"items":[]}, f)
-        with open(JSON_FILE, 'r') as f:
-            return json.load(f)
-        
-def write_json_file(data):
-    with open(JSON_FILE, 'w') as f:
-        json.dump(data, f, indent=4)
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    items_list = [{"name": name, "category":category, "image_name": image_name} for name, category, image_name in rows]
+    result = {"items": items_list}
+    cursor.close()
 
+    return result
 
-import hashlib
+def get_items_from_database_by_id(id: int, db: sqlite3.Connection)-> Dict[str, List[Dict[str, str]]]:
+    cursor = db.cursor()
+    query = """
+    SELECT items.name, categories.name AS category, image_name
+    FROM items
+    JOIN categories
+    ON category_id = categories.id
+    WHERE items.id = ?
+    """
+    cursor.execute(query, (id,))
+    rows = cursor.fetchall()
+    items_list = [{"name": name, "category":category, "image_name": image_name} for name, category, image_name in rows]
+    result = {"items": items_list}
+    cursor.close()
+
+    return result
+
 def hash_image(image_file: UploadFile):
     try:
         image = image_file.file.read()
@@ -56,7 +77,13 @@ def hash_image(image_file: UploadFile):
 
 # STEP 5-1: set up the database connection
 def setup_database():
-    pass
+    conn = sqlite3.connect(db)
+    cursor = conn.cursor()
+    sql_file = pathlib.Path(__file__).parent.resolve() / "db" / "items.json"
+    with open(sql_file, "r") as f:
+        cursor.executescript(f.read())
+    conn.commit()
+    conn.close()
 
 
 @asynccontextmanager
@@ -110,18 +137,18 @@ def add_item(
 
     hashed_image = hash_image(image)
 
-    insert_item(Item(name=name, category=category, image=hashed_image))
+    insert_item_db(Item(name=name, category=category, image=hashed_image))
     return AddItemResponse(**{"message": f"item received: {name}"})
 
 @app.get("/items")
 def get_items():
-    all_data = read_json_file()
+    all_data = get_items_from_database(db)
     return all_data
 
 @app.get("items/{item_id}")
 def get_item_by_id(item_id):
     item_id_int = int(item_id)
-    all_data = read_json_file()
+    all_data = get_items_from_database_by_id()
     item = all_data["items"] [item_id_int -1]
     return item
 
@@ -141,6 +168,28 @@ async def get_image(image_name):
 
     return FileResponse(image)
 
+@app.get("/search")
+def search_keyword(keyword: str = Query(...), db: sqlite3.Connection = Depends(get_db)):
+    try:
+        cursor = db.cursor()
+        query = """
+        SELECT items.name, categories.name AS category, image_name
+        FROM items
+        JOIN categories
+        ON category_id = categories.id
+        WHERE items.name LIKE ?
+        """
+        pattern = f"%{keyword}%"
+        cursor.execute(query, (pattern,))
+        rows = cursor.fetchall()
+        items_list = [{"name": name, "category":category, "image_name": image_name} for name, category, image_name in rows]
+        result = {"items": items_list}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {e}")
+    finally:
+        cursor.close()
+
+    return result
 
 class Item(BaseModel):
     name: str
@@ -148,9 +197,23 @@ class Item(BaseModel):
     image: str
 
 
-def insert_item(item: Item):
-    current_data = read_json_file()
+def insert_item_db(item: Item, db:sqlite3.Connection) -> int:
+    cursor = db.cursor()
+    query_category = "SELECT id FROM categories WHERE name = ?"
+    cursor.execute(query_category, (item.category,))
+    rows = cursor.fetchone()
+    if rows is None:
+        insert_query_category = "INSERT INTO categories (name) VALUES (?)"
+        cursor.execute(insert_query_category, (item.category,))
+        category_id = cursor.lastrowid
+    else:
+        category_id = rows[0]
 
-    current_data["items"].append({"name": item.name, "category": item.category, "image_name": item.image})
+    query = """
+INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)
+"""
+    cursor.execute(query, (item.name, category_id, item.image))
 
-    write_json_file(current_data)
+    db.commit()
+
+    cursor.close()
