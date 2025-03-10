@@ -82,41 +82,9 @@ class AddItemResponse(BaseModel):
 async def add_item(
     name: str = Form(...),
     category: str = Form(...),
-    image: UploadFile = File(...),
-    db: sqlite3.Connection = Depends(get_db),
+    image: UploadFile = File(...)
 ):
-    if not name or not category: 
-        raise HTTPException(status_code=400, detail="name and category are required")
-
-    if not image.filename.endswith(".jpg") or image.content_type != "image/jpeg":
-        raise HTTPException(status_code=400, detail="only image files with .jpg are allowed")
-
-    image_bytes = await image.read()
-    hashed_filename = hashlib.sha256(image_bytes).hexdigest() + ".jpg"
-    image_path = images / hashed_filename
-    
-    with open(image_path, "wb") as f:
-        f.write(image_bytes) # save the image
-
-    cursor = db.cursor()
-    cursor.execute("SELECT id FROM categories WHERE name = ?", (category,))
-    category_id = cursor.fetchone()
-
-    if category_id is None:
-        cursor.execute("INSERT INTO categories (name) VALUES (?)", (category,))
-        category_id = cursor.lastrowid
-    else:
-        category_id = category_id[0]
-        
-    new_item = Item(name=name, category=category, image_name=hashed_filename)
-    insert_item(new_item, db)
-    logger.debug("Inserting item: %s", new_item)
-    
-    return AddItemResponse(
-        message=f"item received: {name}",
-        items=[{"name": name, "category": category, "image_name": hashed_filename}]
-        )
-
+   return {"message": f"Item received: {name}"}
 
 # get_image is a handler to return an image for GET /images/{filename} .
 @app.get("/image/{image_name}")
