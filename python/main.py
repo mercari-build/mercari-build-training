@@ -3,25 +3,27 @@ import logging
 import pathlib
 import json
 import hashlib
-from fastapi import FastAPI, Form, HTTPException, Depends, UploadFile, File
+from fastapi import FastAPI, Form, HTTPException, Depends, UploadFile, File, Body
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
-from typing import List
-
-FILENAME = pathlib.Path(__file__).parent.resolve() / "items.json"
+from typing import List, Optional
 
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
 db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
+FILENAME = pathlib.Path(__file__).parent.resolve() / "items.json"
 
 images.mkdir(exist_ok=True)
 
 def get_db():
+   if not db.exists():
+        setup_database()
+      
    conn = sqlite3.connect(db)
-    conn.row_factory = sqlite3.Row  # Return rows as dictionaries
+   conn.row_factory = sqlite3.Row  # Return rows as dictionaries
     try:
         yield conn
     finally:
@@ -32,6 +34,16 @@ def get_db():
 def setup_database():
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
+
+   # Create categories table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL COLLATE NOCASE UNIQUE
+        )
+    """)
+
+   # create items table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,7 +55,6 @@ def setup_database():
     conn.commit()
     conn.close()
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_database()
@@ -54,6 +65,7 @@ app = FastAPI(lifespan=lifespan)
 
 logger = logging.getLogger("uvicorn")
 logger.level = logging.DEBUG
+images = pathlib.Path(__file__).parent.resolve() / "images"
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
     CORSMiddleware,
@@ -75,7 +87,10 @@ def hello():
 
 class AddItemResponse(BaseModel):
     message: str
-    items: list
+
+class ItemCreate(BaseModel):
+    name : str
+    category: str
 
 # add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
@@ -84,7 +99,7 @@ async def add_item(
     category: str = Form(...),
     image: UploadFile = File(...)
 ):
-   return {"message": f"Item received: {name}"}
+  return {"message": f"Item received: {name}"}
 
 # get_image is a handler to return an image for GET /images/{filename} .
 @app.get("/image/{image_name}")
@@ -107,15 +122,15 @@ class Item(BaseModel):
     category: str
     image_name: str
 
-def insert_item(item: Item):
+def insert_item(item: Item, category_id, db: sqlite3.Connection):
     cursor = db.cursor()
    cursor.execute(
-        "INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
-        (item.name, item.category, item.image_name)
+        "INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
+        (item.name, category_id, item.image_name)
     )
    db.commit()
 
-def read_items():
+def read_items(db: sqlite3.Connection):
     cursor = db.cursor()
     cursor.execute("""
     SELECT items.name, categories.name AS category, items.image_name
