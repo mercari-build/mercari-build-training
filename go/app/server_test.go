@@ -1,9 +1,11 @@
 package app
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -26,13 +28,13 @@ func TestParseAddItemRequest(t *testing.T) {
 	}{
 		"ok: valid request": {
 			args: map[string]string{
-				"name":     "", // fill here
-				"category": "", // fill here
+				"name":     "name",     // fill here
+				"category": "category", // fill here
 			},
 			wants: wants{
 				req: &AddItemRequest{
-					Name: "", // fill here
-					// Category: "", // fill here
+					Name:     "name",     // fill here
+					Category: "category", // fill here
 				},
 				err: false,
 			},
@@ -85,14 +87,14 @@ func TestHelloHandler(t *testing.T) {
 
 	// Please comment out for STEP 6-2
 	// predefine what we want
-	// type wants struct {
-	// 	code int               // desired HTTP status code
-	// 	body map[string]string // desired body
-	// }
-	// want := wants{
-	// 	code: http.StatusOK,
-	// 	body: map[string]string{"message": "Hello, world!"},
-	// }
+	type wants struct {
+		code int               // desired HTTP status code
+		body map[string]string // desired body
+	}
+	want := wants{
+		code: http.StatusOK,
+		body: map[string]string{"message": "Hello, world!"},
+	}
 
 	// set up test
 	req := httptest.NewRequest("GET", "/hello", nil)
@@ -102,8 +104,20 @@ func TestHelloHandler(t *testing.T) {
 	h.Hello(res, req)
 
 	// STEP 6-2: confirm the status code
+	if res.Code != want.code {
+		t.Errorf("unexpected status code: want %d, got %d", want.code, res.Code)
+	}
 
 	// STEP 6-2: confirm response body
+	var resBody map[string]interface{}
+	err := json.Unmarshal(res.Body.Bytes(), &resBody)
+	if err != nil {
+		t.Errorf("Error decoding JSON: %v", err)
+	}
+
+	if reflect.DeepEqual(resBody, want.body) {
+		t.Errorf("unexpected body: want %v, got %v", want.body, resBody)
+	}
 }
 
 func TestAddItem(t *testing.T) {
