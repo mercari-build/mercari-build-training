@@ -304,11 +304,13 @@ func setupDB(t *testing.T) (db *sql.DB, closers []func(), e error) {
 	})
 
 	// TODO: replace it with real SQL statements.
-	cmd := `CREATE TABLE IF NOT EXISTS items (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name VARCHAR(255),
-		category VARCHAR(255)
-	)`
+	cmd := `CREATE TABLE Item
+(
+    id         INTEGER PRIMARY KEY,
+    name       TEXT NOT NULL,
+    category   TEXT NOT NULL,
+    image_name TEXT NOT NULL
+);`
 	_, err = db.Exec(cmd)
 	if err != nil {
 		return nil, nil, err
