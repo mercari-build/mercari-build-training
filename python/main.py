@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
-db = pathlib.Path(__file__).parent.resolve() / "db" / "items.json"
+db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
 # JSON_DB = pathlib.Path(__file__).parent.resolve() / "db" / "items.json"
 
 
@@ -79,7 +79,7 @@ def hash_image(image_file: UploadFile):
 def setup_database():
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
-    sql_file = pathlib.Path(__file__).parent.resolve() / "db" / "items.json"
+    sql_file = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
     with open(sql_file, "r") as f:
         cursor.executescript(f.read())
     conn.commit()
