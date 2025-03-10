@@ -1,5 +1,4 @@
 import os
-import json
 import hashlib
 import logging
 import pathlib
@@ -14,15 +13,13 @@ from typing import List, Optional
 
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
-db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
-items_json = pathlib.Path(__file__).parent.resolve() / "items.json"
+images = pathlib.Path(__file__).parent.resolve() / "images"
+db_dir = pathlib.Path(__file__).parent.resolve() / "db"
+db = db_dir / "mercari.sqlite3"
 
 
 def get_db():
-    if not db.exists():
-        yield
-
-    conn = sqlite3.connect(db)
+    conn = sqlite3.connect(db, check_same_thread=False)
     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
     try:
         yield conn
@@ -35,10 +32,23 @@ def setup_database():
     # Ensure the images directory exists
     images.mkdir(exist_ok=True)
     
-    # Ensure the items.json file exists with initial structure
-    if not items_json.exists():
-        with open(items_json, 'w') as f:
-            json.dump({"items": []}, f)
+    # Ensure the db directory exists
+    db_dir.mkdir(exist_ok=True)
+    
+    # Initialize the database with the schema
+    conn = sqlite3.connect(db)
+    cursor = conn.cursor()
+    
+    # Read and execute SQL schema from items.sql file
+    schema_file = db_dir / "items.sql"
+    if schema_file.exists():
+        with open(schema_file, 'r') as f:
+            schema_sql = f.read()
+            cursor.executescript(schema_sql)
+    
+    conn.commit()
+    conn.close()
+
 
 
 @asynccontextmanager
@@ -61,6 +71,7 @@ app.add_middleware(
 )
 
 
+
 class HelloResponse(BaseModel):
     message: str
 
@@ -71,9 +82,15 @@ def hello():
 
 
 class Item(BaseModel):
+    id: Optional[int] = None
     name: str
     category: str
     image_name: Optional[str] = None
+
+
+class Category(BaseModel):
+    id: int
+    name: str
 
 
 class ItemResponse(BaseModel):
@@ -83,28 +100,35 @@ class ItemResponse(BaseModel):
 class AddItemResponse(BaseModel):
     message: str
 
+# Find or create category ID
+def get_or_create_category(category_name: str, db_conn):
+    cursor = db_conn.cursor()
+    
+    # Look for existing category
+    cursor.execute("SELECT id FROM categories WHERE name = ?", (category_name,))
+    result = cursor.fetchone()
+    
+    if result:
+        return result['id']
+    
+    # Create new category if it doesn't exist
+    cursor.execute("INSERT INTO categories (name) VALUES (?)", (category_name,))
+    db_conn.commit()
+    return cursor.lastrowid
+
 
 # STEP 4-2: Implementation to store an item
-def insert_item(item: Item):
-    try:
-        # Read existing items
-        if items_json.exists():
-            with open(items_json, 'r') as f:
-                data = json.load(f)
-        else:
-            data = {"items": []}
-        
-        # Add the new item
-        data["items"].append(item.dict())
-        
-        # Write back to the file
-        with open(items_json, 'w') as f:
-            json.dump(data, f, indent=2)
-            
-    except Exception as e:
-        logger.error(f"Error inserting item: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to save item: {str(e)}")
-
+def insert_item(item: Item, db_conn):
+    # Get or create category_id
+    category_id = get_or_create_category(item.category, db_conn)
+    
+    cursor = db_conn.cursor()
+    cursor.execute(
+        "INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
+        (item.name, category_id, item.image_name)
+    )
+    db_conn.commit()
+    return cursor.lastrowid
 
 # add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
@@ -112,6 +136,7 @@ async def add_item(
     name: str = Form(...),
     category: str = Form(...),
     image: Optional[UploadFile] = File(None),
+    db_conn: sqlite3.Connection = Depends(get_db)
 ):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
@@ -138,49 +163,71 @@ async def add_item(
     
     # Create and insert the item
     item = Item(name=name, category=category, image_name=image_name)
-    insert_item(item)
     
-    return AddItemResponse(**{"message": f"item received: {name}"})
+    try:
+        insert_item(item, db_conn)
+        return AddItemResponse(**{"message": f"item received: {name}"})
+    except Exception as e:
+        logger.error(f"Error inserting item: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save item: {str(e)}")
 
 
 # STEP 3: Implement GET /items to get the list of items
 @app.get("/items", response_model=ItemResponse)
-def get_items():
+def get_items(db_conn: sqlite3.Connection = Depends(get_db)):
     try:
-        # Read items from the JSON file
-        if items_json.exists():
-            with open(items_json, 'r') as f:
-                data = json.load(f)
-            return data
-        else:
-            return {"items": []}
+        cursor = db_conn.cursor()
+        cursor.execute("""
+            SELECT i.id, i.name, c.name as category, i.image_name 
+            FROM items i
+            JOIN categories c ON i.category_id = c.id
+        """)
+        items = [dict(item) for item in cursor.fetchall()]
+        return {"items": items}
     except Exception as e:
         logger.error(f"Error retrieving items: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve items: {str(e)}")
 
 
+
 # STEP 5: Implement GET /items/{item_id} to get a specific item
 @app.get("/items/{item_id}")
-def get_item(item_id: int):
+def get_item(item_id: int, db_conn: sqlite3.Connection = Depends(get_db)):
     try:
-        # Read items from the JSON file
-        if items_json.exists():
-            with open(items_json, 'r') as f:
-                data = json.load(f)
-            
-            # Check if item_id is valid
-            if 0 <= item_id < len(data["items"]):
-                return data["items"][item_id]
-            else:
-                raise HTTPException(status_code=404, detail=f"Item with ID {item_id} not found")
+        cursor = db_conn.cursor()
+        cursor.execute("""
+            SELECT i.id, i.name, c.name as category, i.image_name 
+            FROM items i
+            JOIN categories c ON i.category_id = c.id
+            WHERE i.id = ?
+        """, (item_id,))
+        item = cursor.fetchone()
+        
+        if item:
+            return dict(item)
         else:
-            raise HTTPException(status_code=404, detail="No items found")
-    except HTTPException:
-        raise
+            raise HTTPException(status_code=404, detail=f"Item with ID {item_id} not found")
     except Exception as e:
         logger.error(f"Error retrieving item: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve item: {str(e)}")
 
+
+# GET /search to search for items with a keyword
+@app.get("/search", response_model=ItemResponse)
+def search_items(keyword: str, db_conn: sqlite3.Connection = Depends(get_db)):
+    try:
+        cursor = db_conn.cursor()
+        cursor.execute("""
+            SELECT i.id, i.name, c.name as category, i.image_name 
+            FROM items i
+            JOIN categories c ON i.category_id = c.id
+            WHERE i.name LIKE ?
+        """, (f"%{keyword}%",))
+        items = [dict(item) for item in cursor.fetchall()]
+        return {"items": items}
+    except Exception as e:
+        logger.error(f"Error searching items: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to search items: {str(e)}")
 
 # get_image is a handler to return an image for GET /images/{filename} .
 @app.get("/image/{image_name}")
