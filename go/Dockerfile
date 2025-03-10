@@ -1,4 +1,4 @@
-FROM alpine
+FROM golang:1.24-alpine
 
 RUN addgroup -S mercari && adduser -S trainee -G mercari
 # RUN chown -R trainee:mercari /path/to/db
