@@ -132,7 +132,6 @@ type AddItemRequest struct {
 	Name     string `form:"name"`
 	Category string `form:"category"`
 	Image    []byte `form:"image"`
-	FileName string `form:"image_file_name"`
 }
 
 type AddItemResponse struct {
@@ -145,7 +144,6 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 		Name:     r.FormValue("name"),
 		Category: r.FormValue("category"),
 		Image:    []byte(r.FormValue("image")),
-		FileName: r.FormValue("image_file_name"),
 	}
 
 	// validation
