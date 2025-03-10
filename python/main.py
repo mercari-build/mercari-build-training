@@ -6,15 +6,15 @@ import hashlib
 from fastapi import FastAPI, Form, File, UploadFile, HTTPException, Query, Depends
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import Dict, List, Optional
+from pydantic import BaseModel
+from typing import Dict, List
 from contextlib import asynccontextmanager
 
+# cmd to start server uvicorn main:app --reload --port 9000
 
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
 db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
-# JSON_DB = pathlib.Path(__file__).parent.resolve() / "db" / "items.json"
 
 
 def get_db():
@@ -29,38 +29,48 @@ def get_db():
         conn.close()
 
 def get_items_from_database(db: sqlite3.Connection):
-    cursor = db.cursor()
-    query = """"
-    SELECT items.name, categories.name AS category, image_name
-    FROM items
-    JOIN categories
-    ON category_id = categories.id
-    """
+    try:
+        cursor = db.cursor()
+        query = """
+        SELECT items.name, categories.name AS category, image_name
+        FROM items
+        JOIN categories
+        ON category_id = categories.id
+        """
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        items_list = [{"name": name, "category":category, "image_name": image_name} for name, category, image_name in rows]
+        result = {"items": items_list}
 
-    cursor.execute(query)
-    rows = cursor.fetchall()
-    items_list = [{"name": name, "category":category, "image_name": image_name} for name, category, image_name in rows]
-    result = {"items": items_list}
-    cursor.close()
+        return result
 
-    return result
+    except Exception as e:
+        return {f"An unexpected error occurred: {e}"}
+    finally:
+        cursor.close()
 
 def get_items_from_database_by_id(id: int, db: sqlite3.Connection)-> Dict[str, List[Dict[str, str]]]:
-    cursor = db.cursor()
-    query = """
-    SELECT items.name, categories.name AS category, image_name
-    FROM items
-    JOIN categories
-    ON category_id = categories.id
-    WHERE items.id = ?
-    """
-    cursor.execute(query, (id,))
-    rows = cursor.fetchall()
-    items_list = [{"name": name, "category":category, "image_name": image_name} for name, category, image_name in rows]
-    result = {"items": items_list}
-    cursor.close()
+    try:
+        cursor = db.cursor()
+        query = """
+        SELECT items.name, categories.name AS category, image_name
+        FROM items
+        JOIN categories
+        ON category_id = categories.id
+        WHERE items.id = ?
+        """
+        cursor.execute(query, (id,))
+        rows = cursor.fetchall()
+        items_list = [{"name": name, "category":category, "image_name": image_name} for name, category, image_name in rows]
+        result = {"items": items_list}
 
-    return result
+        return result
+
+    except Exception as e:
+        return {f"An unexpected error occurred: {e}"}
+    
+    finally:
+        cursor.close()
 
 def hash_image(image_file: UploadFile):
     try:
@@ -71,7 +81,9 @@ def hash_image(image_file: UploadFile):
 
         with open(hashed_image_path, 'wb') as f:
             f.write(image)
+
         return hashed_image_name
+    
     except Exception as e:
         raise RuntimeError(f"An unexpected error occurred: {e}")
 
@@ -80,8 +92,11 @@ def setup_database():
     conn = sqlite3.connect(db)
     cursor = conn.cursor()
     sql_file = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
-    with open(sql_file, "r") as f:
-        cursor.executescript(f.read())
+    if sql_file.suffix == ".sql":
+        with open(sql_file, "r") as f:
+            cursor.executescript(f.read())
+    else:
+        raise ValueError(f"{sql_file} is not a valid .sql file")
     conn.commit()
     conn.close()
 
@@ -126,7 +141,7 @@ def add_item(
     name: str = Form(...),
     category: str = Form(...),
     image: UploadFile = File(...),
-    db: sqlite3.Connection = Depends(get_db),
+    # db: sqlite3.Connection = Depends(get_db),
 ):
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
@@ -184,12 +199,14 @@ def search_keyword(keyword: str = Query(...), db: sqlite3.Connection = Depends(g
         rows = cursor.fetchall()
         items_list = [{"name": name, "category":category, "image_name": image_name} for name, category, image_name in rows]
         result = {"items": items_list}
+
+        return result
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error: {e}")
+    
     finally:
         cursor.close()
-
-    return result
 
 class Item(BaseModel):
     name: str
