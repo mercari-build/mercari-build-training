@@ -98,17 +98,3 @@ func (mr *MockItemRepositoryMockRecorder) SelectAll(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectAll", reflect.TypeOf((*MockItemRepository)(nil).SelectAll), ctx)
 }
-
-// UseDB mocks base method.
-func (m *MockItemRepository) UseDB() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UseDB")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// UseDB indicates an expected call of UseDB.
-func (mr *MockItemRepositoryMockRecorder) UseDB() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UseDB", reflect.TypeOf((*MockItemRepository)(nil).UseDB))
-}
