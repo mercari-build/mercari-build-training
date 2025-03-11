@@ -207,6 +207,8 @@ def get_item(item_id: int, db_conn: sqlite3.Connection = Depends(get_db)):
             return dict(item)
         else:
             raise HTTPException(status_code=404, detail=f"Item with ID {item_id} not found")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error retrieving item: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to retrieve item: {str(e)}")
