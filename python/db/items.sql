@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS items(
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     category_id INTEGER NOT NULL,
-    image TEXT NOT NULL
+    image TEXT NOT NULL,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS categories(

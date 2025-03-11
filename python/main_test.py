@@ -23,13 +23,23 @@ def db_connection():
     # Before the test is done, create a test database
     conn = sqlite3.connect(test_db)
     cursor = conn.cursor()
+    # Create the categories table
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL
+        )"""
+    )
+
+    # Create the items table
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS items (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name VARCHAR(255),
-		category_id VARCHAR(255),
-        image TEXT
-	)"""
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR(255),
+            category_id INTEGER,
+            image TEXT,
+            FOREIGN KEY (category_id) REFERENCES categories(id)
+        )"""
     )
     conn.commit()
     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
@@ -67,13 +77,13 @@ def test_hello(want_status_code, want_body):
     "args, image, want_status_code",
     [   # success, 想定通り200が返る
         (
-            {"name": "used iPhone 16e", "category_id": "1"}, 
+            {"name": "used iPhone 16e", "category": "Eletronics"}, 
             {"image": ("default.jpg", open("images/default.jpg", "rb"))}, 
             200
          ),
         # Name is empty, 想定通り400エラーが返る
         (
-            {"name":"", "category_id":"1"},
+            {"name":"", "category":"empty"},
             {"image" : ("default.jpg", open("images/default.jpg", "rb"))},
             400
         ),

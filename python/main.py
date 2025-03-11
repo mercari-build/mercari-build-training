@@ -87,26 +87,38 @@ class AddItemResponse(BaseModel):
 @app.post("/items", response_model=AddItemResponse)
 def add_item(
     name: str = Form(...),
-    category_id: int = Form(...),
+    category: str = Form(...),  # category_id ではなく category を受け取る
     image: UploadFile = File(...),
     db: sqlite3.Connection = Depends(get_db),
 ):
     file_data = image.file.read()
-    # Calculate the SHA-256 hash of the file
     hashed_value = hashlib.sha256(file_data).hexdigest()
-    
+
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
 
+    # カテゴリIDを取得（なければ作成）
+    cursor = db.cursor()
+    cursor.execute("SELECT id FROM categories WHERE name = ?", (category,))
+    category_row = cursor.fetchone()
 
-    # Save the image to the images directory
+    if category_row:
+        category_id = category_row["id"]
+    else:
+        cursor.execute("INSERT INTO categories (name) VALUES (?)", (category,))
+        category_id = cursor.lastrowid
+        db.commit()
+
+    # 画像を保存
     image_path = images / f"{hashed_value}.jpg"
     with open(image_path, "wb") as f:
         f.write(file_data)
 
+    # アイテムを追加
     insert_item(Item(name=name, category_id=category_id, image=hashed_value), db)
 
     return AddItemResponse(**{"message": f"item received: {name}"})
+
 
 # get_item is a handler to get all items for GET /items .
 @app.get("/items")
