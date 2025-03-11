@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS items (
 );
 
 INSERT INTO categories (id, name) VALUES (1, "fashion");
+INSERT INTO categories (id, name) VALUES (2, "phone");
 INSERT INTO items (id, name, category_id, image_name) VALUES (1, "jacket", 1, "510824dfd4caed183a7a7cc2be80f24a5f5048e15b3b5338556d5bbd3f7bc267.jpg");
 
 SELECT * FROM categories;
