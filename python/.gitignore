@@ -3,6 +3,7 @@ __pycache__/
 
 db/mercari.sqlite3
 
-
+myenv
+venv
 
 .DS_Store
