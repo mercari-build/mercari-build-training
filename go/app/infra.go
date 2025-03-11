@@ -30,6 +30,7 @@ type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 	List(ctx context.Context) ([]*Item, error)
 	Select(ctx context.Context, id int) (*Item, error)  // リポジトリのinterfaceにselectを追加
+	Search(ctx context.Context, keyword string) ([]*Item, error)
 }
 
 // itemRepository is an implementation of ItemRepository
@@ -108,4 +109,26 @@ func (i *itemRepository) Select(ctx context.Context, id int) (*Item, error) {
 		return nil, fmt.Errorf("failed to select item: %w", err)
 	}
 	return &item, err
+}
+
+// itemRepository の Search メソッド実装
+func (i *itemRepository) Search(ctx context.Context, keyword string) ([]*Item, error) {
+	// LIKE検索で部分一致するものを探す
+	query := `SELECT id, name, category, image_name FROM items WHERE name LIKE ?`
+	rows, err := i.db.QueryContext(ctx, query, "%"+keyword+"%")
+	if err != nil {
+		return nil, fmt.Errorf("failed to search items: %w", err)
+	}
+	defer rows.Close()
+
+	var items []*Item
+	for rows.Next() {
+		var item Item
+		if err := rows.Scan(&item.ID, &item.Name, &item.Category, &item.ImageName); err != nil {
+			return nil, fmt.Errorf("failed to scan item: %w", err)
+		}
+		items = append(items, &item)
+	}
+
+	return items, nil
 }

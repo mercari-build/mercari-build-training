@@ -63,6 +63,8 @@ func (s Server) Run() int {
 	mux.HandleFunc("POST /items", h.AddItem)  // POST /itemsが呼ばれたらAddItemを呼び出す
 	mux.HandleFunc("GET /items/{id}", h.GetItem)  // 商品を取得する(パスに含まれるデータを取得するにはこの形がいい)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
+	mux.HandleFunc("GET /search", h.SearchItems) // 検索エンドポイント
+
 
 	// start the server
 	// サーバーを立てる
@@ -257,4 +259,29 @@ func (s *Handlers) GetImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.ServeFile(w, r, imgPath)
+}
+
+// 検索用エンドポイントを追加
+func (h *Handlers) SearchItems(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	
+	// クエリパラメータ "keyword" を取得
+	keyword := r.URL.Query().Get("keyword")
+	if keyword == "" {
+		http.Error(w, "keyword is required", http.StatusBadRequest)
+		return
+	}
+
+	// リポジトリで検索
+	items, err := h.itemRepo.Search(ctx, keyword)
+	if err != nil {
+		slog.Error("failed to search items", "error", err)
+		http.Error(w, "failed to search items", http.StatusInternalServerError)
+		return
+	}
+
+	// 結果を JSON で返す
+	resp := map[string]interface{}{"items": items}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }
