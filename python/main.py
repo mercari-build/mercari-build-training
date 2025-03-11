@@ -13,7 +13,7 @@ from typing import Optional
 
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
-db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
+db_path = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
 # items.jsonに新しいアイテムを追加した時のデータを追加するためにjsonファイルのパスを指定
 items_file = pathlib.Path(__file__).parent.resolve() / "items.json"
 
@@ -23,10 +23,10 @@ class Item(BaseModel):
     image_name: str
 
 def get_db():
-    if not db.exists():
+    if not db_path.exists():
         yield
 
-    conn = sqlite3.connect(db)
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
     try:
         yield conn
@@ -36,10 +36,10 @@ def get_db():
 
 # STEP 5-1: set up the database connection
 def setup_database():
-    db_dir = db.parent
+    db_dir = db_path.parent
     db_dir.mkdir(parents=True, exist_ok=True)
     
-    conn = sqlite3.connect(db)
+    conn = sqlite3.connect(db_path)
     try:
         # UNIQUEによって同じカテゴリ名を重複して挿入できなくなる
         conn.execute("""
