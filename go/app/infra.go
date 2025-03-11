@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -205,5 +206,63 @@ func StoreImage(fileName string, image_name []byte) error {
 	if err != nil {
 		return fmt.Errorf("write image file failed: %w", err)
 	}
+	return nil
+}
+
+const dbPath = "db/mercari.sqlite3"
+
+// SQLite の初期化処理
+func InitDB() (*sql.DB, error) {
+	// データベースファイルがなければ作成
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		log.Println("Database file not found, creating a new one...")
+		if err := createDatabase(); err != nil {
+			return nil, fmt.Errorf("failed to create database: %w", err)
+		}
+	}
+
+	// DB 接続
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database: %w", err)
+	}
+
+	return db, nil
+}
+
+// DB ファイル作成 & テーブル作成
+func createDatabase() error {
+	// ディレクトリがない場合は作成
+	if err := os.MkdirAll("db", os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create db directory: %w", err)
+	}
+
+	// DB 作成
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return fmt.Errorf("failed to create database file: %w", err)
+	}
+	defer db.Close()
+
+	// `categories` と `items` のテーブルを作成
+	schema := `
+	CREATE TABLE IF NOT EXISTS categories (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name VARCHAR(255) NOT NULL
+	);
+	CREATE TABLE IF NOT EXISTS items (
+		id INTEGER PRIMARY KEY,
+		name VARCHAR(255) NOT NULL,
+		category_id INTEGER,
+		image_name VARCHAR(255) NOT NULL,
+		FOREIGN KEY (category_id) REFERENCES categories(id)
+	);`
+
+	_, err = db.Exec(schema)
+	if err != nil {
+		return fmt.Errorf("failed to create tables: %w", err)
+	}
+
+	log.Println("Database and tables created successfully.")
 	return nil
 }

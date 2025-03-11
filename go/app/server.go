@@ -27,33 +27,28 @@ type Server struct {
 // Run is a method to start the server.
 // This method returns 0 if the server started successfully, and 1 otherwise.
 func (s Server) Run() int {
-	// (1) ロガーのセットアップ
 	// set up logger
-	// STEP 4-6: set the log level to DEBUG
 	// DEBUG 以上のログを出力するよう設定
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	slog.SetDefault(logger)
 
-	// (2) CORS（クロスオリジン）設定
 	// set up CORS settings
 	frontURL, found := os.LookupEnv("FRONT_URL")
 	if !found {
 		frontURL = "http://localhost:3000"
 	}
 
-	// STEP 5-1: set up the database connection
-	db, err := sql.Open("sqlite3", "./db/mercari.sqlite3")
+	// set up the database connection
+	db, err := InitDB()
 	if err != nil {
-		slog.Error("failed to open database", "error", err)
+		slog.Error("failed to initialize database", "error", err)
 		return 1
 	}
-	defer db.Close()
 
 	// set up handlers
 	itemRepo := NewItemRepository(db)
 	h := &Handlers{imgDirPath: s.ImageDirPath, itemRepo: itemRepo}
 
-	// (3) ルーティング（リクエストの振り分け）
 	// set up routes
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /items", h.AddItem)
@@ -63,12 +58,11 @@ func (s Server) Run() int {
 	mux.HandleFunc("GET /search", h.SearchItems)
 	mux.HandleFunc("GET /", h.Hello)
 
-	// (4) サーバーの起動
 	// start the server
 	slog.Info("http server started on", "port", s.Port)
 	err = http.ListenAndServe(":"+s.Port, simpleCORSMiddleware(simpleLoggerMiddleware(mux), frontURL, []string{"GET", "HEAD", "POST", "OPTIONS"}))
 	if err != nil {
-		slog.Error("failed to start server: ", "error", err)
+		slog.Error("failed to start server", "error", err)
 		return 1
 	}
 
@@ -119,34 +113,50 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 		Category: r.FormValue("category"),
 	}
 
-	file, _, err := r.FormFile("image")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get image: %w", err)
-	}
-
-	// Read the image file only if it exists
-	if file != nil {
-		defer file.Close()
-		imageData, err := io.ReadAll(file)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read image file: %w", err)
-		}
-		req.Image = imageData
-	}
-
-	// validate the request
 	if req.Name == "" {
 		return nil, errors.New("name is required")
+	}
+	if len(req.Name) > 255 {
+		return nil, errors.New("name is too long (max 255 chars)")
 	}
 
 	if req.Category == "" {
 		return nil, errors.New("category is required")
 	}
-
-	if len(req.Image) == 0 {
-		return nil, errors.New("image is required")
+	if len(req.Category) > 255 {
+		return nil, errors.New("category is too long (max 255 chars)")
 	}
 
+	// 画像ファイルの取得
+	file, _, err := r.FormFile("image")
+	if err != nil {
+		return nil, errors.New("image is required")
+	}
+	defer file.Close()
+
+	// 画像のバイナリデータを読み込む
+	imageData, err := io.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read image file: %w", err)
+	}
+
+	// **空の画像データのチェック**
+	if len(imageData) == 0 {
+		return nil, errors.New("image file is empty")
+	}
+
+	// **MIMEタイプを `http.DetectContentType` で取得**
+	contentType := http.DetectContentType(imageData[:512]) // 最初の 512 バイトから MIME を判定
+	validMimeTypes := map[string]bool{
+		"image/jpeg": true,
+		"image/png":  true,
+	}
+
+	if !validMimeTypes[contentType] {
+		return nil, fmt.Errorf("invalid image format (must be JPEG or PNG, got %s)", contentType)
+	}
+
+	req.Image = imageData
 	return req, nil
 }
 
@@ -278,9 +288,11 @@ func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
 	hashSum := hasher.Sum(nil)
 	fileName := fmt.Sprintf("%x.jpg", hashSum)
 
+	// Build the full file path
+	filePath = filepath.Join(s.imgDirPath, fileName)
+
 	// Check if the image already exists
-	GetImageRequest := &GetImageRequest{FileName: fileName}
-	_, err = s.buildImagePath(GetImageRequest.FileName)
+	_, err = os.Stat(filePath)
 	if err == nil {
 		// Image already exists, return the filename
 		return fileName, nil
