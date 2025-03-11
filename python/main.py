@@ -161,7 +161,7 @@ def get_items():
     all_data = get_items_from_database(db)
     return all_data
 
-@app.get("items/{item_id}")
+@app.get("/items/{item_id}")
 def get_item_by_id(item_id):
     item_id_int = int(item_id)
     all_data = get_items_from_database_by_id()

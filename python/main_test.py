@@ -25,11 +25,12 @@ def db_connection():
     cursor = conn.cursor()
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS items (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		id INTEGER PRIMARY KEY,
 		name VARCHAR(255),
 		category VARCHAR(255)
 	)"""
     )
+
     conn.commit()
     conn.row_factory = sqlite3.Row
 
@@ -41,16 +42,6 @@ def db_connection():
         test_db.unlink()
 
 client = TestClient(app)
-
-# @pytest.mark.parametrize("args, want_status_code",
-#     [
-#         ({"name": "pant", "category": "fashion"}, 201),
-        
-#         ],)
-# def test_items(args, want_status_code):
-#     response = client.post("/items").json()
-#     assert eval(args) == {"msg": "Hello World"}
-#     assert eval(want_status_code) == 200
 
 @pytest.mark.parametrize(
     "want_status_code, want_body",
@@ -68,26 +59,26 @@ def test_hello(want_status_code, want_body):
 @pytest.mark.parametrize(
     "args, want_status_code",
     [
-        ({"name":"used iPhone 16e", "category":"phone"}, 200),
-        ({"name":"", "category":"phone"}, 422),
+        ({"name": "iphone", "category": "phone"}, 201),
+        ({"name": "", "category": "phone"}, 422),
     ],
 )
-def test_add_item_e2e(args,want_status_code,db_connection):
-    response = client.post("/items", json=args)
+def test_add_item_e2e(args, want_status_code, db_connection):
+    response = client.post("/items/", data=args)
     assert response.status_code == want_status_code
     
     if want_status_code >= 400:
-        print(response.json())
+        print("Validation failed:", response.json())
         return
-    
-    
-#     # Check if the response body is correct
+
     response_data = response.json()
     assert "message" in response_data
 
-#     # Check if the data was saved to the database correctly
+
     cursor = db_connection.cursor()
     cursor.execute("SELECT * FROM items WHERE name = ?", (args["name"],))
     db_item = cursor.fetchone()
     assert db_item is not None
     assert dict(db_item)["name"] == args["name"]
+    assert dict(db_item)["category"] == args["category"]
+
