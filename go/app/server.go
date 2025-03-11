@@ -171,28 +171,26 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 
 // AddItem handles POST /items requests
 func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
+	req, err := parseAddItemRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	name := r.FormValue("name")
-	if name == "" {
-		http.Error(w, "name is required", http.StatusBadRequest)
+	// Store image and get file path
+	imagePath, err := s.storeImage(req.Image)
+	if err != nil {
+		http.Error(w, "failed to store image", http.StatusInternalServerError)
 		return
 	}
 
-	category := r.FormValue("category")
-	if category == "" {
-		http.Error(w, "category is required", http.StatusBadRequest)
-		return
-	}
+	// Get just the filename from the full path
+	imageFileName := filepath.Base(imagePath)
 
 	item := &Item{
-		Name:     name,
-		Category: category,
-		Image:    "default.jpg",
+		Name:     req.Name,
+		Category: req.Category,
+		Image:    imageFileName,
 	}
 
 	err = s.itemRepo.Insert(r.Context(), item)
