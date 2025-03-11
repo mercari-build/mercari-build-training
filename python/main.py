@@ -1,6 +1,8 @@
 import os
 import logging
 import pathlib
+from typing import List
+from urllib import request
 from fastapi import FastAPI, Form, HTTPException, Depends
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -100,6 +102,10 @@ class Item(BaseModel):
     category: str
 
 
+item_storage: List[Item] = []
+
 def insert_item(item: Item):
     # STEP 4-1: add an implementation to store an item
-    pass
+    data = request.get_json()
+    item_storage.append(item) 
+

@@ -1,2 +1,3 @@
 *.json
+mercari.sqlite3
 *.sqlite3

@@ -77,12 +77,20 @@ type GetItemsResponse struct {
 
 // Hello is a handler to return a Hello, world! message for GET / .
 func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("received GET / request",
+		"method", r.Method,
+		"remote_addr", r.RemoteAddr,
+		"user_agent", r.UserAgent())
+
 	resp := HelloResponse{Message: "Hello, world!"}
 	err := json.NewEncoder(w).Encode(resp)
 	if err != nil {
+		slog.Error("failed to encode response", "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	slog.Debug("sent hello response")
 }
 
 // GetItems handles GET /items requests
@@ -263,24 +271,25 @@ func parseGetImageRequest(r *http.Request) (*GetImageRequest, error) {
 // GetImage is a handler to return an image for GET /images/{filename} .
 // If the specified image is not found, it returns the default image.
 func (s *Handlers) GetImage(w http.ResponseWriter, r *http.Request) {
-	req, err := parseGetImageRequest(r)
-	if err != nil {
-		slog.Warn("failed to parse get image request: ", "error", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	req := &GetImageRequest{
+		FileName: r.PathValue("filename"),
+	}
+
+	if req.FileName == "" {
+		http.Error(w, "filename is required", http.StatusBadRequest)
 		return
 	}
 
 	imgPath, err := s.buildImagePath(req.FileName)
 	if err != nil {
-		if !errors.Is(err, errImageNotFound) {
-			slog.Warn("failed to build image path: ", "error", err)
+		if errors.Is(err, errImageNotFound) {
+			slog.Debug("Image not found", "path", imgPath)
+			imgPath = filepath.Join(s.imgDirPath, "default.jpg")
+		} else {
+			slog.Warn("failed to build image path", "error", err, "filename", req.FileName)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-
-		// when the image is not found, it returns the default image without an error.
-		slog.Debug("image not found", "filename", imgPath)
-		imgPath = filepath.Join(s.imgDirPath, "default.jpg")
 	}
 
 	slog.Info("returned image", "path", imgPath)
@@ -305,6 +314,7 @@ func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
 	// check if the image exists
 	_, err = os.Stat(imgPath)
 	if err != nil {
+		slog.Debug("image not found", "path", imgPath, "error", err)
 		return imgPath, errImageNotFound
 	}
 
