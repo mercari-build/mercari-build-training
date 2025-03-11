@@ -33,12 +33,6 @@ func (s Server) Run() int {
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
 
-	// set up CORS settings
-	// frontURL, found := os.LookupEnv("FRONT_URL")
-	// if !found {
-	// 	frontURL = "http://localhost:3000"
-	// }
-
 	// STEP 5-1: set up the database connection
 	db, err := sql.Open("sqlite3", "db/mercari.sqlite3")
 	if err != nil {
@@ -96,19 +90,18 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) GetItems(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	sid := r.PathValue("id")
-    _, err := strconv.Atoi(sid)  //リポジトリを見て商品をすべて取得する
+	// `items` テーブルと `categories` テーブルを `JOIN` してデータを取得
 	items, err := h.itemRepo.List(ctx)
 	if err != nil {
 		http.Error(w, "failed to get items", http.StatusInternalServerError)
 		return
 	}
 
-	resp := map[string]interface{}{"items": items}  //リポジトリからかえってきたレスポンスを形式の沿って帰す
+	// JSON レスポンスを返す
+	resp := map[string]interface{}{"items": items}
 	json.NewEncoder(w).Encode(resp)
 }
 
-// 
 func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -174,6 +167,7 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 // 直接乗せた画像ファイルを変更
 func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	slog.Info("Received request to add item")
 
 	req, err := parseAddItemRequest(r)  // リクエストが来た時にAddItemRequestにリクエストの中身を入れて返す
 	if err != nil {
@@ -203,9 +197,12 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	// DBにデータを追加
 	err = s.itemRepo.Insert(ctx, item)
 	if err != nil {
-		http.Error(w, "failed to store item", http.StatusInternalServerError)
+		slog.Error("failed to store item", "error", err)
+		http.Error(w, fmt.Sprintf("failed to store item: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
+
+	slog.Info("Item successfully stored", "id", item.ID)
 
 	// JSONレスポンスを返す
 	resp := map[string]interface{}{
@@ -264,7 +261,7 @@ func (s *Handlers) GetImage(w http.ResponseWriter, r *http.Request) {
 // 検索用エンドポイントを追加
 func (h *Handlers) SearchItems(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	
+
 	// クエリパラメータ "keyword" を取得
 	keyword := r.URL.Query().Get("keyword")
 	if keyword == "" {
@@ -275,13 +272,11 @@ func (h *Handlers) SearchItems(w http.ResponseWriter, r *http.Request) {
 	// リポジトリで検索
 	items, err := h.itemRepo.Search(ctx, keyword)
 	if err != nil {
-		slog.Error("failed to search items", "error", err)
 		http.Error(w, "failed to search items", http.StatusInternalServerError)
 		return
 	}
 
 	// 結果を JSON で返す
 	resp := map[string]interface{}{"items": items}
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }
