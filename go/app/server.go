@@ -49,6 +49,7 @@ func (s Server) Run() int {
 	mux.HandleFunc("POST /items", h.AddItem)
 	mux.HandleFunc("GET /items/{id}", h.GetItemByID)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
+	mux.HandleFunc("GET /search", h.Search)
 
 	// start the server
 	slog.Info("http server started on", "port", s.Port)
@@ -337,4 +338,26 @@ func (s *Handlers) GetItemByID(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *Handlers) Search(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	keyword := r.URL.Query().Get("keyword")
+	if keyword == "" {
+		http.Error(w, "keyword is required", http.StatusBadRequest)
+		return
+	}
+
+	items, err := h.itemRepo.Search(r.Context(), keyword)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(items)
 }
