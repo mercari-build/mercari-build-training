@@ -6,3 +6,5 @@ db/mercari.sqlite3
 
 
 .DS_Store
+myenv/
+venv/
