@@ -18,7 +18,7 @@ COPY . .
 
 # ユーザー・グループの作成と権限設定
 RUN addgroup -S mercari && adduser -S trainee -G mercari \
-    && chown -R trainee:mercari db 
+    && chown -R trainee:mercari db images
 
 # バイナリをビルド
 RUN go build -o server cmd/api/main.go
