@@ -30,15 +30,19 @@ export const ItemList = ({ reload, onLoadCompleted }: Prop) => {
 
   return (
     <div>
-      {items?.map((item) => {
+      {items?.map((item, index) => {
+      console.debug(`Rendering item:`, item); // Debugging log
+        const imageUrl = item.id ? `http://localhost:9000/image/${item.id}.jpg` : PLACEHOLDER_IMAGE;
+      
         return (
-          <div key={item.id} className="ItemList">
+          <div key={item.id || index} className="ItemList">
             {/* TODO: Task 2: Show item images */}
-            <img src={PLACEHOLDER_IMAGE} />
+{/*             <img src={PLACEHOLDER_IMAGE} /> */}
+               <img src={imageUrl} alt={item.name || 'Item image'} onError={(e) => (e.currentTarget.src = PLACEHOLDER_IMAGE)} />
             <p>
-              <span>Name: {item.name}</span>
+              <span>Name: {item.name || 'Unknown'}</span>
               <br />
-              <span>Category: {item.category}</span>
+              <span>Category: {item.category || 'Uncategorized'}</span>
             </p>
           </div>
         );
