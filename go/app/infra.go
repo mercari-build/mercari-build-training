@@ -3,17 +3,17 @@ package app
 import (
 	"context"
 	"database/sql"
-	"log/slog"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	// STEP 5-1: uncomment this line
 	_ "github.com/mattn/go-sqlite3"
 )
 
 var (
-	errImageNotFound = errors.New("image not found")
-	errItemNotFound = errors.New("item not found")
+	errImageNotFound    = errors.New("image not found")
+	errItemNotFound     = errors.New("item not found")
 	errCategoryNotFound = errors.New("category not found")
 )
 
@@ -47,7 +47,7 @@ type Item struct {
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 	List(ctx context.Context) ([]*Item, error)
-	Select(ctx context.Context, id int) (*Item, error)  // リポジトリのinterfaceにselectを追加
+	Select(ctx context.Context, id int) (*Item, error) // リポジトリのinterfaceにselectを追加
 	Search(ctx context.Context, keyword string) ([]*Item, error)
 }
 
@@ -101,13 +101,13 @@ func (i *itemRepository) getOrCreateCategoryID(ctx context.Context, categoryName
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	// カテゴリ ID を取得（新規なら追加）
 	categoryID, err := i.getOrCreateCategoryID(ctx, item.Category)
-    if err != nil {
+	if err != nil {
 		slog.Error("failed to get category ID", "category", item.Category, "error", err)
-        return err
-    }
+		return err
+	}
 	query := `INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)`
 	slog.Info("Executing insert query", "query", query, "name", item.Name, "category_id", categoryID, "image_name", item.ImageName)
-	
+
 	result, err := i.db.ExecContext(ctx, query, item.Name, categoryID, item.ImageName)
 	if err != nil {
 		slog.Error("failed to execute insert query", "error", err)
@@ -117,11 +117,11 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	var id int64
 	id, err = result.LastInsertId()
 	if err != nil {
-        slog.Error("failed to retrieve last insert ID", "error", err)
+		slog.Error("failed to retrieve last insert ID", "error", err)
 		return fmt.Errorf("failed to retrieve last insert ID: %w", err)
 	}
 	item.ID = int(id) // ここで ID をセット
-    slog.Info("Item inserted successfully", "id", item.ID)
+	slog.Info("Item inserted successfully", "id", item.ID)
 	return nil
 }
 

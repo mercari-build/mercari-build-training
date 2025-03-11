@@ -19,7 +19,7 @@ import (
 
 type Server struct {
 	// Port is the port number to listen on.
-	Port 		 string
+	Port string
 	// ImageDirPath is the path to the directory storing images.
 	ImageDirPath string
 	DB           *sql.DB
@@ -52,13 +52,12 @@ func (s Server) Run() int {
 
 	// set up routes
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", h.Hello)  // GET /が呼ばれたらHelloを呼び出す
-	mux.HandleFunc("GET /items", h.GetItems)  // 一覧を返すエンドポイント
-	mux.HandleFunc("POST /items", h.AddItem)  // POST /itemsが呼ばれたらAddItemを呼び出す
-	mux.HandleFunc("GET /items/{id}", h.GetItem)  // 商品を取得する(パスに含まれるデータを取得するにはこの形がいい)
+	mux.HandleFunc("GET /", h.Hello)             // GET /が呼ばれたらHelloを呼び出す
+	mux.HandleFunc("GET /items", h.GetItems)     // 一覧を返すエンドポイント
+	mux.HandleFunc("POST /items", h.AddItem)     // POST /itemsが呼ばれたらAddItemを呼び出す
+	mux.HandleFunc("GET /items/{id}", h.GetItem) // 商品を取得する(パスに含まれるデータを取得するにはこの形がいい)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 	mux.HandleFunc("GET /search", h.SearchItems) // 検索エンドポイント
-
 
 	// start the server
 	// サーバーを立てる
@@ -134,9 +133,9 @@ func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
 
 // AddItemRequestは以下の情報を受け取れる
 type AddItemRequest struct {
-	Name 	 string `form:"name"`
+	Name     string `form:"name"`
 	Category string `form:"category"` // STEP 4-2: add a category field
-	Image 	 []byte `form:"image"` // STEP 4-4: add an image field  受け取った画像ファイルを構造体にそのまま載せる
+	Image    []byte `form:"image"`    // STEP 4-4: add an image field  受け取った画像ファイルを構造体にそのまま載せる
 }
 
 // parseAddItemRequest parses and validates the request to add an item.
@@ -158,7 +157,7 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	imageData, err := io.ReadAll(uploadedFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
-	} 
+	}
 	req.Image = imageData
 	return req, nil
 }
@@ -169,9 +168,9 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	slog.Info("Received request to add item")
 
-	req, err := parseAddItemRequest(r)  // リクエストが来た時にAddItemRequestにリクエストの中身を入れて返す
+	req, err := parseAddItemRequest(r) // リクエストが来た時にAddItemRequestにリクエストの中身を入れて返す
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest) 
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -250,7 +249,7 @@ func (s *Handlers) GetImage(w http.ResponseWriter, r *http.Request) {
 	fileName := r.PathValue("filename")
 	imgPath := filepath.Join(s.imgDirPath, fileName)
 
-		// when the image is not found, it returns the default image without an error.
+	// when the image is not found, it returns the default image without an error.
 	if _, err := os.Stat(imgPath); os.IsNotExist(err) {
 		imgPath = filepath.Join(s.imgDirPath, "default.jpg")
 	}
