@@ -1,17 +1,17 @@
 package app
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"io"
-	"crypto/sha256"
-	"encoding/hex"
 )
 
 type Server struct {
@@ -81,9 +81,9 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 }
 
 type AddItemRequest struct {
-	Name string `form:"name"`
+	Name     string `form:"name"`
 	Category string `form:"category"` // STEP 4-2: add a category field
-	Image []byte `form:"image"` // STEP 4-4: add an image field
+	Image    []byte `form:"image"`    // STEP 4-4: add an image field
 }
 
 type AddItemResponse struct {
@@ -93,7 +93,7 @@ type AddItemResponse struct {
 // parseAddItemRequest parses and validates the request to add an item.
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	req := &AddItemRequest{
-		Name: r.FormValue("name"),
+		Name:     r.FormValue("name"),
 		Category: r.FormValue("category"), // STEP 4-2: add a category field
 	}
 
@@ -147,9 +147,9 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item := &Item{
-		Name: req.Name,
-		Category: req.Category, // STEP 4-2: add a category field
-		ImageName: fileName, // STEP 4-4: add an image field
+		Name:      req.Name,
+		Category:  req.Category, // STEP 4-2: add a category field
+		ImageName: fileName,     // STEP 4-4: add an image field
 	}
 	message := fmt.Sprintf("item received: %s", item.Name)
 	slog.Info(message)
@@ -204,12 +204,12 @@ func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
 	hashStr := hex.EncodeToString(hash[:])
 
 	// - build image file path
-    filePath = filepath.Join(s.imgDirPath, fmt.Sprintf("%s.jpg", hashStr))
+	filePath = filepath.Join(s.imgDirPath, fmt.Sprintf("%s.jpg", hashStr))
 
 	// - check if the image already exists
 	if _, err := os.Stat(filePath); err == nil {
 		return filePath, nil
-	}else if !os.IsNotExist(err) {
+	} else if !os.IsNotExist(err) {
 		return "", fmt.Errorf("error checking image existence: %w", err)
 	}
 

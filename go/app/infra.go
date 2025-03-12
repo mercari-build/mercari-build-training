@@ -13,9 +13,9 @@ import (
 var errImageNotFound = errors.New("image not found")
 
 type Item struct {
-	ID   int    `db:"id" json:"-"`
-	Name string `db:"name" json:"name"`
-	Category string `db:"category" json:"category"`
+	ID        int    `db:"id" json:"-"`
+	Name      string `db:"name" json:"name"`
+	Category  string `db:"category" json:"category"`
 	ImageName string `db:"image_name" json:"image_name"` // STEP 4-4: add an image field
 }
 
@@ -43,61 +43,61 @@ func NewItemRepository() ItemRepository {
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	// STEP 4-2: add an implementation to store an item
 	// Prepare an empty structure with Items
-    data := &struct {
-        Items []*Item `json:"items"`
-    }{}
+	data := &struct {
+		Items []*Item `json:"items"`
+	}{}
 
-    oldData, err := os.ReadFile(i.fileName)
-    if err != nil && !os.IsNotExist(err) {
-        return fmt.Errorf("failed to read file: %w", err)
-    }
+	oldData, err := os.ReadFile(i.fileName)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to read file: %w", err)
+	}
 
-    // If JSON exists, parse and read existing Items
-    if len(oldData) > 0 {
-        if err := json.Unmarshal(oldData, data); err != nil {
-            return fmt.Errorf("failed to unmarshal JSON: %w", err)
-        }
-    }
+	// If JSON exists, parse and read existing Items
+	if len(oldData) > 0 {
+		if err := json.Unmarshal(oldData, data); err != nil {
+			return fmt.Errorf("failed to unmarshal JSON: %w", err)
+		}
+	}
 
-    // Add new item
-    data.Items = append(data.Items, item)
+	// Add new item
+	data.Items = append(data.Items, item)
 
-    // Convert to JSON with indentation
-    newData, err := json.MarshalIndent(data, "", "  ")
-    if err != nil {
-        return fmt.Errorf("failed to marshal JSON: %w", err)
-    }
+	// Convert to JSON with indentation
+	newData, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal JSON: %w", err)
+	}
 
-    // Write to file (0644 is rw-r--r-- permissions)
-    if err := os.WriteFile(i.fileName, newData, 0644); err != nil {
-        return fmt.Errorf("failed to write file: %w", err)
-    }
+	// Write to file (0644 is rw-r--r-- permissions)
+	if err := os.WriteFile(i.fileName, newData, 0644); err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
+	}
 
 	return nil
 }
 
-//List list items from the repository
+// List list items from the repository
 func (i *itemRepository) List(ctx context.Context) ([]*Item, error) {
 	// Temporary structure for JSON file
-    data := &struct {
-        Items []*Item `json:"items"`
-    }{}
+	data := &struct {
+		Items []*Item `json:"items"`
+	}{}
 
 	// Read file
-    bytes, err := os.ReadFile(i.fileName)
-    if err != nil {
-        if os.IsNotExist(err) {
-            return nil, nil
-        }
-        return nil, fmt.Errorf("failed to read file: %w", err)
-    }
+	bytes, err := os.ReadFile(i.fileName)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
 
 	// Unmarshal JSON if file is not empty
-    if len(bytes) > 0 {
-        if err := json.Unmarshal(bytes, data); err != nil {
-            return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
-        }
-    }
+	if len(bytes) > 0 {
+		if err := json.Unmarshal(bytes, data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
+		}
+	}
 
 	return data.Items, nil
 }
