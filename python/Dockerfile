@@ -1,7 +1,6 @@
 FROM python:3.9-alpine@sha256:2bac43769ace90ebd3ad83e5392295e25dfc58e58543d3ab326c3330b505283d
 
-RUN apk add --no-cache python3 py3-pip && \
-    pip install --upgrade pip
+RUN apk add --no-cache python3 py3-pip
 
 # non-root user for better security
 RUN addgroup -S appgroup && \
