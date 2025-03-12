@@ -23,9 +23,17 @@ import (
 
 type Server struct {
 	Port         string // Port is the port number to listen on.
-	ImageDirPath string // ImageDirPath is the path to the directory storing images.
+	ImageDirPath string // imageDirPath is the path to the directory storing images.
 	DB           *sql.DB
 }
+
+func NewHandlers(imageDirPath string) *Handlers {
+	return &Handlers{
+		imageDirPath: imageDirPath,
+	}
+}
+
+var ErrInvalidInput = errors.New("invalid input")
 
 // Run is a method to start the server.
 // This method returns 0 if the server started successfully, and 1 otherwise.
@@ -41,12 +49,11 @@ func (s Server) Run() int {
 	}
 
 	// STEP 5-1: set up the database connection
-	db, err := sql.Open("sqlite3", "./db/items.db")
+	db, err := sql.Open("sqlite3", "../db/items.db")
 	if err != nil {
 		slog.Error("failed to open database: ", "error", err)
 		return 1
 	}
-	s.DB = db
 
 	repo, err := NewItemRepository()
 	if err != nil {
@@ -54,9 +61,23 @@ func (s Server) Run() int {
 		return 1
 	}
 
-	// set up handlers
-	h := &Handlers{imgDirPath: s.ImageDirPath, db: db, repo: repo}
+	imageDir, found := os.LookupEnv("IMAGE_DIR_PATH")
+	if !found {
+		s.ImageDirPath = "../../cmd/api/images"
+		log.Println("Using default image directory: ", s.ImageDirPath)
+	}
 
+	s.ImageDirPath = imageDir
+
+	// set up handlers
+	h := &Handlers{imageDirPath: s.ImageDirPath, db: db, repo: repo}
+
+	if db == nil {
+		slog.Error("Database connection is nil")
+	}
+	if repo == nil {
+		slog.Error("ItemRepository is nil")
+	}
 	// set up routes
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /items", h.AddItem)
@@ -83,9 +104,9 @@ func (s Server) Run() int {
 }
 
 type Handlers struct {
-	imgDirPath string  // imgDirPath is the path to the directory storing images.
-	db         *sql.DB //define struct of db
-	repo       ItemRepository
+	imageDirPath string  // imiageDirPath is the path to the directory storing images.
+	db           *sql.DB //define struct of db
+	repo         ItemRepository
 }
 type HelloResponse struct {
 	Message string `json:"message"`
@@ -105,6 +126,7 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 	resp := HelloResponse{Message: "Hello, world!"}
 	err := json.NewEncoder(w).Encode(resp)
 	if err != nil {
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -113,47 +135,50 @@ func (s *Handlers) Hello(w http.ResponseWriter, r *http.Request) {
 // parseAddItemRequest parses and validates the request to add an item.
 func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		return nil, errors.New("failed to parse multipart form")
+		log.Printf("Error parsing multipart form: %v", err)
+		return nil, fmt.Errorf("failed to parse multipart form: %w", err)
 	}
 
-	req := &AddItemRequest{
-		Name:     r.FormValue("name"),
-		Category: r.FormValue("category"),
-	}
-
-	// get the image file
-	imageFile, _, err := r.FormFile("image")
+	name := r.FormValue("name")
+	category := r.FormValue("category")
+	file, _, err := r.FormFile("image")
 	if err != nil {
-		if errors.Is(err, http.ErrMissingFile) {
-			req.Image = nil
-		} else {
-			log.Printf("Error parsing image file: %v", err) // Debug log
-			return nil, fmt.Errorf("failed to get image file: %w", err)
-		}
+		log.Println("No image file found, using default image")
+		file = nil
 	} else {
-		defer imageFile.Close()
-		imageData, err := io.ReadAll(imageFile)
-		if err != nil {
-			return nil, errors.New("failed to read image file")
-		}
-		req.Image = imageData
+		defer file.Close()
 	}
 
-	// validate the request
-	if req.Name == "" {
+	var image []byte
+	if file != nil {
+		image, err = io.ReadAll(file) //read image file
+		if err != nil {
+			log.Printf("Error reading image file: %v", err)
+			return nil, fmt.Errorf("failed to read image file: %w", err)
+		}
+	}
+
+	if name == "" {
+		log.Println("Name is empty")
 		return nil, errors.New("name is required")
 	}
-	if req.Category == "" {
+	if category == "" {
+		log.Println("Category is empty")
 		return nil, errors.New("category is required")
 	}
-	return req, nil
+
+	return &AddItemRequest{
+		Name:     name,
+		Category: category,
+		Image:    image,
+	}, nil
 }
 
 // AddItem is a handler to add a new item for POST /items .
 func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
-		http.Error(w, "faled to parse multipart form", http.StatusBadRequest)
+		http.Error(w, "failed to parse form", http.StatusBadRequest)
 		return
 	}
 
@@ -174,7 +199,7 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		}
 		fileName = storedFileName
 	} else {
-		fileName = "default.jpg"
+		fileName = "default.jpg" // if req.Image is nil, set fileName as default.jpg
 	}
 
 	item := &Item{
@@ -183,22 +208,25 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		Image:    fileName,
 	}
 
-	insertedItem, err := s.repo.AddItem(r.Context(), item)
+	err = s.repo.Insert(r.Context(), item)
 
 	if err != nil {
-		http.Error(w, "Database error", http.StatusInternalServerError)
-		log.Println("Database error: ", err)
+		log.Println("Failed to insert item:", err)
+
+		if errors.Is(err, ErrInvalidInput) {
+			http.Error(w, "Invalid input", http.StatusBadRequest) //400
+		} else {
+			http.Error(w, "Database error", http.StatusInternalServerError) //500
+		}
 		return
 	}
 
-	log.Printf("insertedItem: %+v\n", insertedItem)
-
 	// return response
 	response := map[string]interface{}{
-		"id":       insertedItem.ID,
-		"name":     insertedItem.Name,
-		"category": insertedItem.Category,
-		"image":    insertedItem.Image,
+		"id":       item.ID,
+		"name":     item.Name,
+		"category": item.Category,
+		"image":    item.Image,
 	}
 
 	// return JSON response
@@ -208,7 +236,6 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 		log.Println("failed to encode JSON: ", err)
 		return
 	}
-	log.Printf("response: %+v\n", response)
 
 	// debug
 	file, err := os.Create("response.json")
@@ -302,15 +329,15 @@ func (s *Handlers) Getkeyword(w http.ResponseWriter, r *http.Request) {
 // this method calculates the hash sum of the image as a file name to avoid the duplication of a same file
 // and stores it in the image directory.
 func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
-	if image == nil || len(image) == 0 {
-		return "default.jpg", nil
+	s.imageDirPath = "../cmd/api/images"
+	if s.imageDirPath == "" {
+		return "", fmt.Errorf("image directory path is not set")
 	}
+
 	hash := sha256.Sum256(image)
 	hashStr := hex.EncodeToString(hash[:])
-	fileName := hashStr + ".jpg"                     // - calc hash sum
-	filePath = filepath.Join(s.imgDirPath, fileName) // - build image file path
-
-	log.Printf("storing image: hash = %s,path = %s", hashStr, filePath)
+	fileName := hashStr + ".jpg"                       // - calc hash sum
+	filePath = filepath.Join(s.imageDirPath, fileName) // - build image file path
 
 	if _, err := os.Stat(filePath); err == nil {
 		return fileName, nil //if the file already exists, just return file
@@ -318,7 +345,7 @@ func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
 		return "", fmt.Errorf("failed to check image file existence: %w", err)
 	}
 
-	if err := os.MkdirAll(s.imgDirPath, 0755); err != nil {
+	if err := os.MkdirAll(s.imageDirPath, 0755); err != nil {
 		return "", fmt.Errorf("failed to create image directory: %w", err)
 	}
 
@@ -376,10 +403,10 @@ func (s *Handlers) GetImage(w http.ResponseWriter, r *http.Request) {
 
 // buildImagePath builds the image path and validates it.
 func (s *Handlers) buildImagePath(imageFileName string) (string, error) {
-	imgPath := filepath.Join(s.imgDirPath, filepath.Clean(imageFileName))
+	imgPath := filepath.Join(s.imageDirPath, filepath.Clean(imageFileName))
 
 	// to prevent directory traversal attacks
-	rel, err := filepath.Rel(s.imgDirPath, imgPath)
+	rel, err := filepath.Rel(s.imageDirPath, imgPath)
 	if err != nil || strings.HasPrefix(rel, "..") {
 		return "", fmt.Errorf("invalid image path: %s", imgPath)
 	}

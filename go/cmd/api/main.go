@@ -7,7 +7,7 @@ import (
 
 const (
 	port         = "9000"
-	imageDirPath = "images"
+	imageDirPath = "./images"
 )
 
 func main() {
