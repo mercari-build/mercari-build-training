@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"io"
+	"crypto/sha256"
+	"encoding/hex"
 )
 
 type Server struct {
@@ -198,12 +200,26 @@ func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
 	// STEP 4-4: add an implementation to store an image
 	// TODO:
 	// - calc hash sum
-	// - build image file path
-	// - check if the image already exists
-	// - store image
-	// - return the image file path
+	hash := sha256.Sum256(image)
+	hashStr := hex.EncodeToString(hash[:])
 
-	return
+	// - build image file path
+    filePath = filepath.Join(s.imgDirPath, fmt.Sprintf("%s.jpg", hashStr))
+
+	// - check if the image already exists
+	if _, err := os.Stat(filePath); err == nil {
+		return filePath, nil
+	}else if !os.IsNotExist(err) {
+		return "", fmt.Errorf("error checking image existence: %w", err)
+	}
+
+	// - store image
+	if err := StoreImage(filePath, image); err != nil {
+		return "", fmt.Errorf("fail to store image: %w", err)
+	}
+
+	// - return the image file path
+	return filePath, nil
 }
 
 type GetImageRequest struct {
