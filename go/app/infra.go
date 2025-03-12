@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"structs"
 	// STEP 5-1: uncomment this line
 	// _ "github.com/mattn/go-sqlite3"
 )
