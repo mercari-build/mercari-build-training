@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"io"
 )
 
 type Server struct {
@@ -95,6 +96,21 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 	}
 
 	// STEP 4-4: add an image field
+	uploadFile, _, err := r.FormFile("image")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get image file: %w", err)
+	}
+	defer func() {
+		if cerr := uploadFile.Close(); cerr != nil {
+			slog.Warn("failed to close image file", "error", cerr)
+		}
+	}()
+
+	imageData, err := io.ReadAll(uploadFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read image file: %w", err)
+	}
+	req.Image = imageData
 
 	// validate the request
 	if req.Name == "" {
