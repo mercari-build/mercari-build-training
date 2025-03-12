@@ -3,6 +3,9 @@ package app
 import (
 	"context"
 	"errors"
+	"encoding/json"
+	"os"
+	"fmt"
 	// STEP 5-1: uncomment this line
 	// _ "github.com/mattn/go-sqlite3"
 )
@@ -37,6 +40,36 @@ func NewItemRepository() ItemRepository {
 // Insert inserts an item into the repository.
 func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	// STEP 4-2: add an implementation to store an item
+	// Prepare an empty structure with Items
+    data := &struct {
+        Items []*Item `json:"items"`
+    }{}
+
+    oldData, err := os.ReadFile(i.fileName)
+    if err != nil && !os.IsNotExist(err) {
+        return fmt.Errorf("failed to read file: %w", err)
+    }
+
+    // If JSON exists, parse and read existing Items
+    if len(oldData) > 0 {
+        if err := json.Unmarshal(oldData, data); err != nil {
+            return fmt.Errorf("failed to unmarshal JSON: %w", err)
+        }
+    }
+
+    // Add new item
+    data.Items = append(data.Items, item)
+
+    // Convert to JSON with indentation
+    newData, err := json.MarshalIndent(data, "", "  ")
+    if err != nil {
+        return fmt.Errorf("failed to marshal JSON: %w", err)
+    }
+
+    // Write to file (0644 is rw-r--r-- permissions)
+    if err := os.WriteFile(i.fileName, newData, 0644); err != nil {
+        return fmt.Errorf("failed to write file: %w", err)
+    }
 
 	return nil
 }
