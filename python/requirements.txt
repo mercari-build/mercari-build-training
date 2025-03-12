@@ -1,3 +1,5 @@
 fastapi[all]>=0.75
 uvicorn[standard]>=0.15
 pytest==8.3.4
+pydantic
+python-multipart
