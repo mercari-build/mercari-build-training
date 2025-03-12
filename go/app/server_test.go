@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestParseAddItemRequest(t *testing.T) {
@@ -36,9 +35,9 @@ func TestParseAddItemRequest(t *testing.T) {
 		"ok: valid request": {
 			args: map[string][]byte{
 				//data included in the body of an HTTP request is often treated as binary data ([]byte).
-				"name":     []byte("sample_name"),     // fill here
-				"category": []byte("sample_category"), // fill here
-				"image":    imageBytes,
+				"name":       []byte("sample_name"),     // fill here
+				"category":   []byte("sample_category"), // fill here
+				"image_name": imageBytes,
 			},
 			wants: wants{
 				req: &AddItemRequest{
@@ -49,12 +48,44 @@ func TestParseAddItemRequest(t *testing.T) {
 				err: false,
 			},
 		},
+
+		// step6-1
+		// if any one is missing, an error will be issued
+		"ng: missing name": {
+			args: map[string][]byte{
+				"category":   []byte("sample_category"),
+				"image_name": imageBytes,
+			},
+			wants: wants{
+				req: nil,
+				err: true, // Error due to missing Name
+			},
+		},
+		"ng: missing category": {
+			args: map[string][]byte{
+				"name":       []byte("sample_name"),
+				"image_name": imageBytes,
+			},
+			wants: wants{
+				req: nil,
+				err: true, //Error due to missing Category
+			},
+		},
+		"ng: missing image": {
+			args: map[string][]byte{
+				"name":     []byte("sample_name"),
+				"category": []byte("sample_category"),
+			},
+			wants: wants{
+				req: nil,
+				err: true, // Error due to missing Image
+			},
+		},
 		"ng: empty request": {
-			// if the body of an HTTP request is empty, test result is ng
 			args: map[string][]byte{},
 			wants: wants{
 				req: nil,
-				err: true,
+				err: true, // Error due to request is empty
 			},
 		},
 	}
@@ -70,7 +101,7 @@ func TestParseAddItemRequest(t *testing.T) {
 			// prepare request body
 			// k is a field name like "name"or "category", v is "sample_name", "sample_category"
 			for k, v := range tt.args {
-				if k == "image" {
+				if k == "image_name" {
 					// if k is "image", add image file to multipart/form-data
 					fw, err := w.CreateFormFile("image", "basket.jpg")
 					if err != nil {
@@ -94,15 +125,25 @@ func TestParseAddItemRequest(t *testing.T) {
 			// execute test target
 			got, err := parseAddItemRequest(req)
 
-			// confirm the result
-			if err != nil {
-				if !tt.wants.err {
-					t.Errorf("unexpected error: %v", err)
-				}
-				return
+			// Confirm the result
+			if err != nil && !tt.wants.err {
+				t.Fatalf("expected no error, but got: %v", err)
 			}
-			if diff := cmp.Diff(tt.wants.req, got); diff != "" {
-				t.Errorf("unexpected request (-want +got):\n%s", diff)
+			if err == nil && tt.wants.err {
+				t.Fatal("expected error, but got none")
+			}
+
+			// Compare the result, handling []byte comparison
+			if !tt.wants.err {
+				if got.Name != tt.wants.req.Name {
+					t.Errorf("expected Name: %s, got: %s", tt.wants.req.Name, got.Name)
+				}
+				if got.Category != tt.wants.req.Category {
+					t.Errorf("expected Category: %s, got: %s", tt.wants.req.Category, got.Category)
+				}
+				if !bytes.Equal(got.Image, tt.wants.req.Image) {
+					t.Errorf("expected Image: %#v, got: %#v", tt.wants.req.Image, got.Image)
+				}
 			}
 		})
 	}
@@ -160,9 +201,9 @@ func TestAddItem(t *testing.T) {
 		"ok: correctly inserted": {
 
 			args: map[string]string{
-				"name":     "used iPhone 16e",
-				"category": "phone",
-				"image":    "test.jpg",
+				"name":       "used iPhone 16e",
+				"category":   "phone",
+				"image_name": "test.jpg",
 			},
 			injector: func(m *MockItemRepository) {
 				// STEP 6-3:
@@ -194,7 +235,7 @@ func TestAddItem(t *testing.T) {
 			},
 		},
 	}
-
+	// convert to a multipart HTTP request body
 	// use dummy image data instead of an actual image data
 	for name, tt := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -211,15 +252,15 @@ func TestAddItem(t *testing.T) {
 			w := multipart.NewWriter(&body)
 
 			for k, v := range tt.args {
-				if k == "image" {
+				if k == "image_name" {
 					// set the image data
 					fw, err := w.CreateFormFile("image", v)
 					if err != nil {
-						t.Fatal(err)
+						t.Errorf("failed to create form file: %v", err)
 					}
 					_, err = fw.Write([]byte("dummy image data"))
 					if err != nil {
-						t.Fatal(err)
+						t.Errorf("failed to write image data: %v", err)
 					}
 				} else {
 					w.WriteField(k, v)
@@ -269,9 +310,9 @@ func TestAddItemE2e(t *testing.T) {
 	}{
 		"ok: correctly inserted": {
 			args: map[string][]byte{
-				"name":     []byte("used iPhone 16e"),
-				"category": []byte("phone"),
-				"image":    []byte("fake image data"),
+				"name":       []byte("used iPhone 16e"),
+				"category":   []byte("phone"),
+				"image_name": []byte("fake image data"),
 			},
 			wants: wants{
 				code: http.StatusOK,
@@ -279,9 +320,9 @@ func TestAddItemE2e(t *testing.T) {
 		},
 		"ng: failed to insert": {
 			args: map[string][]byte{
-				"name":     []byte(""),
-				"category": []byte("phone"),
-				"image":    []byte("fake image data"),
+				"name":       []byte(""),
+				"category":   []byte("phone"),
+				"image_name": []byte("fake image data"),
 			},
 			wants: wants{
 				code: http.StatusBadRequest,
@@ -297,7 +338,7 @@ func TestAddItemE2e(t *testing.T) {
 			var buf bytes.Buffer
 			writer := multipart.NewWriter(&buf)
 			for k, v := range tt.args {
-				if k == "image" {
+				if k == "image_name" {
 					part, err := writer.CreateFormFile("image", "test.jpg")
 					if err != nil {
 						t.Fatalf("failed to create form file: %v", err)
@@ -327,14 +368,14 @@ func TestAddItemE2e(t *testing.T) {
 			// STEP 6-4: check inserted data
 			item := &Item{}
 			err = db.QueryRow(`
-    		SELECT items.name, categories.name, items.image
+    		SELECT items.name, categories.name, items.image_name
    		    FROM items
     		JOIN categories ON items.category_id = categories.id
     		WHERE items.name = ?`, string(tt.args["name"]),
 			).Scan(&item.Name, &item.Category, &item.Image)
 
 			if err != nil {
-				t.Fatalf("failed to query inserted item: %v", err)
+				t.Errorf("failed to query inserted item: %v", err)
 			}
 
 			//verify that the inserted item matches the expected values
@@ -344,7 +385,7 @@ func TestAddItemE2e(t *testing.T) {
 			if item.Category != string(tt.args["category"]) {
 				t.Errorf("expected item category to be %s, got %s", tt.args["category"], item.Category)
 			}
-			if item.Image != "5b3397652358a6663a0225ee76466d4e4fd6c58d484d1aa25170bb617d6bb086.jpg" { // image_nameを検証するように修正
+			if item.Image != "5b3397652358a6663a0225ee76466d4e4fd6c58d484d1aa25170bb617d6bb086.jpg" {
 				t.Errorf("expected item image to be %s, got %s", "5b3397652358a6663a0225ee76466d4e4fd6c58d484d1aa25170bb617d6bb086.jpg", item.Image)
 			}
 
@@ -363,45 +404,28 @@ func setupDB(t *testing.T) (db *sql.DB, closers []func(), e error) {
 		}
 	}()
 
-	// create a temporary file for e2e testing
-	f, err := os.CreateTemp(".", "*.sqlite3")
-	if err != nil {
-		return nil, nil, err
-	}
-	closers = append(closers, func() {
-		f.Close()
-		os.Remove(f.Name())
-	})
+	originalDB := "../db/items.db"
+	// copy items.db
+	testDB := "../db/items_test.db"
 
-	// set up tables
-	db, err = sql.Open("sqlite3", f.Name())
+	input, err := os.ReadFile(originalDB)
 	if err != nil {
 		return nil, nil, err
 	}
+	err = os.WriteFile(testDB, input, 0644)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	db, err = sql.Open("sqlite3", testDB)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	closers = append(closers, func() {
 		db.Close()
+		os.Remove(testDB)
 	})
-
-	// TODO: replace it with real SQL statements.
-	// Temporary database for testing
-	cmd := `CREATE TABLE IF NOT EXISTS categories(
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			name TEXT NOT NULL UNIQUE
-			);
-	
-
-	CREATE TABLE IF NOT EXISTS items (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT NOT NULL,
-		category_id INTEGER,
-		image TEXT NOT NULL DEFAULT 'default.jpg',
-		FOREIGN KEY (category_id) REFERENCES categories(id)
-	);`
-
-	_, err = db.Exec(cmd)
-	if err != nil {
-		return nil, nil, err
-	}
 
 	return db, closers, nil
 }

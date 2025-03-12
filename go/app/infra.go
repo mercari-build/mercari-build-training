@@ -19,7 +19,7 @@ type Item struct {
 	ID       int    `db:"id" json:"-"`
 	Name     string `db:"name" json:"name"`
 	Category string `db:"category" json:"category"`
-	Image    string `db:"image" json:"image"`
+	Image    string `db:"image_name" json:"image"`
 }
 
 // Please run `go generate ./...` to generate the mock implementation
@@ -90,7 +90,7 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
 	}
 
 	// insert the item to items.table
-	query := "INSERT INTO items (name, category_id, image) VALUES (?, ?, ?)"
+	query := "INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)"
 	result, err := i.db.ExecContext(ctx, query, item.Name, categoryID, item.Image)
 	if err != nil {
 		return fmt.Errorf("failed to insert item: %w", err)
@@ -132,7 +132,7 @@ func StoreImage(fileName string, image []byte) error {
 
 func (i *itemRepository) GetItemByID(ctx context.Context, id int) (*Item, error) {
 	query := `
-	SELECT items.id, items.name, COALESCE(categories.name, '') AS category,items.image
+	SELECT items.id, items.name, COALESCE(categories.name, '') AS category,items.image_name
 	FROM items
 	LEFT JOIN categories ON items.category_id = categories.id
 	WHERE items.id = ?
@@ -153,7 +153,7 @@ func (i *itemRepository) GetItemByID(ctx context.Context, id int) (*Item, error)
 
 func (i *itemRepository) GetAll(ctx context.Context) ([]Item, error) {
 	query := `
-        SELECT items.id, items.name, COALESCE(categories.name, '') AS category, items.image
+        SELECT items.id, items.name, COALESCE(categories.name, '') AS category, items.image_name
         FROM items
         LEFT JOIN categories ON items.category_id = categories.id
     `
