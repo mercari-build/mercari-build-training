@@ -83,6 +83,7 @@ async def add_item(
     image: UploadFile = File(...),
     db: sqlite3.Connection = Depends(get_db),
 ):
+    print(f"Received: name={name}, category={category}, image={image.filename}")  #check
     if not name:
         raise HTTPException(status_code=400, detail="name is required")
     if not category:
@@ -95,6 +96,10 @@ async def add_item(
     with open(image_path, "wb") as a:
         a.write(content)
 
+    # Check if image was saved correctly
+    if not image_path.exists():
+        print(f"Error: Image not saved at {image_path}")
+    
     insert_item_db(Item(name=name, category=category, image=hashedimg), db)
     return AddItemResponse(**{"message": f"item received: {name}"})
 
@@ -155,10 +160,10 @@ def get_item_by_id(item_id: int, db: sqlite3.Connection = Depends(get_db)):
     return all_items[item_id - 1]  # Adjust to zero-based index
 
 
-# get_image is a handler to return an image for GET /images/{filename} .
+#get_image is a handler to return an image for GET /images/{filename} .
 @app.get("/image/{image_name}")
 async def get_image(image_name: str):
-    # Create image path
+    #Create image path
     image = images / image_name
 
     if not image_name.endswith(".jpg"):
@@ -168,7 +173,7 @@ async def get_image(image_name: str):
         logger.debug(f"Image not found: {image}")
         image = images / "default.jpg"
 
-    return FileResponse(image)
+    return FileResponse(image, media_type="image/jpeg")
 
 @app.get("/search")
 def search_keyword(keyword: str = Query(...), db: sqlite3.Connection = Depends(get_db)):
@@ -194,8 +199,30 @@ def search_keyword(keyword: str = Query(...), db: sqlite3.Connection = Depends(g
 class Item(BaseModel):
     name: str
     category:str 
-    #image
     image: str
+
+@app.get("/image/{item_id}.jpg")
+def get_image_by_id(item_id, conn: sqlite3.Connection = Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("SELECT items.image_name FROM items WHERE id = ?", (item_id,))
+    row = cur.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    image_name = row[0]
+
+    # Ensure the filename has a .jpg extension
+    if not image_name.endswith(".jpg"):
+        image_name += ".jpg"
+
+    image_path = images / image_name
+
+    # Check if the image exists
+    if not image_path.exists():
+        logger.debug(f"Image not found: {image_path}, returning default.jpg")
+        return FileResponse(images / "default.jpg", media_type="image/jpeg")
+
+    return FileResponse(image_path, media_type="image/jpeg")
 
 
 def insert_item_db(item: Item, db: sqlite3.Connection) -> int:
