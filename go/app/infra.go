@@ -2,10 +2,11 @@ package app
 
 import (
 	"context"
-	"errors"
 	"encoding/json"
-	"os"
+	"errors"
 	"fmt"
+	"os"
+	"structs"
 	// STEP 5-1: uncomment this line
 	// _ "github.com/mattn/go-sqlite3"
 )
@@ -24,6 +25,7 @@ type Item struct {
 //go:generate go run go.uber.org/mock/mockgen -source=$GOFILE -package=${GOPACKAGE} -destination=./mock_$GOFILE
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
+	List(ctx context.Context) ([]*Item, error)
 }
 
 // itemRepository is an implementation of ItemRepository
@@ -72,6 +74,32 @@ func (i *itemRepository) Insert(ctx context.Context, item *Item) error {
     }
 
 	return nil
+}
+
+//List list items from the repository
+func (i *itemRepository) List(ctx context.Context) ([]*Item, error) {
+	// Temporary structure for JSON file
+    data := &struct {
+        Items []*Item `json:"items"`
+    }{}
+
+	// Read file
+    bytes, err := os.ReadFile(i.fileName)
+    if err != nil {
+        if os.IsNotExist(err) {
+            return nil, nil
+        }
+        return nil, fmt.Errorf("failed to read file: %w", err)
+    }
+
+	// Unmarshal JSON if file is not empty
+    if len(bytes) > 0 {
+        if err := json.Unmarshal(bytes, data); err != nil {
+            return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
+        }
+    }
+
+	return data.Items, nil
 }
 
 // StoreImage stores an image and returns an error if any.
