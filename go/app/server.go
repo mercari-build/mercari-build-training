@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -46,6 +47,7 @@ func (s Server) Run() int {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", h.Hello)
 	mux.HandleFunc("POST /items", h.AddItem)
+	mux.HandleFunc("GET /items/{id}", h.GetItem)
 	mux.HandleFunc("GET /items", h.GetItems)
 	mux.HandleFunc("GET /images/{filename}", h.GetImage)
 
@@ -167,6 +169,44 @@ func (s *Handlers) AddItem(w http.ResponseWriter, r *http.Request) {
 
 	resp := AddItemResponse{Message: message}
 	err = json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// SetItem is a handler to return items for GET /items/{id}
+func (s *Handlers) GetItem(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get path parameter id
+	sid := r.PathValue("id")
+	if sid == "" {
+		http.Error(w, "id is required", http.StatusBadRequest)
+		return
+	}
+
+	// Convert id to integer
+	id, err := strconv.Atoi(sid)
+	if err != nil {
+		http.Error(w, "id must be an integer", http.StatusBadRequest)
+		return
+	}
+
+	// Get item by the id
+	item, err := s.itemRepo.Select(ctx, id)
+	if err != nil {
+		if errors.Is(err, errItemNotFound) {
+			http.Error(w, "item not found", http.StatusNotFound)
+			return
+		}
+		slog.Error("failed to get item: ", "error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Return the item
+	err = json.NewEncoder(w).Encode(item)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
