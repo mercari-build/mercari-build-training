@@ -1,18 +1,22 @@
 import os
 import logging
 import pathlib
-from fastapi import FastAPI, Form, HTTPException, Depends
+import json
+from fastapi import FastAPI, Form, HTTPException, Depends,UploadFile, File
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
+import hashlib
 
 
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
 db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
+items_file = pathlib.Path(__file__).parent.resolve() / "items.json"
 
+images.mkdir(exist_ok=True)
 
 def get_db():
     if not db.exists():
@@ -64,19 +68,61 @@ def hello():
 class AddItemResponse(BaseModel):
     message: str
 
+class Item(BaseModel):
+    name: str
+    category: str
+    image_name: str = ""
+
+def load_items():
+    if items_file.exists():
+        with open(items_file, "r") as f:
+            return json.load(f)
+    return {"items": []}
+
+
+def save_items(items):
+    with open(items_file, "w") as f:
+        json.dump({"items": items}, f, indent=4)
+
+def insert_item(item: Item):
+    if items_file.exists():
+        with open(items_file, "r") as f:
+            data = json.load(f)
+            items = data.get("items", [])
+    else:
+        items = []
+    
+    items.append(item.dict())
+    save_items(items)
 
 # add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
 def add_item(
     name: str = Form(...),
-    db: sqlite3.Connection = Depends(get_db),
+    category: str = Form(...),
+    image: UploadFile = File(None),
+    db: sqlite3.Connection = Depends(get_db)
 ):
-    if not name:
-        raise HTTPException(status_code=400, detail="name is required")
+    if not name or not category:
+        raise HTTPException(status_code=400, detail="name and category are required")
 
-    insert_item(Item(name=name))
+    image_name = ""
+    if image:
+        contents = image.file.read()
+        image_hash = hashlib.sha256(contents).hexdigest()
+        image_name = f"{image_hash}.jpg"
+        image_path = images / image_name
+        with open(image_path, "wb") as f:
+            f.write(contents)
+    
+    item = Item(name=name, category=category, image_name=image_name)
+    insert_item(item)
     return AddItemResponse(**{"message": f"item received: {name}"})
 
+# get_items is a handler to return the list of items for GET /items .
+@app.get("/items")
+def get_items():
+    return load_items()
 
 # get_image is a handler to return an image for GET /images/{filename} .
 @app.get("/images/{image_name}")
@@ -92,12 +138,3 @@ async def get_image(image_name):
         image = images / "default.jpg"
 
     return FileResponse(image)
-
-
-class Item(BaseModel):
-    name: str
-
-
-def insert_item(item: Item):
-    # STEP 4-2: add an implementation to store an item
-    pass
