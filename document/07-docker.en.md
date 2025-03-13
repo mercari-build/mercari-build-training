@@ -87,7 +87,7 @@ Check that you can now see `mercari-build-training/app` in the list of images.
 
 * [Dockerfile reference](https://docs.docker.com/engine/reference/builder/)
 
-## 5. Modity Dockerfile
+## 5. Modify Dockerfile
 **Run the docker image you built in STEP7-4, and check if the following error shows up.**
 
 ```
