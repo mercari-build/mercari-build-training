@@ -33,7 +33,7 @@ export const ItemList = ({ reload, onLoadCompleted }: Prop) => {
       {items.map((item) => (
         <div key={item.id} className="card"> {/* ✅ 修正: 商品カードのクラス名を統一 */}
           <img
-            src={item.image_name ? `http://localhost:8000/image/${item.image_name}` : PLACEHOLDER_IMAGE}
+            src={item.image_name ? `${import.meta.env. VITE_BACKEND_URL}/${item.image_name}` : PLACEHOLDER_IMAGE}
             alt={item.name}
           />
           <div className="item-info">
