@@ -42,14 +42,14 @@ export const ItemList = ({ reload, onLoadCompleted }: Prop) => {
               whileHover={{ scale: 1.05 }}
             >
               <div className="ItemImageContainer">
-                <img 
-                  src={`http://localhost:9000/images/${item.id}.jpg`} 
-                  onError={(e) => {
-                    e.currentTarget.src = import.meta.env.VITE_FRONTEND_URL + '/logo192.png';
-                  }}
-                  alt={item.name}
-                  className="ItemImage"
-                />
+              <img 
+                src={`http://localhost:9000/image/${item.image_name}`} 
+                onError={(e) => {
+                  e.currentTarget.src = import.meta.env.VITE_FRONTEND_URL + '/logo192.png';
+                }}
+                alt={item.name}
+                className="ItemImage"
+              />
               </div>
               <div className="ItemDetails">
                 <h3 className="ItemName">{item.name}</h3>
