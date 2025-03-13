@@ -1,27 +1,19 @@
-FROM python:3.9-alpine@sha256:2bac43769ace90ebd3ad83e5392295e25dfc58e58543d3ab326c3330b505283d
-
+FROM python:3.9-alpine
 RUN apk add --no-cache python3 py3-pip
 
-# non-root user for better security
-RUN addgroup -S appgroup && \
-    adduser -S appuser -G appgroup
-
+RUN addgroup -S mercari && adduser -S trainee -G mercari
+# RUN chown -R trainee:mercari /path/to/db
 WORKDIR /app
 
-# Dependencies
+USER trainee
+# Install dependencies (layer 1)
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# application code
+CMD ["python", "-V"]
+# Copy rest of code (layer 2)
 COPY main.py .
-COPY db/items.sql ./db/
+COPY db/items.sql ./db/items.sql
 
-RUN chown -R appuser:appgroup /app
-
-USER appuser
-
-# Expose the application port
-EXPOSE 9000
-
-# Use array syntax for CMD
+# Run backend
 CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9000"]
