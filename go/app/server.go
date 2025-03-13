@@ -49,7 +49,7 @@ func (s Server) Run() int {
 	}
 
 	// STEP 5-1: set up the database connection
-	db, err := sql.Open("sqlite3", "../db/items.db")
+	db, err := sql.Open("sqlite3", "db/items.db")
 	if err != nil {
 		slog.Error("failed to open database: ", "error", err)
 		return 1
@@ -63,7 +63,7 @@ func (s Server) Run() int {
 
 	imageDir, found := os.LookupEnv("IMAGE_DIR_PATH")
 	if !found {
-		s.ImageDirPath = "../../cmd/api/images"
+		s.ImageDirPath = "images"
 		log.Println("Using default image directory: ", s.ImageDirPath)
 	}
 
@@ -329,7 +329,7 @@ func (s *Handlers) Getkeyword(w http.ResponseWriter, r *http.Request) {
 // this method calculates the hash sum of the image as a file name to avoid the duplication of a same file
 // and stores it in the image directory.
 func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
-	s.imageDirPath = "../cmd/api/images"
+	s.imageDirPath = "images"
 	if s.imageDirPath == "" {
 		return "", fmt.Errorf("image directory path is not set")
 	}

@@ -42,9 +42,8 @@ type itemRepository struct {
 // NewItemRepository creates a new itemRepository.
 func NewItemRepository() (*itemRepository, error) {
 
-	//相対パス ../db/items.dbだとエラーが出ました
-	dbPath := "/Users/sui/mercari-build-training/go/db/items.db"
-
+	//相対パス ../../db/items.dbだとエラーが出ました
+	dbPath := "db/items.db"
 	logger := log.New(os.Stdout, "ItemRepository: ", log.LstdFlags)
 	logger.Println("Opening database at:", dbPath)
 
@@ -119,7 +118,7 @@ func (i *itemRepository) AddItem(ctx context.Context, item *Item) (*Item, error)
 // This package doesn't have a related interface for simplicity.
 func StoreImage(fileName string, image []byte) error {
 
-	relPath := "../cmd/api/images"
+	relPath := "images"
 	filePath := filepath.Join(relPath, fileName)
 
 	//save file to the filepath

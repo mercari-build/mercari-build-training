@@ -22,7 +22,7 @@ func TestParseAddItemRequest(t *testing.T) {
 		err bool
 	}
 
-	imageBytes, err := os.ReadFile("../cmd/api/images/basket.jpg")
+	imageBytes, err := os.ReadFile("../images/basket.jpg")
 	if err != nil {
 		t.Fatalf("failed to read default image: %v", err)
 	}
