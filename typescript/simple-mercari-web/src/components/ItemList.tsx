@@ -29,19 +29,20 @@ export const ItemList = ({ reload, onLoadCompleted }: Prop) => {
   }, [reload, onLoadCompleted]);
 
   return (
-    <div className="ItemList">
-      {items.map((item) => (
-        <div key={item.id} className="card"> {/* ✅ 修正: 商品カードのクラス名を統一 */}
-          <img
-            src={item.image_name ? `http://localhost:8000/image/${item.image_name}` : PLACEHOLDER_IMAGE}
-            alt={item.name}
-          />
-          <div className="item-info">
-            <h3>{item.name}</h3>
-            <p>{item.category}</p>
+    <div>
+      {items.map((item) => {
+        return (
+          <div key={item.id} className="ItemList">
+            {/* TODO: Task 2: Show item images */}
+            <img src={PLACEHOLDER_IMAGE} />
+            <p>
+              <span>Name: {item.name}</span>
+              <br />
+              <span>Category: {item.category}</span>
+            </p>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

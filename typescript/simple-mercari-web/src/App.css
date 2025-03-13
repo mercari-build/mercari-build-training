@@ -1,133 +1,44 @@
-/* 🌿 洗練された、都会的、シンプルなベージュ・ブラウン基調のデザイン */
-:root {
-  --primary-color: #593d27;  /* ブラウン */
-  --secondary-color: #FFF5E1; /* ベージュ */
-  --accent-color: #D2B48C;   /* タン（薄いブラウン） */
-  --bg-color: #F5F1E6; /* オフホワイト */
-  --card-bg: #ffffff;
-  --border-radius: 12px;
-  --shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+.App {
+  text-align: center;
 }
 
-body {
-  font-family: 'Helvetica Neue', Arial, sans-serif;
-  background-color: var(--bg-color);
-  color: #5C3E2A;
-  margin: 0;
-  padding: 0;
-}
-
-/* ✅ ヘッダーのデザイン */
 .Title {
-  background: linear-gradient(135deg, var(--primary-color), #A67B5B);
-  color: var(--secondary-color);
-  min-height: 10vh;
+  background-color: #222427;
+  min-height: 8vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: 1.8rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
+  justify-content: left;
+  font-size: calc(10px + 1vmin);
+  color: white;
 }
 
-/* ✅ 商品登録フォーム */
 .Listing {
-  background: linear-gradient(135deg, var(--accent-color), #E5C7A9);
-  color: var(--primary-color);
-  padding: 20px;
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
-  margin: 20px auto;
-  max-width: 600px;
-  text-align: center;
+  background-color: #222427;
+  min-height: 8vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: left;
+  font-size: calc(10px + 1vmin);
+  color: white;
 }
 
-.Listing input, .Listing button {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-}
-
-.Listing input {
-  background-color: #EAD7C1;
-  color: #5C3E2A;
-}
-
-.Listing button {
-  background-color: var(--primary-color);
-  color: var(--secondary-color);
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.Listing button:hover {
-  background-color: #704F33;
-}
-
-/* ✅ 商品一覧のデザイン */
 .ItemList {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* ✅ グリッドレイアウト */
-  gap: 20px;
-  padding: 20px;
-  justify-content: center;
+  background-color: #222427;
+  min-height: 8vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: left;
+  font-size: calc(10px + 1vmin);
+  color: white;
 }
 
-/* ✅ 商品カード */
-.ItemList .card {
-  background-color: var(--card-bg);
-  border-radius: var(--border-radius);
-  padding: 20px;
-  box-shadow: var(--shadow);
-  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-  text-align: center;
-}
-
-.ItemList .card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-}
-
-/* ✅ 商品画像 */
-.ItemList img {
-  width: 100%;
-  max-height: 200px;
-  object-fit: cover;
-  border-radius: var(--border-radius);
-  border-bottom: 4px solid var(--primary-color);
-}
-
-/* ✅ 商品情報のデザイン */
-.item-info h3 {
-  font-size: 1.2rem;
-  color: #5C3E2A;
-  margin: 10px 0;
-}
-
-.item-info p {
-  font-size: 0.9rem;
-  color: #7D5A44;
-}
-
-/* ✅ リンクのデザイン */
 .App-link {
-  color: var(--primary-color);
-  text-decoration: none;
-  font-weight: bold;
+  color: #61dafb;
 }
 
-.App-link:hover {
-  text-decoration: underline;
-}
-
-/* ✅ ロゴのアニメーション */
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
