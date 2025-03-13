@@ -1,3 +1,4 @@
+
 const SERVER_URL = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:9000';
 
 export interface Item {
@@ -50,3 +51,14 @@ export const postItem = async (input: CreateItemInput): Promise<Response> => {
 
   return response;
 };
+
+export const deleteItem = async (itemId: number): Promise<void> => {
+  const response = await fetch(`http://localhost:9000/items/${itemId}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete item');
+  }
+};
+
