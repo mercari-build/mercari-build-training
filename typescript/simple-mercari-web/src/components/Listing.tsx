@@ -36,18 +36,23 @@ export const Listing = ({ onListingCompleted }: Prop) => {
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    // Validate field before submit
-    const REQUIRED_FILEDS = ['name', 'image'];
-    const missingFields = Object.entries(values)
-      .filter(([, value]) => !value && REQUIRED_FILEDS.includes(value))
-      .map(([key]) => key);
+    console.log("🚀 Form submitted!");  // ✅ デバッグログ
 
-    if (missingFields.length) {
-      alert(`Missing fields: ${missingFields.join(', ')}`);
-      return;
-    }
+    console.log("🔍 Current state before sending:", values); // ✅ 追加: 送信前の `values` の中身を確認
 
-    // Submit the form
+  if (!values.name.trim() || !values.category.trim()) {
+    console.error("❌ Name or category is empty!");
+    alert("Name and category are required!");
+    return;
+  }
+
+  if (!values.image || typeof values.image === "string") {
+    console.error("❌ Image is missing or invalid!");
+    alert("Please select an image file!");
+    return;
+  }
+  
+
     postItem({
       name: values.name,
       category: values.category,
@@ -77,6 +82,7 @@ export const Listing = ({ onListingCompleted }: Prop) => {
             name="name"
             id="name"
             placeholder="name"
+            value={values.name} // ✅ 追加
             onChange={onValueChange}
             required
             value={values.name}
@@ -86,6 +92,7 @@ export const Listing = ({ onListingCompleted }: Prop) => {
             name="category"
             id="category"
             placeholder="category"
+            value={values.category} // ✅ 追加
             onChange={onValueChange}
             value={values.category}
           />
