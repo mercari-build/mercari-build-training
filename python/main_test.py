@@ -23,18 +23,19 @@ def db_connection():
     conn = sqlite3.connect(test_db)
     cursor = conn.cursor()
     cursor.execute(
-     """CREATE TABLE IF NOT EXISTS items (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name VARCHAR(255),
-		category VARCHAR(255)
-	)""")
+    """CREATE TABLE IF NOT EXISTS items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name VARCHAR(255),
+        category VARCHAR(255),
+        image_name VARCHAR(255)
+    )""")
     conn.commit()
     conn.row_factory = sqlite3.Row  # Return rows as dictionaries
 
     yield conn
 
     conn.close()
-     # After the test is done, remove the test database
+    # After the test is done, remove the test database
     if test_db.exists():
        test_db.unlink() # Remove the file
 
@@ -64,7 +65,7 @@ def test_hello(want_status_code, want_body):
      "args, want_status_code",
     [
          ({"name":"used iPhone 16e", "category":"phone"}, 200),
-         ({"name":"", "category":"phone"}, 422),
+         ({"name":"", "category":"phone"}, 400),
     ],
  )
 
