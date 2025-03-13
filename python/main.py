@@ -79,7 +79,7 @@ def add_item(
 
 
 # get_image is a handler to return an image for GET /images/{filename} .
-@app.get("/image/{image_name}")
+@app.get("/images/{image_name}")
 async def get_image(image_name):
     # Create image path
     image = images / image_name
