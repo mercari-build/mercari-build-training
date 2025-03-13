@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { postItem } from '~/api';
 
 interface Prop {
@@ -19,6 +19,8 @@ export const Listing = ({ onListingCompleted }: Prop) => {
   };
   const [values, setValues] = useState<FormDataType>(initialState);
 
+  const uploadImageRef = useRef<HTMLInputElement>(null);
+
   const onValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setValues({
       ...values,
@@ -33,6 +35,7 @@ export const Listing = ({ onListingCompleted }: Prop) => {
   };
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     console.log("🚀 Form submitted!");  // ✅ デバッグログ
 
     console.log("🔍 Current state before sending:", values); // ✅ 追加: 送信前の `values` の中身を確認
@@ -49,11 +52,15 @@ export const Listing = ({ onListingCompleted }: Prop) => {
     return;
   }
   
+
     postItem({
       name: values.name,
       category: values.category,
       image: values.image,
     })
+      .then(() => {
+        alert('Item listed successfully');
+      })
       .catch((error) => {
         console.error('POST error:', error);
         alert('Failed to list this item');
@@ -61,6 +68,9 @@ export const Listing = ({ onListingCompleted }: Prop) => {
       .finally(() => {
         onListingCompleted();
         setValues(initialState);
+        if (uploadImageRef.current) {
+          uploadImageRef.current.value = '';
+        }
       });
   };
   return (
@@ -75,6 +85,7 @@ export const Listing = ({ onListingCompleted }: Prop) => {
             value={values.name} // ✅ 追加
             onChange={onValueChange}
             required
+            value={values.name}
           />
           <input
             type="text"
@@ -83,6 +94,7 @@ export const Listing = ({ onListingCompleted }: Prop) => {
             placeholder="category"
             value={values.category} // ✅ 追加
             onChange={onValueChange}
+            value={values.category}
           />
           <input
             type="file"
@@ -90,6 +102,7 @@ export const Listing = ({ onListingCompleted }: Prop) => {
             id="image"
             onChange={onFileChange}
             required
+            ref={uploadImageRef}
           />
           <button type="submit">List this item</button>
         </div>

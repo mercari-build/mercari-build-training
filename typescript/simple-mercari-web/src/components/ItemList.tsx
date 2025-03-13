@@ -29,6 +29,7 @@ export const ItemList = ({ reload, onLoadCompleted }: Prop) => {
   }, [reload, onLoadCompleted]);
 
   return (
+
     <div className="ItemList">
       {items.map((item) => (
         <div key={item.id} className="card"> {/* ✅ 修正: 商品カードのクラス名を統一 */}
@@ -39,6 +40,7 @@ export const ItemList = ({ reload, onLoadCompleted }: Prop) => {
           <div className="item-info">
             <h3>{item.name}</h3>
             <p>{item.category}</p>
+
           </div>
         </div>
       ))}

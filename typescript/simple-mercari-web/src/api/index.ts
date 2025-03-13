@@ -22,6 +22,10 @@ export const fetchItems = async (): Promise<ItemListResponse> => {
       Accept: 'application/json',
     },
   });
+
+  if (response.status >= 400) {
+    throw new Error('Failed to fetch items from the server');
+  }
   return response.json();
 };
 
@@ -38,6 +42,7 @@ export const postItem = async (input: CreateItemInput): Promise<Response> => {
   data.append('name', input.name);
   data.append('category', input.category);
   data.append('image', input.image);
+
 
   console.log("📡 FormData prepared:", [...data.entries()]); // ✅ 追加: FormData の中身を確認
 
@@ -57,6 +62,7 @@ export const postItem = async (input: CreateItemInput): Promise<Response> => {
   }
 
   console.log("✅ Response received:", response); // ✅ 追加: レスポンスを確認
+
 
 
   return response;
