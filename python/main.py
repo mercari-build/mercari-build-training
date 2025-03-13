@@ -125,6 +125,7 @@ async def get_image(image_name):
 
 
 
-def insert_item(new_item):
-    # STEP 4-1: add an implementation to store an item
+
+def insert_item(item: Item):
+    # STEP 4-2: add an implementation to store an item
     pass

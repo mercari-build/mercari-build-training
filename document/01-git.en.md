@@ -22,7 +22,7 @@ In this step, we will learn how to use Git and GitHub.
    $ git version
    ```
    
-   * For Mac users: Install [brew](https://brew.sh/index) and `brew install git`
+   * For Mac users: Install [brew](https://brew.sh/) and `brew install git`
    * For Windows users: Download [installer](https://gitforwindows.org/)
    
 2. Set your name and email address using git config. Check if your email address shows up.
@@ -34,11 +34,16 @@ In this step, we will learn how to use Git and GitHub.
    ```
 
 ## Use basic commands in Git
+0. Follow the GitHub documentation to setup SSH-key.
+- [Generate new SSH key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent?platform=mac)
+- [Add a new SSH key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)
 
-1. **Clone** `https://github.com/<your github id>/mercari-build-training` onto your local using the following command.
+
+1. **Clone** `https://github.com/<your github id>/mercari-build-training` onto your local using the following command. Follow the below image to get the ssh url. 
+![clone-ssh.png](./assets/clone-ssh.png)
    ```shell
    $ cd <your working space>
-   $ git clone https://github.com/<your github id>/mercari-build-training
+   $ git clone git@github.com:<your github id>/mercari-build-training.git
    ```
 
 **:bangbang: Caution**
@@ -56,7 +61,7 @@ This is required to use githooks in mercari-build-training repository.
    $ git branch first-pull-request
    $ git switch first-pull-request
    ```
-3. Replace `@<your github id>` on README.md with your GitHub ID.
+3. Replace `@your_github_id` on README.md with your GitHub ID.
 4. **commit** the changes you made with the following commands.
    ```shell
    $ git status # Check your change

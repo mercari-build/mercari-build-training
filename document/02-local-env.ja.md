@@ -39,7 +39,7 @@ $ python3 -m venv .venv
 
 # 仮想環境をアクティベートする  
 $ source .venv/bin/activate  # Unix / Macの場合
-$ ./venv/Scripts/activate    # windowsの場合
+$ .venv/Scripts/activate    # windowsの場合
 
 # 今回使うPythonのパスを確認する。
 $ which python
@@ -72,8 +72,8 @@ $ uvicorn main:app --reload --port 9000
 
 ## Goの環境を作る
 ### 1. Goをインストールする
-* Go1.20以上がインストールされていない場合、Go1.21をインストールします
-* すでに1.20以上がインストール済みの方はskipして問題ないです
+* Go1.24以上がインストールされていない場合、Go1.24をインストールします
+* すでに1.24以上がインストール済みの方はskipして問題ないです
 
 https://go.dev/dl/ このリンクからダウンロードしてください。  
 ※ Macの方で`x86-64`と`ARM64`どちらをダウンロードすればいいかわからない場合は、左上の🍎マーク > 「このMacについて」を開き、チップが「Apple」になっていたら`ARM64`を「Intel」であれば`x86-64`を選択してください。
@@ -120,6 +120,7 @@ $ go run cmd/api/main.go
 
 起動に成功したら、 ブラウザで `http://127.0.0.1:9000` にアクセスして、`{"message": "Hello, world!"}`
 が表示されれば成功です。
+サーバーをストップする場合はCtrl+Cを押してください。
 
 ---
 **:beginner: Point**
