@@ -16,7 +16,7 @@ from typing import Union
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
 db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
-
+sql_file = pathlib.Path(__file__).parent.resolve() / "db" / "items.sql"  # 🔹 **修正: SQL ファイルのパスを定義**
 
 def get_db():
     if not db.exists():
@@ -35,24 +35,12 @@ def setup_database():
     conn = sqlite3.connect(db) #SQLiteのデータベースに接続
     cursor = conn.cursor() #cursorオブジェクトを作成。cursorはデータベースに対してSQLコマンドを実行するために使われる
 
-    # カテゴリテーブルの作成（変更点）
-    cursor.execute(
-        """CREATE TABLE IF NOT EXISTS categories (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT UNIQUE NOT NULL
-        );"""
-    )
+    # 🔹 **SQL スクリプトを読み込んで実行**
+    if sql_file.exists():
+        with open(sql_file, "r", encoding="utf-8") as file:
+            sql_script = file.read()
+            cursor.executescript(sql_script)  # 🔹 **SQL スクリプトを実行**
 
-    # itemsテーブルの変更（category → category_id に変更）
-    cursor.execute(
-        """CREATE TABLE IF NOT EXISTS items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            category_id INTEGER NOT NULL,
-            image_name TEXT NOT NULL,
-            FOREIGN KEY (category_id) REFERENCES categories(id)
-        );"""
-    )
     
     conn.commit() #commit()を呼び出してSQLの変更をデータベースに保存
     conn.close() #データベースとの接続を閉じる。開いたままにするとリソース無駄に消費
@@ -125,7 +113,6 @@ def add_item(
     with open(image_path, "wb") as buffer:
         buffer.write(image_bytes)
 
-
     cursor =db.cursor() 
     
     # categories テーブルにカテゴリが存在するか確認
@@ -156,7 +143,6 @@ def add_item(
     db.commit()
 
     return AddItemResponse(**{"message": f"item received: {name},{category}, {hashed_filename}"})
-
 
 
 

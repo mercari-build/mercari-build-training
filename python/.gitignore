@@ -7,3 +7,5 @@ myenv
 venv
 
 .DS_Store
+myenv/
+venv/
