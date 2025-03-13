@@ -134,16 +134,7 @@ def add_item(
     db.commit()
     return AddItemResponse(**{"message": f"item received: {name}, {category}, {hashed_filename}"})
 
-    #データをデータベースに保存
-    cursor = db.cursor()
-    cursor.execute(
-        "INSERT INTO items (name, category, image_name) VALUES (?, ?, ?)",
-        (name, category, hashed_filename),
-    )
-    db.commit()
-
-    return AddItemResponse(**{"message": f"item received: {name},{category}, {hashed_filename}"})
-
+   
 
 
 

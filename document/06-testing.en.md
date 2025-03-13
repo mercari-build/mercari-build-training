@@ -233,6 +233,98 @@ func TestSayHelloWithTime(t *testing.T) {
 
 This demonstrates writing code with testing in mind.
 
+### Python
+
+# Python Testing Strategies
+
+**:book: Reference**
+
+- (EN)[pytest: helps you write better programs — pytest documentation](https://docs.pytest.org/en/stable/)
+- (EN)[pytest fixtures: explicit, modular, scalable — pytest documentation](https://docs.pytest.org/en/6.2.x/fixture.html)
+- (EN)[Parametrizing fixtures and test functions — pytest documentation](https://docs.pytest.org/en/stable/how-to/parametrize.html)
+
+
+While Python has the standard unittest library built-in for testing, the **pytest** library is widely used to write more flexible and readable tests. pytest comes with a simple API and powerful features, and can be easily installed with `pip install pytest`. You can run tests with the `$ pytest` command.
+
+In Python, you can use the `pytest.mark.parametrize` decorator to describe multiple test cases together. Let's write a test for the say_hello function:
+
+```python
+# hello.py
+def say_hello(name=""):
+    if name:
+        return f"Hello, {name}!"
+    return "Hello!"
+
+# test_hello.py
+import pytest
+from hello import say_hello
+
+@pytest.mark.parametrize("name, expected",[
+    ("Alice", "Hello, Alice!"),
+    ("", "Hello!"),
+]
+)
+def test_say_hello(name, expected):
+    got = say_hello(name)
+
+    # Check if the expected return value and the actual value are the same, and display an error if they differ
+    assert got == expected, f"unexpected result of say_hello: want={expected}, got={got}"
+```
+
+The need to consider argument design with testing in mind is common to both Python and Go. Let's consider modifying the `say_hello` implementation to change the greeting based on the time of day:
+
+```python
+from datetime import datetime
+
+def say_hello(name):
+    now = datetime.now() # Directly depends on the current time, making it difficult to test
+    current_hour = now.hour
+
+    if 6 <= current_hour < 10:
+        return f"Good morning, {name}!"
+    if 10 <= current_hour < 18:
+        return f"Hello, {name}!"
+    return f"Good evening, {name}!"
+```
+
+This function is difficult to test because it directly depends on the current time. To test each time period, you would need to run the test at that specific time.
+
+To make it more testable, we can rewrite the function as follows:
+
+```python
+# Improved code (more testable design)
+from datetime import datetime
+
+def say_hello(name, now=None):
+    if now is None:
+        now = datetime.now()
+    
+    current_hour = now.hour
+
+    if 6 <= current_hour < 10:
+        return f"Good morning, {name}!"
+    if 10 <= current_hour < 18:
+        return f"Hello, {name}!"
+    return f"Good evening, {name}!"
+```
+
+Now we can specify the current time as an argument. By setting None as the default value, we can still omit the now parameter in normal usage.
+
+```python
+import pytest
+from datetime import datetime
+from greetings import say_hello
+
+@pytest.mark.parametrize("name, now, expected", [
+    ("Alice", datetime(2024, 1, 1, 9, 0, 0), "Good morning, Alice!"),
+    ("Bob", datetime(2024, 1, 1, 12, 0, 0), "Hello, Bob!"),
+    ("Charlie", datetime(2024, 1, 1, 20, 0, 0), "Good evening, Charlie!"),
+])
+def test_say_hello_simple(name, now, expected):
+    got = say_hello(name, now)
+    assert got == expected, f"unexpected result of say_hello: want={expected}, got={got}"
+```
+
 ## 1. Writing Tests for the Item Listing API
 
 Let's write tests for basic functionality, specifically testing item registration requests.
@@ -251,8 +343,11 @@ Let's write test cases for this.
 - What does this test verify?
 - What's the difference between `t.Error()` and `t.Fatal()`?
 
-### Python
-TBD
+### Python (Read Only)
+
+Python testing is implemented in [`main_test.py`](https://github.com/mercari-build/mercari-build-training/blob/main/python/main_test.py).
+
+Unlike the Go API implementation, in Python API implementation using the FastAPI framework, developers do not need to implement HTTP Request parsing themselves. Therefore, no additional implementation is required in this chapter, but you should review the test code to deepen your understanding.
 
 ## 2. Writing Tests for the Hello Handler
 
@@ -283,7 +378,16 @@ Once you have the logic figured out, implement it.
 
 ### Python
 
-TBD
+- (En)[FastAPI > Learn > Tutorial - User Guide / Testing](https://fastapi.tiangolo.com/tutorial/testing/)
+
+In Python, we use FastAPI's `testclient.TestClient` to verify that the handler function `hello` works correctly. Let's edit the test function [test_hello](https://github.com/mercari-build/mercari-build-training/blob/main/python/main_test.py#L53) that's already provided and write a test.
+
+As with Go, let's implement the test code with the following considerations in mind:
+
+- What do you want to test with this handler?
+- How can you verify that it behaves correctly?
+
+For implementing the test, you may refer to the [official FastAPI documentation](https://fastapi.tiangolo.com/tutorial/testing/#testclient).
 
 ## 3. Writing Tests Using Mocks
 
@@ -311,9 +415,24 @@ Let's test both successful and failed persistence scenarios using mocks.
 - Consider the benefits of using interfaces to satisfy mocks
 - Think about the pros and cons of using mocks
 
-### Python
+### Python (Read Only)
 
-TBD
+**:book: Reference**
+
+- (EN) [pytest-mock](https://github.com/pytest-dev/pytest-mock)
+- (EN) [unittest.mock --- introduction](https://docs.python.org/3.13/library/unittest.mock-examples.html#)
+
+For Python mock libraries, there are several options including the built-in standard `unittest.mock` and pytest's `pytest-mock`. Mocks become necessary when the process being tested depends on external tools or objects, such as in the following cases:
+
+- Mocking database connections to test user authentication logic without connecting to an actual database.
+- Mocking HTTP API clients to test weather forecast retrieval functions without actual network communication.
+- Mocking the file system to test logging functionality without actual file operations.
+
+In our case, we could consider implementing a test like the first example mentioned: "mocking database connections." However, the Build Python API implementation is very simple, and setting up classes like ItemRepository for mock testing would unnecessarily complicate the implementation.
+
+Since sufficient verification can be done with the test code implemented in the chapter "4. Writing tests using actual databases," and because it would contradict Python's language philosophy of "simplicity" and "explicitness," **we have omitted Python implementations using mocks from this teaching material**.
+
+However, in actual development environments where applications become more complex, there are many cases where tests using mocks are implemented in Python as well. If you're interested, take a look at the explanation of mock testing in the Go section, or review Python test implementations using mocks that are introduced on the internet.
 
 ## 4. Writing Tests Using Real Databases
 
@@ -332,7 +451,17 @@ After performing database operations, we need to verify the database state match
 
 ### Python
 
-TBD
+Let's write a test in Python using a test database (sqlite3). Uncomment the two places in [main_test.py](https://github.com/mercari-build/mercari-build-training/blob/main/python/main_test.py) that say "`STEP 6-4: uncomment this test setup`". ([first location](https://github.com/mercari-build/mercari-build-training/blob/main/python/main_test.py#L9-L42)/[second location](https://github.com/mercari-build/mercari-build-training/blob/main/python/main_test.py#L60-L84))
+
+The `db_connection` function creates and sets up a new test database using sqlite3 before the test, and deletes the test database after the test is completed.
+
+The `test_add_item_e2e` function tests the item addition functionality by sending a POST request to the API endpoint (`/items/`). This function runs with parameterized test cases (valid and invalid data). The test verifies:
+
+1. Whether the response status code matches the expected value
+2. For non-error cases, whether the response body contains a "message"
+3. Whether the data was correctly saved in the database (matching name and category)
+
+What's particularly important is that it tests end-to-end using an actual database (for testing) rather than mocks, which verifies the functionality in a way that's closer to the actual environment.
 
 ## Next
 

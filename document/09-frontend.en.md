@@ -42,7 +42,7 @@ If your API from STEP4 only accepts name and category, modify `typescript/simple
 
 ## (Optional) Task 2. Show item images
 
-In this screen, item images are all rendered as Build@Mercari logo. Specify the item image as `http://localhost:9000/image/<item_id>.jpg` and see if they can be displayed on the web app.
+In this screen, item images are all rendered as Build@Mercari logo. Specify the item image as `http://localhost:9000/images/<item_id>.jpg` and see if they can be displayed on the web app.
 
 ## (Optional) Task 3. Change the styling with HTML and CSS
 

@@ -18,6 +18,7 @@ def override_get_db():
      finally:
          conn.close()
 
+# app.dependency_overrides[get_db] = override_get_db
 
 @pytest.fixture(autouse=True)
 def db_connection():
