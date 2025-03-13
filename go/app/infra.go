@@ -10,7 +10,10 @@ import (
 	// _ "github.com/mattn/go-sqlite3"
 )
 
-var errImageNotFound = errors.New("image not found")
+var (
+	errImageNotFound = errors.New("image not found")
+	errItemNotFound  = errors.New("item not found")
+)
 
 type Item struct {
 	ID        int    `db:"id" json:"-"`
@@ -26,6 +29,7 @@ type Item struct {
 type ItemRepository interface {
 	Insert(ctx context.Context, item *Item) error
 	List(ctx context.Context) ([]*Item, error)
+	Select(ctx context.Context, id int) (*Item, error)
 }
 
 // itemRepository is an implementation of ItemRepository
@@ -100,6 +104,24 @@ func (i *itemRepository) List(ctx context.Context) ([]*Item, error) {
 	}
 
 	return data.Items, nil
+}
+
+// Select gets item from repository by id
+func (i *itemRepository) Select(ctx context.Context, id int) (*Item, error) {
+	// Get entire list
+	items, err := i.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if id is valid
+	if id <= 0 || id > len(items) {
+		return nil, errItemNotFound
+	}
+
+	// Return item
+	return items[id-1], nil
+
 }
 
 // StoreImage stores an image and returns an error if any.
