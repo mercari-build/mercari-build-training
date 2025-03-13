@@ -13,7 +13,6 @@ from typing import List, Optional
 
 # Define the path to the images & sqlite3 database
 images = pathlib.Path(__file__).parent.resolve() / "images"
-images = pathlib.Path(__file__).parent.resolve() / "images"
 db_dir = pathlib.Path(__file__).parent.resolve() / "db"
 db = db_dir / "mercari.sqlite3"
 

@@ -1,2 +1,6 @@
+*.sqlite3
 .venv/
 __pycache__/
+.DS_Store
+*.pyc
+*.pyo
