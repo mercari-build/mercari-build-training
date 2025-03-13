@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Item, fetchItems } from '~/api';
-
-const PLACEHOLDER_IMAGE = import.meta.env.VITE_FRONTEND_URL + '/logo192.png';
+import { motion } from 'framer-motion';
 
 interface Prop {
   reload: boolean;
@@ -29,20 +28,37 @@ export const ItemList = ({ reload, onLoadCompleted }: Prop) => {
   }, [reload, onLoadCompleted]);
 
   return (
-    <div>
-      {items?.map((item) => {
-        return (
-          <div key={item.id} className="ItemList">
-            {/* TODO: Task 2: Show item images */}
-            <img src={PLACEHOLDER_IMAGE} />
-            <p>
-              <span>Name: {item.name}</span>
-              <br />
-              <span>Category: {item.category}</span>
-            </p>
-          </div>
-        );
-      })}
+    <div className="ItemListContainer">
+      <h2 className="ItemListTitle">Available Items</h2>
+      <div className="ItemListGrid">
+        {items?.map((item, index) => {
+          return (
+            <motion.div
+              key={item.id}
+              className="ItemCard"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+              whileHover={{ scale: 1.05 }}
+            >
+              <div className="ItemImageContainer">
+                <img 
+                  src={`http://localhost:9000/images/${item.id}.jpg`} 
+                  onError={(e) => {
+                    e.currentTarget.src = import.meta.env.VITE_FRONTEND_URL + '/logo192.png';
+                  }}
+                  alt={item.name}
+                  className="ItemImage"
+                />
+              </div>
+              <div className="ItemDetails">
+                <h3 className="ItemName">{item.name}</h3>
+                <span className="ItemCategory">{item.category}</span>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
     </div>
   );
 };
