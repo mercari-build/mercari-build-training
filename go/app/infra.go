@@ -41,8 +41,6 @@ type itemRepository struct {
 
 // NewItemRepository creates a new itemRepository.
 func NewItemRepository() (*itemRepository, error) {
-
-	//相対パス ../../db/items.dbだとエラーが出ました
 	dbPath := "db/items.db"
 	logger := log.New(os.Stdout, "ItemRepository: ", log.LstdFlags)
 	logger.Println("Opening database at:", dbPath)
