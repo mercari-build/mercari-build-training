@@ -97,9 +97,9 @@ class ItemCreate(BaseModel):
 async def add_item(
     name: str = Form(...),
     category: str = Form(...),
-    image: UploadFile = File(...),
-    db: sqlite3.Connection = Depends(get_db),
+    image: UploadFile = File(...)
 ):
+
     if not name or not category: 
         raise HTTPException(status_code=400, detail="name and category are required")
 
@@ -136,6 +136,7 @@ async def add_item(
     return AddItemResponse(
         message=f"Item '{name}' added successfully!",
     )
+  return {"message": f"Item received: {name}"}
 
 # get_image is a handler to return an image for GET /images/{filename} .
 @app.get("/image/{image_name}")
