@@ -43,13 +43,14 @@ def setup_database():
         )
     """)
 
-   # create items table
+  # Create items table with category_id instead of category
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL COLLATE NOCASE,
-            category TEXT NOT NULL,
-            image_name TEXT NOT NULL
+            category_id INTEGER NOT NULL,
+            image_name TEXT NOT NULL,
+            FOREIGN KEY (category_id) REFERENCES categories (id)
         )
     """)
     conn.commit()
@@ -64,7 +65,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 logger = logging.getLogger("uvicorn")
-logger.level = logging.DEBUG
+logger.level = logging.INFO
 images = pathlib.Path(__file__).parent.resolve() / "images"
 origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
@@ -92,13 +93,49 @@ class ItemCreate(BaseModel):
     name : str
     category: str
 
-# add_item is a handler to add a new item for POST /items .
 @app.post("/items", response_model=AddItemResponse)
 async def add_item(
     name: str = Form(...),
     category: str = Form(...),
     image: UploadFile = File(...)
 ):
+
+    if not name or not category: 
+        raise HTTPException(status_code=400, detail="name and category are required")
+
+   # Image validation 
+   if not image.filename.endswith(".jpg") or image.content_type != "image/jpeg":
+        raise HTTPException(status_code=400, detail="only image files with .jpg are allowed")
+
+   # Save image
+    image_bytes = await image.read()
+    hashed_filename = hashlib.sha256(image_bytes).hexdigest() + ".jpg"
+    image_path = images / hashed_filename
+   
+    with open(image_path, "wb") as f:
+        f.write(image_bytes)  # Save the image
+
+    cursor = db.cursor()
+    cursor.execute("SELECT id FROM categories WHERE name = ?", (category,))
+    category_id = cursor.fetchone()
+
+    if category_id is None:
+        cursor.execute("INSERT INTO categories (name) VALUES (?)", (category,))
+        category_id = cursor.lastrowid
+    else:
+        category_id = category_id["id"]
+        
+    # Insert the item into the items table
+    cursor.execute(
+        "INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
+        (name, category_id, hashed_filename)
+    )
+    db.commit()
+
+    # Response with item information
+    return AddItemResponse(
+        message=f"Item '{name}' added successfully!",
+    )
   return {"message": f"Item received: {name}"}
 
 # get_image is a handler to return an image for GET /images/{filename} .
@@ -116,6 +153,36 @@ async def get_image(image_name: str):
 
     return FileResponse(image_path)
 
+# New endpoint to get image by item ID
+@app.get("/image/id/{item_id}")
+async def get_image_by_id(item_id: int, db: sqlite3.Connection = Depends(get_db)):
+    # Query the database to get the image_name for this item_id
+    cursor = db.cursor()
+    cursor.execute("SELECT image_name FROM items WHERE id = ?", (item_id,))
+    result = cursor.fetchone()
+    
+    if not result:
+        logger.warning(f"Item not found with ID: {item_id}")
+        # Fall back to default image
+        image_path = images / "default.jpg"
+        if not image_path.exists():
+            logger.error("Default image not found!")
+            raise HTTPException(status_code=404, detail="Image not found")
+        return FileResponse(image_path)
+    
+    image_name = result["image_name"]
+    image_path = images / image_name
+    
+    if not image_path.exists():
+        logger.warning(f"Image not found for item ID {item_id}, using default")
+        image_path = images / "default.jpg"
+        if not image_path.exists():
+            logger.error("Default image not found!")
+            raise HTTPException(status_code=404, detail="Image not found")
+    else:
+        logger.info(f"Serving image for item ID {item_id}: {image_name}")
+    
+    return FileResponse(image_path)
 
 class Item(BaseModel):
     name: str
@@ -138,24 +205,20 @@ def read_items(db: sqlite3.Connection):
     JOIN categories ON items.category_id = categories.id
 """)
     rows = cursor.fetchall()
-    items = [{"name": row[0], "category": row[1], "image_name": row[2]} for row in rows]
+     items = [{"id": row["id"], "name": row["name"], "category": row["category"], "image_name": row["image_name"]} for row in rows]
     return items
 
 @app.get("/items/{item_id}", response_model=Item)
 def get_items(item_id: int, db: sqlite3.Connection = Depends(det_db)):
     cursor = db.cursor()
     cursor.execute("""
-        SELECT items.name, categories.name AS category, items.image_name
-        FROM items
-        JOIN categories ON items.category_id = categories.id
-        WHERE items.id = ?
-    """, (item_id,))
-    row = cursor.fetchone()
-
-    if row is None:
-        raise HTTPException(status_code=404, detail="Item not found")
-
-    return Item(name=row[0], category=row[1], image_name=row[2])
+    SELECT items.id, items.name, categories.name AS category, items.image_name
+    FROM items
+    JOIN categories ON items.category_id = categories.id
+    """)
+    rows = cursor.fetchall()
+    items = [{"id": row["id"], "name": row["name"], "category": row["category"], "image_name": row["image_name"]} for row in rows]
+    return {"items": items}
 
 @app.get("/search")
 def search_items(keyword: str, db: sqlite3.Connection = Depends(get_db)):
@@ -163,7 +226,7 @@ def search_items(keyword: str, db: sqlite3.Connection = Depends(get_db)):
     
     cursor = db.cursor()
     cursor.execute("""
-        SELECT items.name, categories.name AS category, items.image_name
+        SELECT items.id, items.name, categories.name AS category, items.image_name
         FROM items
         JOIN categories ON items.category_id = categories.id
         WHERE items.name LIKE ?
@@ -174,16 +237,22 @@ def search_items(keyword: str, db: sqlite3.Connection = Depends(get_db)):
     if not rows:
         logger.debug("No items found matching the search criteria.")
         
-    items = [{"name": row[0], "category": row[1], "image_name": row[2]} for row in rows]
+    items = [{"id": row["id"], "name": row["name"], "category": row["category"], "image_name": row["image_name"]} for row in rows]
     
     return {"items": items}
 
-@app.on_event("startup")
-def startup_db():
-    print("Attempting to connect to the database:", db)
-    try:
-        conn = sqlite3.connect(db)
-        print("Database connection successful!")
-        conn.close()
-    except sqlite3.Error as e:
-        print(f"Error connecting to the database: {e}")
+@app.delete("/items/{item_id}")
+async def delete_item(item_id: int, db: sqlite3.Connection = Depends(get_db)):
+# Find the item in the database
+    cursor = db.cursor()
+    cursor.execute("SELECT id FROM items WHERE id = ?", (item_id,))
+    item = cursor.fetchone()
+
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    # Delete the item from the database
+    cursor.execute("DELETE FROM items WHERE id = ?", (item_id,))
+    db.commit()
+
+    return {"message": f"Item with ID {item_id} deleted successfully"}
