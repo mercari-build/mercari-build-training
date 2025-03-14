@@ -8,7 +8,7 @@
 
 
 .Title {
-  background-color: #5d9c59; /* Slightly darker green for better contrast */
+  background-color: #5d9c59;
   min-height: 10vh;
   display: flex;
   flex-direction: column;
