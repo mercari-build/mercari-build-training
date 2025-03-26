@@ -224,7 +224,7 @@ $ curl -X GET 'http://127.0.0.1:9000/items/1'
 ```
 
 ## 6. (Optional) Understand Loggers
-Open `http://127.0.0.1:9000/image/no_image.jpg` on your browser.
+Open `http://127.0.0.1:9000/images/no_image.jpg` on your browser.
 This returns an image called `no image` but the debug log is not displayed on your console.
 ```
 Image not found: <image path>

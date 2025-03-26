@@ -226,7 +226,7 @@ $ curl -X GET 'http://127.0.0.1:9000/items/1'
 ```
 
 ## 6. (Optional) Loggerについて調べる
-`http://127.0.0.1:9000/image/no_image.jpg`にアクセスしてみましょう。
+`http://127.0.0.1:9000/images/no_image.jpg`にアクセスしてみましょう。
 `no image`という画像が帰ってきますが、 コード中にある
 ```
 Image not found: <image path>
