@@ -98,32 +98,47 @@ func parseAddItemRequest(r *http.Request) (*AddItemRequest, error) {
 		// STEP 4-2: add a category field
 		Category: r.FormValue("category"),
 	}
-	// STEP 4-4: add an image field
-	file, _, err := r.FormFile("image")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get image: %w", err)
-	}
-	// Read the image file only if it exists
-	if file != nil {
-		defer file.Close()
-		imageData, err := io.ReadAll(file)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read image file: %w", err)
-		}
-		req.Image = imageData
-	}
-	// validate the request
+
 	if req.Name == "" {
 		return nil, errors.New("name is required")
 	}
-	// STEP 4-2: validate the category field
+	if len(req.Name) > 255 {
+		return nil, errors.New("name is too long (max 255 chars)")
+	}
+
 	if req.Category == "" {
 		return nil, errors.New("category is required")
 	}
-	// STEP 4-4: validate the image field
-	if len(req.Image) == 0 {
+	if len(req.Category) > 255 {
+		return nil, errors.New("category is too long (max 255 chars)")
+	}
+
+	// STEP 4-4: add an image field
+	file, _, err := r.FormFile("image")
+	if err != nil {
 		return nil, errors.New("image is required")
 	}
+	defer file.Close()
+
+	imageData, err := io.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read image file: %w", err)
+	}
+
+	if len(imageData) == 0 {
+		return nil, errors.New("image file is empty")
+	}
+
+	contentType := http.DetectContentType(imageData[:512]) // 最初の 512 バイトから MIME を判定
+	validMimeTypes := map[string]bool{
+		"image/jpeg": true,
+		"image/png":  true,
+	}
+
+	if !validMimeTypes[contentType] {
+		return nil, fmt.Errorf("invalid image format (must be JPEG or PNG, got %s)", contentType)
+	}
+	req.Image = imageData
 	return req, nil
 }
 // AddItem is a handler to add a new item for POST /items .
@@ -252,20 +267,23 @@ func (s *Handlers) storeImage(image []byte) (filePath string, err error) {
 	hasher.Write(image)
 	hashSum := hasher.Sum(nil)
 	fileName := fmt.Sprintf("%x.jpg", hashSum)
+
 	// Build the full file path
 	filePath = filepath.Join(s.imgDirPath, fileName)
+
 	// Check if the image already exists
 	_, err = os.Stat(filePath)
 	if err == nil {
 		// Image already exists, return the filename
 		return fileName, nil
 	}
+
 	// Store the image
 	err = os.WriteFile(filePath, image, 0644)
 	if err != nil {
 		return "", fmt.Errorf("failed to write image file: %w", err)
 	}
-	return
+	
 	return fileName, nil
 }
 type GetImageRequest struct {
@@ -372,4 +390,3 @@ func (s *Handlers) GetCategories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-
