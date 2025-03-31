@@ -1,0 +1,17 @@
+{
+    "items": [
+        {
+            "name": "jacket",
+            "category": "fashion"
+        },
+        {
+            "name": "shoes",
+            "category": "footwear"
+        },
+        {
+            "name": "jacket",
+            "category": "fashion",
+            "image_name": "ea21d99a77505fda3a5030ab650cca3da0c061fdfa58f3b7b6cfa83024825e7e.jpg"
+        }
+    ]
+}

@@ -1,103 +1,144 @@
 import os
+import json
+import hashlib
 import logging
-import pathlib
-from fastapi import FastAPI, Form, HTTPException, Depends
-from fastapi.responses import FileResponse
-from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
+from pathlib import Path
+from fastapi import FastAPI, Form, HTTPException, UploadFile, File, Path, Query
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from contextlib import asynccontextmanager
 
+# Constants
+DB_FILE = "mercari.sqlite3"
+IMAGE_DIR = "images"
+os.makedirs(IMAGE_DIR, exist_ok=True)  # Ensure image directory exists
 
-# Define the path to the images & sqlite3 database
-images = pathlib.Path(__file__).parent.resolve() / "images"
-db = pathlib.Path(__file__).parent.resolve() / "db" / "mercari.sqlite3"
-
-
+# Function to connect to database
 def get_db():
-    if not db.exists():
-        yield
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    return conn
 
-    conn = sqlite3.connect(db)
-    conn.row_factory = sqlite3.Row  # Return rows as dictionaries
-    try:
-        yield conn
-    finally:
-        conn.close()
+# Define Item schema
+class Item(BaseModel):
+    name: str
+    category: str
+    image_name: str = None
 
+# Initialize FastAPI
+app = FastAPI()
 
-# STEP 5-1: set up the database connection
-def setup_database():
-    pass
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    setup_database()
-    yield
-
-
-app = FastAPI(lifespan=lifespan)
-
-logger = logging.getLogger("uvicorn")
-logger.level = logging.INFO
-images = pathlib.Path(__file__).parent.resolve() / "images"
-origins = [os.environ.get("FRONT_URL", "http://localhost:3000")]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=False,
+    allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
-
-class HelloResponse(BaseModel):
-    message: str
-
-
-@app.get("/", response_model=HelloResponse)
-def hello():
-    return HelloResponse(**{"message": "Hello, world!"})
-
-
-class AddItemResponse(BaseModel):
-    message: str
-
-
-# add_item is a handler to add a new item for POST /items .
-@app.post("/items", response_model=AddItemResponse)
+# ✅ List a new item (Insert into database)
+@app.post("/items")
 def add_item(
     name: str = Form(...),
-    db: sqlite3.Connection = Depends(get_db),
+    category: str = Form(...),
+    image: UploadFile = File(None),
 ):
-    if not name:
-        raise HTTPException(status_code=400, detail="name is required")
+    conn = get_db()
+    cursor = conn.cursor()
 
-    insert_item(Item(name=name))
-    return AddItemResponse(**{"message": f"item received: {name}"})
+    # Check if category exists
+    cursor.execute("SELECT id FROM categories WHERE name = ?", (category,))
+    category_data = cursor.fetchone()
 
+    # If category doesn't exist, insert it
+    if category_data is None:
+        cursor.execute("INSERT INTO categories (name) VALUES (?)", (category,))
+        category_id = cursor.lastrowid
+    else:
+        category_id = category_data["id"]
 
-# get_image is a handler to return an image for GET /images/{filename} .
+    # Process image
+    image_name = None
+    if image:
+        image_bytes = image.file.read()
+        image_hash = hashlib.sha256(image_bytes).hexdigest()
+        image_name = f"{image_hash}.jpg"
+        with open(f"{IMAGE_DIR}/{image_name}", "wb") as f:
+            f.write(image_bytes)
+
+    # Insert item into database
+    cursor.execute(
+        "INSERT INTO items (name, category_id, image_name) VALUES (?, ?, ?)",
+        (name, category_id, image_name),
+    )
+    conn.commit()
+    conn.close()
+
+    return {"message": f"Item added: {name}"}
+
+# ✅ Get all items (from database)
+@app.get("/items")
+def get_items():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT items.id, items.name, categories.name AS category, items.image_name 
+        FROM items 
+        JOIN categories ON items.category_id = categories.id
+    """)
+    items = cursor.fetchall()
+    conn.close()
+    return {"items": [dict(item) for item in items]}
+
+# ✅ Get specific item details (from database)
+@app.get("/items/{item_id}")
+def get_item(item_id: int = Path(..., description="The ID of the item to retrieve")):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT items.id, items.name, categories.name AS category, items.image_name 
+        FROM items 
+        JOIN categories ON items.category_id = categories.id
+        WHERE items.id = ?
+    """, (item_id,))
+    item = cursor.fetchone()
+    conn.close()
+
+    if item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    return dict(item)
+
+# ✅ Search for an item (by name or category)
+@app.get("/search")
+def search_items(keyword: str = Query(..., description="Keyword to search for items")):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT items.id, items.name, categories.name AS category, items.image_name 
+        FROM items 
+        JOIN categories ON items.category_id = categories.id
+        WHERE items.name LIKE ? OR categories.name LIKE ?
+    """, (f"%{keyword}%", f"%{keyword}%"))
+    
+    items = cursor.fetchall()
+    conn.close()
+    return {"items": [dict(item) for item in items]}
+
+# ✅ Fetch an image by filename
 @app.get("/images/{image_name}")
-async def get_image(image_name):
-    # Create image path
-    image = images / image_name
+async def get_image(image_name: str):
+    image_path = Path(f"{IMAGE_DIR}/{image_name}")
+    if image_path.exists():
+        return FileResponse(image_path)
+    raise HTTPException(status_code=404, detail="Image not found")
 
-    if not image_name.endswith(".jpg"):
-        raise HTTPException(status_code=400, detail="Image path does not end with .jpg")
+# ✅ Root endpoint
+@app.get("/")
+def read_root():
+    return {"message": "Hello, world!"}
 
-    if not image.exists():
-        logger.debug(f"Image not found: {image}")
-        image = images / "default.jpg"
-
-    return FileResponse(image)
-
-
-class Item(BaseModel):
-    name: str
-
-
-def insert_item(item: Item):
-    # STEP 4-2: add an implementation to store an item
-    pass
+# ✅ Logger Configuration
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
